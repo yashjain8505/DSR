@@ -159,31 +159,19 @@ export function SubTabContent({
 }
 
 /**
- * Renders a PDF via Google Docs Viewer (most reliable for cross-origin PDFs).
- * Falls back to a direct download link if Google Viewer fails.
+ * Renders a PDF by proxying it through our own API so it's same-origin.
+ * This avoids all cross-origin iframe/embed/object blocking issues.
  */
 function PdfEmbed({ url, title }: { url: string; title: string }) {
-  const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+  const proxyUrl = `/api/assets/proxy?url=${encodeURIComponent(url)}`;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-lg bg-gray-50">
+    <div className="relative w-full overflow-hidden rounded-lg">
       <iframe
-        src={viewerUrl}
+        src={proxyUrl}
         className="h-[700px] w-full border-0"
         title={title}
-        allow="autoplay"
       />
-      <div className="flex items-center justify-center gap-3 border-t border-gray-200 bg-white px-4 py-3">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-medium hover:underline"
-          style={{ color: "var(--brand-primary)" }}
-        >
-          Open in new tab ↗
-        </a>
-      </div>
     </div>
   );
 }
