@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https:",
-              "frame-src https://www.youtube.com https://youtube.com https://trust.linkrunner.io https://calendly.com",
+              "frame-src 'self' https://www.youtube.com https://youtube.com https://trust.linkrunner.io https://calendly.com",
               "connect-src 'self' https://*.supabase.co",
             ].join("; "),
           },
