@@ -137,6 +137,19 @@ export function SubTabContent({
         pdfUrl.includes("/assets/"); // Supabase storage PDFs
       return pdfUrl ? (
         <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+          {isPdf && (
+            <div className="mb-3 flex justify-end">
+              <a
+                href={pdfUrl}
+                download
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
+                style={{ backgroundColor: "var(--brand-primary)" }}
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </a>
+            </div>
+          )}
           {isPdf ? (
             <PdfEmbed url={pdfUrl} title="Company Deck" />
           ) : (
@@ -166,17 +179,7 @@ function PdfEmbed({ url, title }: { url: string; title: string }) {
   const proxyUrl = `/api/assets/proxy?url=${encodeURIComponent(url)}#toolbar=0&navpanes=0&view=Fit`;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-lg">
-      {/* Download button overlaid top-right */}
-      <a
-        href={url}
-        download
-        className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-md transition-colors hover:opacity-90"
-        style={{ backgroundColor: "var(--brand-primary)" }}
-      >
-        <Download className="h-4 w-4" />
-        Download
-      </a>
+    <div className="w-full overflow-hidden rounded-lg">
       <iframe
         src={proxyUrl}
         className="h-[700px] w-full border-0"
