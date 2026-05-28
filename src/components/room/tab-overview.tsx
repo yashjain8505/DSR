@@ -159,37 +159,31 @@ export function SubTabContent({
 }
 
 /**
- * Renders a PDF using <object> with an <embed> fallback and a download link
- * as the final fallback. Unlike <iframe>, <object>/<embed> handle cross-origin
- * PDFs from Supabase Storage without the "content is blocked" error.
+ * Renders a PDF via Google Docs Viewer (most reliable for cross-origin PDFs).
+ * Falls back to a direct download link if Google Viewer fails.
  */
 function PdfEmbed({ url, title }: { url: string; title: string }) {
+  const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+
   return (
-    <div className="relative w-full overflow-hidden rounded-lg bg-gray-100">
-      <object
-        data={url}
-        type="application/pdf"
-        className="h-[700px] w-full"
-        aria-label={title}
-      >
-        {/* Fallback for browsers that don't support <object> for PDFs */}
-        <embed src={url} type="application/pdf" className="h-[700px] w-full" />
-        {/* Final fallback: download link */}
-        <div className="flex h-[700px] flex-col items-center justify-center gap-4 text-gray-500">
-          <p className="text-sm">
-            Unable to display the PDF inline.
-          </p>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg px-5 py-2.5 text-sm font-medium text-white"
-            style={{ backgroundColor: "var(--brand-primary)" }}
-          >
-            Open PDF ↗
-          </a>
-        </div>
-      </object>
+    <div className="relative w-full overflow-hidden rounded-lg bg-gray-50">
+      <iframe
+        src={viewerUrl}
+        className="h-[700px] w-full border-0"
+        title={title}
+        allow="autoplay"
+      />
+      <div className="flex items-center justify-center gap-3 border-t border-gray-200 bg-white px-4 py-3">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-medium hover:underline"
+          style={{ color: "var(--brand-primary)" }}
+        >
+          Open in new tab ↗
+        </a>
+      </div>
     </div>
   );
 }
