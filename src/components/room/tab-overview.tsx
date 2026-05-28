@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Download } from "lucide-react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { YouTubeEmbed } from "@/components/room/youtube-embed";
 import { IframeEmbed } from "@/components/room/iframe-embed";
@@ -172,6 +172,17 @@ function PdfEmbed({ url, title }: { url: string; title: string }) {
         className="h-[700px] w-full border-0"
         title={title}
       />
+      <div className="flex items-center justify-end border-t border-gray-200 bg-white px-4 py-2.5">
+        <a
+          href={url}
+          download
+          className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
+          style={{ backgroundColor: "var(--brand-primary)" }}
+        >
+          <Download className="h-4 w-4" />
+          Download PDF
+        </a>
+      </div>
     </div>
   );
 }
