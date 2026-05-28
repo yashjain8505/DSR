@@ -163,7 +163,7 @@ export function SubTabContent({
  * This avoids all cross-origin iframe/embed/object blocking issues.
  */
 function PdfEmbed({ url, title }: { url: string; title: string }) {
-  const proxyUrl = `/api/assets/proxy?url=${encodeURIComponent(url)}`;
+  const proxyUrl = `/api/assets/proxy?url=${encodeURIComponent(url)}#toolbar=0&navpanes=0&view=FitH`;
 
   return (
     <div className="relative w-full overflow-hidden rounded-lg">
