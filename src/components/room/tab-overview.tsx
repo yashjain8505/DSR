@@ -6,7 +6,7 @@ import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { YouTubeEmbed } from "@/components/room/youtube-embed";
 import { IframeEmbed } from "@/components/room/iframe-embed";
 import { OVERVIEW_SUB_TAB_LABELS } from "@/lib/constants";
-import type { OverviewSubTab } from "@/lib/types";
+import type { OverviewSubTab, Asset } from "@/lib/types";
 import type { OverviewSubTabKey } from "@/lib/constants";
 
 interface SubTabDropdownSectionProps {
@@ -85,43 +85,113 @@ export function SubTabDropdownSection({
 
 /* ------------------------------------------------------------------ */
 
-export function SubTabContent({ subTab }: { subTab: OverviewSubTab }) {
+export function SubTabContent({
+  subTab,
+  assets = [],
+}: {
+  subTab: OverviewSubTab;
+  assets?: Asset[];
+}) {
+  const asset = assets.find((a) => a.category === subTab.sub_tab_key);
+  const content = subTab.content || asset?.content || "";
+  const youtubeUrl = subTab.youtube_url || asset?.url || "";
+  const iframeUrl = subTab.iframe_url || asset?.url || "";
+
   switch (subTab.sub_tab_key) {
     case "product_demo":
-      return subTab.youtube_url ? (
+      return youtubeUrl ? (
         <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
-          <YouTubeEmbed url={subTab.youtube_url} title="Product Demo" />
-          {subTab.content && (
+          <YouTubeEmbed url={youtubeUrl} title="Product Demo" />
+          {content && (
             <div className="mt-6">
-              <MarkdownRenderer content={subTab.content} />
+              <MarkdownRenderer content={content} />
             </div>
           )}
         </div>
       ) : (
-        <FallbackContent content={subTab.content} />
+        <FallbackContent content={content} />
       );
 
     case "security_compliance":
-      return subTab.iframe_url ? (
+      return iframeUrl ? (
         <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
           <IframeEmbed
-            url={subTab.iframe_url}
+            url={iframeUrl}
             height={700}
             title="Security & Compliance"
           />
-          {subTab.content && (
+          {content && (
             <div className="mt-6">
-              <MarkdownRenderer content={subTab.content} />
+              <MarkdownRenderer content={content} />
             </div>
           )}
         </div>
       ) : (
-        <FallbackContent content={subTab.content} />
+        <FallbackContent content={content} />
       );
 
+    case "company_deck": {
+      const pdfUrl = subTab.iframe_url || asset?.url || "";
+      const isPdf =
+        pdfUrl.toLowerCase().endsWith(".pdf") ||
+        pdfUrl.includes("/assets/"); // Supabase storage PDFs
+      return pdfUrl ? (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+          {isPdf ? (
+            <PdfEmbed url={pdfUrl} title="Company Deck" />
+          ) : (
+            <IframeEmbed url={pdfUrl} height={700} title="Company Deck" />
+          )}
+          {content && (
+            <div className="mt-6">
+              <MarkdownRenderer content={content} />
+            </div>
+          )}
+        </div>
+      ) : (
+        <FallbackContent content={content} />
+      );
+    }
+
     default:
-      return <FallbackContent content={subTab.content} />;
+      return <FallbackContent content={content} />;
   }
+}
+
+/**
+ * Renders a PDF using <object> with an <embed> fallback and a download link
+ * as the final fallback. Unlike <iframe>, <object>/<embed> handle cross-origin
+ * PDFs from Supabase Storage without the "content is blocked" error.
+ */
+function PdfEmbed({ url, title }: { url: string; title: string }) {
+  return (
+    <div className="relative w-full overflow-hidden rounded-lg bg-gray-100">
+      <object
+        data={url}
+        type="application/pdf"
+        className="h-[700px] w-full"
+        aria-label={title}
+      >
+        {/* Fallback for browsers that don't support <object> for PDFs */}
+        <embed src={url} type="application/pdf" className="h-[700px] w-full" />
+        {/* Final fallback: download link */}
+        <div className="flex h-[700px] flex-col items-center justify-center gap-4 text-gray-500">
+          <p className="text-sm">
+            Unable to display the PDF inline.
+          </p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg px-5 py-2.5 text-sm font-medium text-white"
+            style={{ backgroundColor: "var(--brand-primary)" }}
+          >
+            Open PDF ↗
+          </a>
+        </div>
+      </object>
+    </div>
+  );
 }
 
 function FallbackContent({ content }: { content: string }) {

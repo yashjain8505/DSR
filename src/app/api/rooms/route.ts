@@ -83,7 +83,7 @@ export async function POST(request: Request) {
             title: OVERVIEW_SUB_TAB_LABELS[key],
             content: "",
             youtube_url: key === "product_demo" ? "" : null,
-            iframe_url: key === "security_compliance" ? TRUST_PAGE_URL : null,
+            iframe_url: key === "security_compliance" ? TRUST_PAGE_URL : key === "company_deck" ? "" : null,
             sort_order: OVERVIEW_SUB_TAB_SORT_ORDER[key],
           }))
         ),

@@ -7,6 +7,7 @@ export const OVERVIEW_SUB_TAB_KEYS = [
   "product_demo",
   "features",
   "how_it_works",
+  "company_deck",
   "differentiators",
   "integrations",
   "customers_references",
@@ -23,6 +24,7 @@ export const OVERVIEW_SUB_TAB_LABELS: Record<OverviewSubTabKey, string> = {
   product_demo: "Product Demo",
   features: "Features",
   how_it_works: "How It Works",
+  company_deck: "Company Deck",
   differentiators: "What Makes Us Different",
   integrations: "Integrations",
   customers_references: "Our Customers & References",
@@ -37,10 +39,11 @@ export const OVERVIEW_SUB_TAB_SORT_ORDER: Record<OverviewSubTabKey, number> = {
   product_demo: 1,
   features: 2,
   how_it_works: 3,
-  differentiators: 4,
-  integrations: 5,
-  customers_references: 6,
-  security_compliance: 7,
+  company_deck: 4,
+  differentiators: 5,
+  integrations: 6,
+  customers_references: 7,
+  security_compliance: 8,
 };
 
 /**
@@ -51,6 +54,7 @@ export const PRODUCT_SUB_TABS: OverviewSubTabKey[] = [
   "product_demo",
   "features",
   "how_it_works",
+  "company_deck",
 ];
 
 /**
@@ -130,3 +134,42 @@ export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
  * Default iframe URL for the security & compliance sub-tab.
  */
 export const TRUST_PAGE_URL = "https://trust.linkrunner.io";
+
+/**
+ * Asset categories for the global Assets tab.
+ * These map to the room content sections that are the same for every customer.
+ */
+export const ASSET_CATEGORIES = [
+  "what_is_linkrunner",
+  "product_demo",
+  "features",
+  "how_it_works",
+  "company_deck",
+  "differentiators",
+  "integrations",
+  "security_compliance",
+  "case_studies",
+  "comparisons",
+] as const;
+
+export type AssetCategory = (typeof ASSET_CATEGORIES)[number];
+
+export const ASSET_CATEGORY_LABELS: Record<AssetCategory, string> = {
+  what_is_linkrunner: "What is Linkrunner",
+  product_demo: "Product Demo",
+  features: "Features",
+  how_it_works: "How It Works",
+  company_deck: "Company Deck",
+  differentiators: "Differentiators",
+  integrations: "Integrations",
+  security_compliance: "Security & Compliance",
+  case_studies: "Case Studies",
+  comparisons: "Comparisons",
+};
+
+export const ASSET_TYPE_OPTIONS = [
+  { value: "markdown", label: "Markdown" },
+  { value: "youtube_url", label: "YouTube URL" },
+  { value: "iframe_url", label: "Embed URL" },
+  { value: "file_url", label: "File URL" },
+] as const;

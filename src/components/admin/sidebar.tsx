@@ -14,6 +14,8 @@ import {
   Rocket,
   BarChart3,
   ChevronLeft,
+  Package,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +26,9 @@ type SidebarProps = {
 
 const mainLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/meetings", label: "Meetings", icon: Calendar },
   { href: "/admin/rooms/new", label: "Create Room", icon: Plus },
+  { href: "/admin/assets", label: "Assets", icon: Package },
 ];
 
 const roomLinks = [

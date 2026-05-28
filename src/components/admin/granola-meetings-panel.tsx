@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Calendar,
@@ -9,6 +9,7 @@ import {
   Sparkles,
   CheckCircle2,
   Loader2,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
@@ -27,6 +28,7 @@ export function GranolaMeetingsPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   // Normalize company names for matching
   const existingSet = new Set(
@@ -73,6 +75,17 @@ export function GranolaMeetingsPanel({
     }
   }
 
+  const filteredMeetings = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return meetings;
+    return meetings.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) ||
+        (m.company_name && m.company_name.toLowerCase().includes(q)) ||
+        m.participants.some((p) => p.name.toLowerCase().includes(q))
+    );
+  }, [meetings, search]);
+
   function hasExistingRoom(meeting: GranolaMeetingCache): boolean {
     if (!meeting.company_name) return false;
     return existingSet.has(meeting.company_name.toLowerCase().trim());
@@ -80,7 +93,7 @@ export function GranolaMeetingsPanel({
 
   if (loading) {
     return (
-      <div className="mt-10">
+      <div>
         <h2 className="text-lg font-semibold text-gray-900">
           Granola Meetings
         </h2>
@@ -94,7 +107,7 @@ export function GranolaMeetingsPanel({
 
   if (error) {
     return (
-      <div className="mt-10">
+      <div>
         <h2 className="text-lg font-semibold text-gray-900">
           Granola Meetings
         </h2>
@@ -106,7 +119,7 @@ export function GranolaMeetingsPanel({
   if (meetings.length === 0) return null;
 
   return (
-    <div className="mt-10">
+    <div>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
@@ -119,6 +132,18 @@ export function GranolaMeetingsPanel({
         <span className="rounded-full bg-[#e6ecff] px-3 py-1 text-xs font-medium text-[#4d4bf7]">
           {meetings.length} meetings
         </span>
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search meetings by title, company, or participant…"
+          className="block w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#4d4bf7] focus:outline-none focus:ring-2 focus:ring-[#c9d4ff]"
+        />
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -143,7 +168,7 @@ export function GranolaMeetingsPanel({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {meetings.map((meeting) => {
+            {filteredMeetings.map((meeting) => {
               const alreadyExists = hasExistingRoom(meeting);
               const isGenerating = generatingId === meeting.id;
               const hasSummary = !!meeting.summary;

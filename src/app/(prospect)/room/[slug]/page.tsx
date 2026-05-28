@@ -68,6 +68,7 @@ export default async function RoomPage({ params }: PageProps) {
     caseStudiesResult,
     comparisonsResult,
     gettingStartedResult,
+    assetsResult,
   ] = await Promise.all([
     supabase
       .from("meeting_briefs")
@@ -95,6 +96,11 @@ export default async function RoomPage({ params }: PageProps) {
       .select("*")
       .eq("room_id", room.id)
       .single(),
+    supabase
+      .from("assets")
+      .select("*")
+      .order("category")
+      .order("sort_order"),
   ]);
 
   const data: RoomWithContent = {
@@ -105,6 +111,7 @@ export default async function RoomPage({ params }: PageProps) {
     case_studies: caseStudiesResult.data ?? [],
     comparisons: comparisonsResult.data ?? [],
     getting_started: gettingStartedResult.data,
+    assets: assetsResult.data ?? [],
   };
 
   // Compute brand palette from room's stored color or fallback
@@ -116,6 +123,8 @@ export default async function RoomPage({ params }: PageProps) {
     "--brand-primary-light": palette.primaryLight,
     "--brand-primary-dark": palette.primaryDark,
     "--brand-secondary": "#4d4bf7",
+    "--lr-purple": "#4d4bf7",
+    "--lr-purple-light": "#eeedfe",
   } as React.CSSProperties;
 
   return (

@@ -15,6 +15,7 @@ export interface Room {
   tab_comparison_visible: boolean;
   tab_getting_started_visible: boolean;
   brand_primary_color: string | null;
+  notes: string;
   created_at: string;
   updated_at: string;
 }
@@ -169,6 +170,7 @@ export interface RoomWithContent {
   case_studies: CaseStudy[];
   comparisons: Comparison[];
   getting_started: GettingStarted;
+  assets: Asset[];
 }
 
 /**
@@ -230,6 +232,7 @@ export interface UpdateRoomPayload {
   tab_comparison_visible?: boolean;
   tab_getting_started_visible?: boolean;
   brand_primary_color?: string | null;
+  notes?: string;
 }
 
 /**
@@ -240,6 +243,33 @@ export interface EmailGatePayload {
   name?: string;
   company?: string;
   room_id: string;
+}
+
+/**
+ * Global asset record (template content shared across all rooms).
+ */
+export interface Asset {
+  id: string;
+  category: string;
+  title: string;
+  asset_type: "markdown" | "youtube_url" | "iframe_url" | "file_url";
+  content: string;
+  url: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Payload for creating/updating an asset.
+ */
+export interface SaveAssetPayload {
+  category: string;
+  title: string;
+  asset_type: "markdown" | "youtube_url" | "iframe_url" | "file_url";
+  content: string;
+  url?: string | null;
+  sort_order?: number;
 }
 
 /**

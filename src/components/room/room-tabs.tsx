@@ -398,7 +398,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
           </div>
         )}
         {(activeTab === "product" || activeTab === "why_linkrunner") && (
-          <OverviewSubTabRenderer subTab={getActiveOverviewSubTab()} />
+          <OverviewSubTabRenderer subTab={getActiveOverviewSubTab()} assets={data.assets} />
         )}
         {activeTab === "pricing" && <TabPricing pricing={data.pricing} />}
         {activeTab === "case_studies" && (
@@ -417,7 +417,13 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
 
 /* ------------------------------------------------------------------ */
 
-function OverviewSubTabRenderer({ subTab }: { subTab: OverviewSubTab | null }) {
+function OverviewSubTabRenderer({
+  subTab,
+  assets = [],
+}: {
+  subTab: OverviewSubTab | null;
+  assets?: import("@/lib/types").Asset[];
+}) {
   if (!subTab) {
     return (
       <div className="flex items-center justify-center py-16 text-sm text-gray-500">
@@ -427,7 +433,7 @@ function OverviewSubTabRenderer({ subTab }: { subTab: OverviewSubTab | null }) {
   }
   return (
     <div className="mx-auto max-w-4xl">
-      <SubTabContent subTab={subTab} />
+      <SubTabContent subTab={subTab} assets={assets} />
     </div>
   );
 }

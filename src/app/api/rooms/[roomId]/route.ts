@@ -20,6 +20,7 @@ export async function GET(
       caseStudiesResult,
       comparisonsResult,
       gettingStartedResult,
+      assetsResult,
     ] = await Promise.all([
       supabase.from("rooms").select("*").eq("id", roomId).single(),
       supabase
@@ -48,6 +49,11 @@ export async function GET(
         .select("*")
         .eq("room_id", roomId)
         .single(),
+      supabase
+        .from("assets")
+        .select("*")
+        .order("category")
+        .order("sort_order"),
     ]);
 
     if (roomResult.error) {
@@ -65,6 +71,7 @@ export async function GET(
       case_studies: caseStudiesResult.data ?? [],
       comparisons: comparisonsResult.data ?? [],
       getting_started: gettingStartedResult.data,
+      assets: assetsResult.data ?? [],
     };
 
     return NextResponse.json(data);
