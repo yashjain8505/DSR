@@ -1,0 +1,133 @@
+import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import {
+  OVERVIEW_SUB_TAB_KEYS,
+  OVERVIEW_SUB_TAB_LABELS,
+  OVERVIEW_SUB_TAB_SORT_ORDER,
+  TRUST_PAGE_URL,
+} from "@/lib/constants";
+import type { CreateRoomPayload, Room } from "@/lib/types";
+
+export async function GET() {
+  try {
+    const supabase = await createClient();
+
+    const { data: rooms, error } = await supabase
+      .from("rooms")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ rooms: rooms as Room[] });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body: CreateRoomPayload = await request.json();
+
+    if (!body.slug || !body.company_name) {
+      return NextResponse.json(
+        { error: "slug and company_name are required" },
+        { status: 400 }
+      );
+    }
+
+    const admin = createAdminClient();
+
+    // Create the room
+    const { data: room, error: roomError } = await admin
+      .from("rooms")
+      .insert({
+        slug: body.slug,
+        company_name: body.company_name,
+        logo_url: body.logo_url ?? null,
+        contact_name: body.contact_name ?? null,
+        contact_email: body.contact_email ?? null,
+      })
+      .select()
+      .single();
+
+    if (roomError) {
+      return NextResponse.json(
+        { error: roomError.message },
+        { status: 500 }
+      );
+    }
+
+    const roomId = room.id;
+
+    // Create child rows in parallel
+    const [briefResult, subTabsResult, pricingResult, gettingStartedResult] =
+      await Promise.all([
+        // 1. Meeting brief (empty content)
+        admin.from("meeting_briefs").insert({
+          room_id: roomId,
+          content: "",
+        }),
+
+        // 2. Overview sub-tabs (one per key)
+        admin.from("overview_sub_tabs").insert(
+          OVERVIEW_SUB_TAB_KEYS.map((key) => ({
+            room_id: roomId,
+            sub_tab_key: key,
+            title: OVERVIEW_SUB_TAB_LABELS[key],
+            content: "",
+            youtube_url: key === "product_demo" ? "" : null,
+            iframe_url: key === "security_compliance" ? TRUST_PAGE_URL : null,
+            sort_order: OVERVIEW_SUB_TAB_SORT_ORDER[key],
+          }))
+        ),
+
+        // 3. Pricing (empty content)
+        admin.from("pricing").insert({
+          room_id: roomId,
+          content: "",
+        }),
+
+        // 4. Getting started (empty fields)
+        admin.from("getting_started").insert({
+          room_id: roomId,
+          integration_timeline: "",
+          migration_steps: "",
+          onboarding_plan: "",
+        }),
+      ]);
+
+    // Check for errors in child inserts
+    const childErrors = [
+      briefResult.error,
+      subTabsResult.error,
+      pricingResult.error,
+      gettingStartedResult.error,
+    ].filter(Boolean);
+
+    if (childErrors.length > 0) {
+      // Clean up the room if child inserts fail
+      await admin.from("rooms").delete().eq("id", roomId);
+      return NextResponse.json(
+        {
+          error: "Failed to create room content",
+          details: childErrors.map((e) => e!.message),
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ room: room as Room }, { status: 201 });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
