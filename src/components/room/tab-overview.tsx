@@ -163,26 +163,25 @@ export function SubTabContent({
  * This avoids all cross-origin iframe/embed/object blocking issues.
  */
 function PdfEmbed({ url, title }: { url: string; title: string }) {
-  const proxyUrl = `/api/assets/proxy?url=${encodeURIComponent(url)}#toolbar=0&navpanes=0&view=FitH`;
+  const proxyUrl = `/api/assets/proxy?url=${encodeURIComponent(url)}#toolbar=0&navpanes=0&view=Fit`;
 
   return (
     <div className="relative w-full overflow-hidden rounded-lg">
+      {/* Download button overlaid top-right */}
+      <a
+        href={url}
+        download
+        className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-md transition-colors hover:opacity-90"
+        style={{ backgroundColor: "var(--brand-primary)" }}
+      >
+        <Download className="h-4 w-4" />
+        Download
+      </a>
       <iframe
         src={proxyUrl}
         className="h-[700px] w-full border-0"
         title={title}
       />
-      <div className="flex items-center justify-end border-t border-gray-200 bg-white px-4 py-2.5">
-        <a
-          href={url}
-          download
-          className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
-          style={{ backgroundColor: "var(--brand-primary)" }}
-        >
-          <Download className="h-4 w-4" />
-          Download PDF
-        </a>
-      </div>
     </div>
   );
 }
