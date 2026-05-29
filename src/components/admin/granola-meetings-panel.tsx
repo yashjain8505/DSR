@@ -34,10 +34,11 @@ export function GranolaMeetingsPanel({
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [createdCompanies, setCreatedCompanies] = useState<string[]>([]);
 
-  // Normalize company names for matching
+  // Normalize company names for matching (initial + newly created)
   const existingSet = new Set(
-    existingCompanies.map((c) => c.toLowerCase().trim())
+    [...existingCompanies, ...createdCompanies].map((c) => c.toLowerCase().trim())
   );
 
   useEffect(() => {
@@ -71,9 +72,11 @@ export function GranolaMeetingsPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Redirect to the new room's editor
-      router.push(`/admin/rooms/${data.room.id}`);
-      router.refresh();
+      // Stay on meetings page — update "Room exists" badge instantly
+      if (data.room?.company_name) {
+        setCreatedCompanies((prev) => [...prev, data.room.company_name]);
+      }
+      setGeneratingId(null);
     } catch (err) {
       alert(
         err instanceof Error ? err.message : "Failed to generate room"
