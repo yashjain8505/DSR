@@ -1,28 +1,34 @@
 /**
  * Utility to extract brand assets (logo + colors) from a company's website
  * and compute color variants for theming.
+ *
+ * **Brand color strategy (logo-first):**
+ * 1. Find the company logo (apple-touch-icon, favicon, etc.)
+ * 2. Download the logo image
+ * 3. Extract the dominant saturated color from its pixels using `sharp`
+ * 4. Fall back to HTML meta tags / CSS vars only if logo extraction fails
+ *
+ * This is far more reliable than scraping CSS because the logo ALWAYS
+ * contains the brand color, regardless of how the website is built.
  */
 
-/**
- * Computed brand color palette derived from a single primary color.
- */
+import sharp from "sharp";
+
 export interface BrandPalette {
-  primary: string; // e.g. "#FF5733"
-  primaryLight: string; // light tint for backgrounds
-  primaryDark: string; // darker shade for hover states
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
 }
 
-/**
- * Brand assets extracted from a company's website.
- */
 export interface BrandAssets {
   logoUrl: string | null;
   brandColor: string | null;
 }
 
 /**
- * Extract both logo URL and brand color from a company's website in a
- * single pass. Falls back gracefully when assets can't be found.
+ * Extract both logo URL and brand color from a company's website.
+ * Uses a logo-first approach: finds the logo, then extracts the dominant
+ * color from the logo's pixels for the most reliable brand color.
  */
 export async function extractBrandAssets(
   websiteUrl: string
@@ -50,11 +56,11 @@ export async function extractBrandAssets(
     // Site unreachable — fall through to fallback strategies
   }
 
-  // Extract logo and color in parallel from HTML + fallback sources
-  const [logoUrl, brandColor] = await Promise.all([
-    extractLogo(html, domain, url),
-    extractBrandColor(html, domain, url),
-  ]);
+  // Step 1: Find the logo URL
+  const logoUrl = await extractLogo(html, domain, url);
+
+  // Step 2: Extract brand color — logo pixels first, HTML fallbacks second
+  const brandColor = await extractBrandColor(logoUrl, html, domain, url);
 
   return { logoUrl, brandColor };
 }
@@ -334,40 +340,55 @@ function resolveUrl(href: string, baseUrl: string): string {
  *  5. SVG fill/stroke colors
  *  6. Dominant non-grayscale color from inline styles and CSS blocks
  */
+/**
+ * Extract brand color using a logo-first approach:
+ *
+ * 1. Download the logo image and extract dominant color via sharp (most reliable)
+ * 2. Fall back to HTML meta/CSS strategies if logo extraction fails
+ *
+ * The logo always contains the brand color regardless of how the site is built,
+ * making this far more reliable than scraping CSS from SPAs.
+ */
 async function extractBrandColor(
+  logoUrl: string | null,
   html: string | null,
   domain: string,
   baseUrl: string
 ): Promise<string | null> {
+  // === PRIMARY: Extract color from logo image pixels ===
+  if (logoUrl) {
+    const logoColor = await extractColorFromImage(logoUrl);
+    if (logoColor) return logoColor;
+  }
+
+  // Try apple-touch-icon directly (even if not the chosen logo)
+  const touchIconUrls = [
+    `${baseUrl}/apple-touch-icon.png`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+  ];
+  for (const iconUrl of touchIconUrls) {
+    if (iconUrl === logoUrl) continue; // Already tried
+    const iconColor = await extractColorFromImage(iconUrl);
+    if (iconColor) return iconColor;
+  }
+
+  // === FALLBACK: HTML-based strategies (less reliable) ===
   if (html) {
-    // Strategy 1: <meta name="theme-color"> (skip if near-black/white/gray)
     const themeColor = extractMetaThemeColor(html);
     if (themeColor && isUsableBrandColor(themeColor)) return themeColor;
 
-    // Strategy 2: <meta name="msapplication-TileColor">
-    const tileColor = extractMetaTileColor(html);
-    if (tileColor && isUsableBrandColor(tileColor)) return tileColor;
-
-    // Strategy 3: CSS custom properties with brand/primary/accent in name
     const cssVarColor = extractCssVarColor(html);
     if (cssVarColor) return cssVarColor;
 
-    // Strategy 4: SVG fill colors (logos/icons often reveal brand color)
     const svgColor = extractSvgColor(html);
     if (svgColor) return svgColor;
 
-    // Strategy 5: Dominant non-grayscale color from CSS/styles
     const dominantColor = extractDominantColor(html);
     if (dominantColor) return dominantColor;
   }
 
-  // Strategy 6: Fetch manifest.json for theme_color
   const manifestColor = await extractManifestColor(baseUrl);
   if (manifestColor) return manifestColor;
-
-  // Strategy 7: Extract dominant color from favicon/logo image pixels
-  const faviconColor = await extractColorFromFavicon(domain, baseUrl);
-  if (faviconColor) return faviconColor;
 
   return null;
 }
@@ -381,156 +402,78 @@ function isUsableBrandColor(hex: string): boolean {
 }
 
 /**
- * Download a favicon/apple-touch-icon and extract the dominant non-white,
- * non-black, non-gray color from its pixels. Works by decoding PNG/JPEG
- * pixel data and finding the most frequent saturated color.
+ * Download an image and extract the dominant brand color from its pixels
+ * using `sharp`. Resizes to 64x64 for speed, then counts quantized color
+ * frequencies, returning the most common saturated color.
  */
-async function extractColorFromFavicon(
-  domain: string,
-  baseUrl: string
+async function extractColorFromImage(
+  imageUrl: string
 ): Promise<string | null> {
-  // Try common favicon URLs in order
-  const urls = [
-    `${baseUrl}/apple-touch-icon.png`,
-    `${baseUrl}/favicon-32x32.png`,
-    `${baseUrl}/favicon-16x16.png`,
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-  ];
+  try {
+    const res = await fetch(imageUrl, {
+      signal: AbortSignal.timeout(8000),
+      redirect: "follow",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      },
+    });
+    if (!res.ok) return null;
 
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, {
-        signal: AbortSignal.timeout(5000),
-        redirect: "follow",
-      });
-      if (!res.ok) continue;
+    const ct = res.headers.get("content-type") ?? "";
 
-      const ct = res.headers.get("content-type") ?? "";
-      if (!ct.includes("image/")) continue;
-
-      // For SVG favicons, extract colors from the SVG markup
-      if (ct.includes("svg")) {
-        const svgText = await res.text();
-        const color = extractSvgColor(svgText);
-        if (color) return color;
-        continue;
-      }
-
-      // For raster images, use the raw bytes approach:
-      // PNG/JPEG often have dominant palette colors we can extract
-      // by scanning for repeated color patterns in the raw data
-      const buffer = await res.arrayBuffer();
-      const color = extractDominantColorFromImageBuffer(
-        new Uint8Array(buffer)
-      );
-      if (color) return color;
-    } catch {
-      continue;
+    // For SVGs, fall back to text-based extraction
+    if (ct.includes("svg")) {
+      const svgText = await res.text();
+      return extractSvgColor(svgText);
     }
-  }
 
-  return null;
-}
+    // For HTML responses (e.g. Google favicon returning error page), skip
+    if (ct.includes("text/html")) return null;
 
-/**
- * Extract the dominant color from raw PNG image data by scanning for
- * the PLTE chunk (palette) or sampling IDAT pixels after decompression.
- *
- * For simplicity, we scan for repeated RGB triplets in the raw data
- * after the PNG header — this is a heuristic that works surprisingly
- * well because icon images have limited color palettes.
- */
-function extractDominantColorFromImageBuffer(
-  data: Uint8Array
-): string | null {
-  if (data.length < 100) return null;
+    const buffer = Buffer.from(await res.arrayBuffer());
+    if (buffer.length < 100) return null;
 
-  // Look for PNG PLTE (palette) chunk — most icons use indexed color
-  const plteColors = extractPngPaletteColors(data);
-  if (plteColors.length > 0) {
-    // Find the most saturated, non-gray palette color
-    for (const color of plteColors) {
+    // Use sharp to decode ANY image format and get raw RGB pixels
+    const { data, info } = await sharp(buffer)
+      .resize(64, 64, { fit: "cover" })
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    // Count quantized colors
+    const colorCounts = new Map<string, number>();
+    for (let i = 0; i < data.length; i += info.channels) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      // Skip white, black, near-white, near-black, grayscale
+      const avg = (r + g + b) / 3;
+      const spread = Math.max(r, g, b) - Math.min(r, g, b);
+      if (avg > 230 || avg < 25 || spread < 30) continue;
+
+      // Quantize to nearest 16 to group similar shades
+      const qr = Math.min(255, Math.round(r / 16) * 16);
+      const qg = Math.min(255, Math.round(g / 16) * 16);
+      const qb = Math.min(255, Math.round(b / 16) * 16);
+      const hex = `#${qr.toString(16).padStart(2, "0")}${qg.toString(16).padStart(2, "0")}${qb.toString(16).padStart(2, "0")}`;
+
+      colorCounts.set(hex, (colorCounts.get(hex) ?? 0) + 1);
+    }
+
+    if (colorCounts.size === 0) return null;
+
+    // Sort by frequency and return the most common usable color
+    const sorted = [...colorCounts.entries()].sort((a, b) => b[1] - a[1]);
+    for (const [color] of sorted) {
       if (isUsableBrandColor(color)) return color;
     }
+
+    return null;
+  } catch {
+    return null;
   }
-
-  // Fallback: sample raw byte triplets from the image data
-  // and find the most frequent non-gray color
-  const colorCounts = new Map<string, number>();
-  // Skip first 50 bytes (headers) and sample every 3 bytes
-  for (let i = 50; i < data.length - 2; i += 3) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-
-    // Quick grayscale/near-white/near-black check
-    const spread = Math.max(r, g, b) - Math.min(r, g, b);
-    const avg = (r + g + b) / 3;
-    if (spread < 30 || avg > 230 || avg < 25) continue;
-
-    // Quantize to reduce noise (round to nearest 8)
-    const qr = (r >> 3) << 3;
-    const qg = (g >> 3) << 3;
-    const qb = (b >> 3) << 3;
-    const hex = `#${qr.toString(16).padStart(2, "0")}${qg.toString(16).padStart(2, "0")}${qb.toString(16).padStart(2, "0")}`;
-
-    colorCounts.set(hex, (colorCounts.get(hex) ?? 0) + 1);
-  }
-
-  if (colorCounts.size === 0) return null;
-
-  const sorted = [...colorCounts.entries()].sort((a, b) => b[1] - a[1]);
-  // Return the most frequent usable color
-  for (const [color] of sorted) {
-    if (isUsableBrandColor(color)) return color;
-  }
-
-  return null;
-}
-
-/**
- * Parse the PLTE (palette) chunk from a PNG file and return hex colors.
- * PLTE chunk: 4-byte length, "PLTE" signature, then RGB triplets.
- */
-function extractPngPaletteColors(data: Uint8Array): string[] {
-  const colors: string[] = [];
-
-  // Find "PLTE" chunk
-  for (let i = 8; i < data.length - 12; i++) {
-    if (
-      data[i + 4] === 0x50 && // P
-      data[i + 5] === 0x4c && // L
-      data[i + 6] === 0x54 && // T
-      data[i + 7] === 0x45 // E
-    ) {
-      // Read chunk length (big-endian 4 bytes before the type)
-      const len =
-        (data[i] << 24) | (data[i + 1] << 16) | (data[i + 2] << 8) | data[i + 3];
-      const paletteStart = i + 8;
-      const paletteEnd = Math.min(paletteStart + len, data.length);
-
-      // Read RGB triplets, sort by saturation (most saturated first)
-      const entries: { hex: string; saturation: number }[] = [];
-      for (let j = paletteStart; j < paletteEnd - 2; j += 3) {
-        const r = data[j];
-        const g = data[j + 1];
-        const b = data[j + 2];
-        const hex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-        const rgb = { r, g, b };
-        const hsl = rgbToHsl(rgb);
-        entries.push({ hex, saturation: hsl.s });
-      }
-
-      entries.sort((a, b) => b.saturation - a.saturation);
-      for (const entry of entries) {
-        colors.push(entry.hex);
-      }
-
-      break; // Only process first PLTE chunk
-    }
-  }
-
-  return colors;
 }
 
 function extractMetaThemeColor(html: string): string | null {
