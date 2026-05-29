@@ -70,10 +70,35 @@ function extractContactEmail(
 }
 
 /**
+ * Fetch the full verbatim transcript for a single meeting from the Granola API.
+ * Returns null if the transcript is not available.
+ */
+async function fetchTranscript(
+  meetingId: string,
+  apiKey: string
+): Promise<string | null> {
+  try {
+    const res = await fetch(`${GRANOLA_API}/meetings/${meetingId}/transcript`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.transcript ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * POST /api/granola/sync
  *
- * Pulls recent meetings from the Granola API and upserts them into
- * our granola_meeting_cache table. Returns the count of synced meetings.
+ * Pulls recent meetings from the Granola API, fetches full transcripts
+ * for each, and upserts them into our granola_meeting_cache table.
+ * Returns the count of synced meetings.
  */
 export async function POST() {
   const apiKey = process.env.GRANOLA_API_KEY;
@@ -115,7 +140,21 @@ export async function POST() {
       return NextResponse.json({ synced: 0, message: "No meetings found" });
     }
 
-    // Transform to our cache format
+    // Fetch full transcripts for each meeting (in parallel, batches of 5)
+    const transcripts = new Map<string, string>();
+    for (let i = 0; i < meetings.length; i += 5) {
+      const batch = meetings.slice(i, i + 5);
+      const results = await Promise.allSettled(
+        batch.map((m) => fetchTranscript(m.id, apiKey))
+      );
+      results.forEach((result, idx) => {
+        if (result.status === "fulfilled" && result.value) {
+          transcripts.set(batch[idx].id, result.value);
+        }
+      });
+    }
+
+    // Transform to our cache format — use transcript as primary content
     const rows = meetings.map((m) => {
       const participants = (m.participants ?? []).map((p) => ({
         name: p.name ?? "Unknown",
@@ -124,12 +163,16 @@ export async function POST() {
         is_creator: p.is_creator,
       }));
 
+      // Prefer transcript, fall back to summary/notes
+      const transcript = transcripts.get(m.id);
+      const summary = transcript || m.summary || m.notes || "";
+
       return {
         granola_meeting_id: m.id,
         title: m.title,
         meeting_date: m.start_time,
         participants,
-        summary: m.summary || m.notes || "",
+        summary,
         company_name: extractCompanyName(m.title, participants),
         contact_email: extractContactEmail(participants),
         synced_at: new Date().toISOString(),
@@ -153,6 +196,7 @@ export async function POST() {
     return NextResponse.json({
       synced: upserted?.length ?? 0,
       total_from_granola: meetings.length,
+      transcripts_fetched: transcripts.size,
     });
   } catch (err) {
     return NextResponse.json(
