@@ -39,11 +39,15 @@ export async function PUT(
 ) {
   try {
     const { roomId } = await params;
-    const body: { content: string } = await request.json();
+    const body: { content?: string; next_steps?: string } = await request.json();
 
-    if (typeof body.content !== "string") {
+    const updates: Record<string, string> = {};
+    if (typeof body.content === "string") updates.content = body.content;
+    if (typeof body.next_steps === "string") updates.next_steps = body.next_steps;
+
+    if (Object.keys(updates).length === 0) {
       return NextResponse.json(
-        { error: "content is required and must be a string" },
+        { error: "At least one of content or next_steps is required" },
         { status: 400 }
       );
     }
@@ -52,7 +56,7 @@ export async function PUT(
 
     const { data, error } = await admin
       .from("meeting_briefs")
-      .update({ content: body.content })
+      .update(updates)
       .eq("room_id", roomId)
       .select()
       .single();

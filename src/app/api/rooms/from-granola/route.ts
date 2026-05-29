@@ -103,9 +103,12 @@ export async function POST(request: Request) {
     const roomId = room.id;
 
     // 6. Build meeting brief content — prefer structured brief, fall back to raw summary
-    const briefContent = meeting.meeting_brief
+    const rawBrief = meeting.meeting_brief
       ? meeting.meeting_brief
       : buildBriefContent(meeting, participants);
+
+    // Split structured brief into recap content and next steps
+    const { content: briefContent, nextSteps } = splitBriefContent(rawBrief);
 
     // 7. Create all child rows in parallel
     const [briefResult, subTabsResult, pricingResult, gettingStartedResult] =
@@ -113,6 +116,7 @@ export async function POST(request: Request) {
         admin.from("meeting_briefs").insert({
           room_id: roomId,
           content: briefContent,
+          next_steps: nextSteps,
         }),
 
         admin.from("overview_sub_tabs").insert(
@@ -243,4 +247,42 @@ function buildBriefContent(
   }
 
   return lines.join("\n");
+}
+
+/**
+ * Split a structured meeting brief into main recap content and next steps.
+ *
+ * Looks for a "NEXT STEPS" section and a "READINESS" line.
+ * Everything before NEXT STEPS becomes the recap content.
+ * The NEXT STEPS block (without the READINESS tag) becomes next_steps.
+ */
+function splitBriefContent(brief: string): {
+  content: string;
+  nextSteps: string;
+} {
+  // Find the NEXT STEPS section
+  const nextStepsMatch = brief.match(
+    /\n(NEXT STEPS\b[\s\S]*?)(?=\nREADINESS:|$)/i
+  );
+
+  if (!nextStepsMatch) {
+    // No next steps section found — strip READINESS line and return all as content
+    const cleaned = brief.replace(/\nREADINESS:[\s\S]*$/i, "").trim();
+    return { content: cleaned, nextSteps: "" };
+  }
+
+  const nextStepsRaw = nextStepsMatch[1].trim();
+  // Strip the "NEXT STEPS" heading, keep the bullet items
+  const nextStepsBody = nextStepsRaw
+    .replace(/^NEXT STEPS\s*/i, "")
+    .trim();
+
+  // Content is everything before the NEXT STEPS section, without READINESS
+  const contentEnd = brief.indexOf(nextStepsMatch[0]);
+  const content = brief
+    .slice(0, contentEnd)
+    .replace(/\nREADINESS:[\s\S]*$/i, "")
+    .trim();
+
+  return { content, nextSteps: nextStepsBody };
 }

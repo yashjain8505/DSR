@@ -14,6 +14,7 @@ export default function MeetingBriefPage() {
   const { roomId } = useParams<{ roomId: string }>();
 
   const [content, setContent] = useState("");
+  const [nextSteps, setNextSteps] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -36,6 +37,7 @@ export default function MeetingBriefPage() {
         if (!res.ok) throw new Error(data.error);
         const brief: MeetingBrief = data.meeting_brief;
         setContent(brief.content);
+        setNextSteps(brief.next_steps ?? "");
       } catch {
         setError("Failed to load meeting brief");
       } finally {
@@ -54,7 +56,7 @@ export default function MeetingBriefPage() {
       const res = await fetch(`/api/rooms/${roomId}/meeting-brief`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, next_steps: nextSteps }),
       });
 
       const data = await res.json();
@@ -92,26 +94,62 @@ export default function MeetingBriefPage() {
   }
 
   function handleSelectMeeting(meeting: GranolaMeetingCache) {
-    // Build markdown content from meeting data
-    const header = `# ${meeting.title}\n\n`;
-    const dateLine = `**Date:** ${formatDate(meeting.meeting_date)}\n\n`;
+    // Prefer structured meeting_brief if available
+    const rawBrief = meeting.meeting_brief || "";
 
-    const participantNames = meeting.participants
-      .map((p) => {
-        const parts = [p.name];
-        if (p.company) parts.push(`(${p.company})`);
-        return parts.join(" ");
-      })
-      .join(", ");
-    const participantsLine = participantNames
-      ? `**Participants:** ${participantNames}\n\n---\n\n`
-      : "---\n\n";
+    if (rawBrief) {
+      // Split structured brief into content and next steps
+      const { content: briefContent, nextStepsText } =
+        splitImportedBrief(rawBrief);
+      setContent(briefContent);
+      setNextSteps(nextStepsText);
+    } else {
+      // Fallback: build markdown from meeting data
+      const header = `# ${meeting.title}\n\n`;
+      const dateLine = `**Date:** ${formatDate(meeting.meeting_date)}\n\n`;
 
-    const fullContent = header + dateLine + participantsLine + meeting.summary;
-    setContent(fullContent);
+      const participantNames = meeting.participants
+        .map((p) => {
+          const parts = [p.name];
+          if (p.company) parts.push(`(${p.company})`);
+          return parts.join(" ");
+        })
+        .join(", ");
+      const participantsLine = participantNames
+        ? `**Participants:** ${participantNames}\n\n---\n\n`
+        : "---\n\n";
+
+      setContent(header + dateLine + participantsLine + meeting.summary);
+    }
+
     setGranolaDlgOpen(false);
     setSuccess("Meeting notes imported from Granola");
     setTimeout(() => setSuccess(""), 3000);
+  }
+
+  /** Split a structured meeting brief into recap content and next steps. */
+  function splitImportedBrief(brief: string): {
+    content: string;
+    nextStepsText: string;
+  } {
+    const nextStepsMatch = brief.match(
+      /\n(NEXT STEPS\b[\s\S]*?)(?=\nREADINESS:|$)/i
+    );
+    if (!nextStepsMatch) {
+      return {
+        content: brief.replace(/\nREADINESS:[\s\S]*$/i, "").trim(),
+        nextStepsText: "",
+      };
+    }
+    const nextStepsText = nextStepsMatch[1]
+      .replace(/^NEXT STEPS\s*/i, "")
+      .trim();
+    const contentEnd = brief.indexOf(nextStepsMatch[0]);
+    const content = brief
+      .slice(0, contentEnd)
+      .replace(/\nREADINESS:[\s\S]*$/i, "")
+      .trim();
+    return { content, nextStepsText };
   }
 
   if (loading) {
@@ -152,9 +190,13 @@ export default function MeetingBriefPage() {
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
       {success && <p className="mb-4 text-sm text-green-600">{success}</p>}
 
+      {/* What We Discussed */}
       <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+          What we discussed so far
+        </h2>
         {showPreview ? (
-          <div className="min-h-[300px]">
+          <div className="min-h-[200px]">
             {content ? (
               <MarkdownRenderer content={content} />
             ) : (
@@ -166,8 +208,32 @@ export default function MeetingBriefPage() {
             label="Content (Markdown supported)"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={16}
+            rows={14}
             placeholder="Write the meeting brief here... Markdown is supported."
+          />
+        )}
+      </div>
+
+      {/* Next Steps */}
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+          Next Steps
+        </h2>
+        {showPreview ? (
+          <div className="min-h-[100px]">
+            {nextSteps ? (
+              <MarkdownRenderer content={nextSteps} />
+            ) : (
+              <p className="text-sm text-gray-400">No next steps yet</p>
+            )}
+          </div>
+        ) : (
+          <Textarea
+            label="Next steps (Markdown supported)"
+            value={nextSteps}
+            onChange={(e) => setNextSteps(e.target.value)}
+            rows={6}
+            placeholder="- [ ] Send email with pricing and deck&#10;- [ ] Schedule follow-up call&#10;- [ ] Make WhatsApp group"
           />
         )}
       </div>

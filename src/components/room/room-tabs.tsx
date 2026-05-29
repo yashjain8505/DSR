@@ -22,6 +22,7 @@ import {
   type OverviewSubTabKey,
 } from "@/lib/constants";
 import { TabMeetingBrief } from "@/components/room/tab-meeting-brief";
+import { TabNextSteps } from "@/components/room/tab-next-steps";
 import { TabPricing } from "@/components/room/tab-pricing";
 import { TabCaseStudies } from "@/components/room/tab-case-studies";
 import { TabComparisons } from "@/components/room/tab-comparisons";
@@ -380,22 +381,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
           <TabMeetingBrief meetingBrief={data.meeting_brief} />
         )}
         {activeTab === "meeting_brief" && activeRecapSub === "next_steps" && (
-          <div className="mx-auto max-w-3xl">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Next Steps</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                What&apos;s coming up next in our partnership
-              </p>
-            </div>
-            <div
-              className="rounded-xl border bg-white p-6 shadow-sm sm:p-8"
-              style={{ borderColor: "color-mix(in srgb, var(--brand-primary) 20%, #e5e7eb)" }}
-            >
-              <p className="text-sm text-gray-400 italic">
-                Next steps will be shared here soon.
-              </p>
-            </div>
-          </div>
+          <TabNextSteps nextSteps={data.meeting_brief?.next_steps ?? ""} />
         )}
         {(activeTab === "product" || activeTab === "why_linkrunner") && (
           <OverviewSubTabRenderer subTab={getActiveOverviewSubTab()} assets={data.assets} />

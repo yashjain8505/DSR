@@ -27,6 +27,7 @@ export interface MeetingBrief {
   id: string;
   room_id: string;
   content: string;
+  next_steps: string;
   created_at: string;
   updated_at: string;
 }
