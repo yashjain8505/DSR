@@ -201,6 +201,43 @@ export interface VisitorActivity {
 }
 
 /**
+ * Cross-room analytics response (admin dashboard).
+ */
+export interface CrossRoomAnalytics {
+  kpis: {
+    total_page_views: number;
+    total_unique_visitors: number;
+    active_rooms: number;
+    email_conversion_rate: number;
+  };
+  rooms: RoomAnalyticsCard[];
+  daily_activity: DailyActivity[];
+}
+
+export interface RoomAnalyticsCard {
+  id: string;
+  slug: string;
+  company_name: string;
+  logo_url: string | null;
+  page_views: number;
+  tab_clicks: number;
+  email_submits: number;
+  video_plays: number;
+  unique_visitors: number;
+  sparkline: number[];
+  last_activity: string | null;
+}
+
+export interface DailyActivity {
+  date: string;
+  page_view: number;
+  tab_click: number;
+  email_gate_submit: number;
+  video_play: number;
+  link_click: number;
+}
+
+/**
  * Room list item for admin dashboard (room + basic stats).
  */
 export interface RoomListItem extends Room {
