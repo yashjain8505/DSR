@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Calendar,
@@ -12,13 +12,17 @@ import {
   Search,
   Trash2,
   RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import type { GranolaMeetingCache } from "@/lib/types";
 
 interface GranolaMeetingsPanelProps {
-  /** Existing room company names — used to mark meetings that already have rooms */
   existingCompanies: string[];
 }
 
@@ -35,10 +39,12 @@ export function GranolaMeetingsPanel({
   const [syncMessage, setSyncMessage] = useState("");
   const [search, setSearch] = useState("");
   const [createdCompanies, setCreatedCompanies] = useState<string[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Normalize company names for matching (initial + newly created)
   const existingSet = new Set(
-    [...existingCompanies, ...createdCompanies].map((c) => c.toLowerCase().trim())
+    [...existingCompanies, ...createdCompanies].map((c) =>
+      c.toLowerCase().trim()
+    )
   );
 
   useEffect(() => {
@@ -72,7 +78,6 @@ export function GranolaMeetingsPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Stay on meetings page — update "Room exists" badge instantly
       if (data.room?.company_name) {
         setCreatedCompanies((prev) => [...prev, data.room.company_name]);
       }
@@ -98,6 +103,7 @@ export function GranolaMeetingsPanel({
         throw new Error(data.error);
       }
       setMeetings((prev) => prev.filter((m) => m.id !== meeting.id));
+      if (expandedId === meeting.id) setExpandedId(null);
     } catch (err) {
       alert(
         err instanceof Error ? err.message : "Failed to delete meeting"
@@ -115,7 +121,6 @@ export function GranolaMeetingsPanel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setSyncMessage(`Synced ${data.synced} meetings`);
-      // Refresh the list
       await fetchMeetings();
     } catch (err) {
       setSyncMessage(
@@ -126,6 +131,27 @@ export function GranolaMeetingsPanel({
       setTimeout(() => setSyncMessage(""), 4000);
     }
   }
+
+  const handleSaveSummary = useCallback(
+    async (meetingId: string, newSummary: string) => {
+      const res = await fetch(`/api/granola/meetings/${meetingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ summary: newSummary }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      // Update local state
+      setMeetings((prev) =>
+        prev.map((m) =>
+          m.id === meetingId ? { ...m, summary: newSummary } : m
+        )
+      );
+    },
+    []
+  );
 
   const filteredMeetings = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -176,7 +202,8 @@ export function GranolaMeetingsPanel({
             Granola Meetings
           </h2>
           <p className="mt-0.5 text-sm text-gray-500">
-            Generate rooms directly from your recent demo calls.
+            Click a meeting to view or edit notes. Generate rooms from demo
+            calls.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -224,119 +251,260 @@ export function GranolaMeetingsPanel({
           </button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Meeting
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Company
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Participants
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredMeetings.map((meeting) => {
-                const alreadyExists = hasExistingRoom(meeting);
-                const isGenerating = generatingId === meeting.id;
-                const isDeleting = deletingId === meeting.id;
-                const hasSummary = !!meeting.summary;
+        <div className="space-y-2">
+          {filteredMeetings.map((meeting) => {
+            const alreadyExists = hasExistingRoom(meeting);
+            const isGenerating = generatingId === meeting.id;
+            const isDeleting = deletingId === meeting.id;
+            const isExpanded = expandedId === meeting.id;
+            const hasSummary = !!meeting.summary;
 
-                // Count prospect participants (non-Linkrunner)
-                const prospectCount = meeting.participants.filter(
-                  (p) =>
-                    !p.is_creator &&
-                    !p.email?.endsWith("@linkrunner.io") &&
-                    p.name !== "Shreyans" &&
-                    p.name !== "Lakshith"
-                ).length;
+            const prospectCount = meeting.participants.filter(
+              (p) =>
+                !p.is_creator &&
+                !p.email?.endsWith("@linkrunner.io") &&
+                p.name !== "Shreyans" &&
+                p.name !== "Lakshith"
+            ).length;
 
-                return (
-                  <tr
-                    key={meeting.id}
-                    className={`transition-colors hover:bg-gray-50 ${isDeleting ? "opacity-50" : ""}`}
-                  >
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-gray-900">
-                        {meeting.title}
-                      </p>
-                      {!hasSummary && (
-                        <p className="mt-0.5 text-xs text-amber-500">
-                          No summary available
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {meeting.company_name ? (
-                        <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
-                          <Building2 className="h-3.5 w-3.5 text-gray-400" />
+            return (
+              <div
+                key={meeting.id}
+                className={`overflow-hidden rounded-xl border bg-white transition-all ${
+                  isExpanded
+                    ? "border-[#4d4bf7]/30 shadow-sm"
+                    : "border-gray-200"
+                } ${isDeleting ? "opacity-50" : ""}`}
+              >
+                {/* Row header — clickable */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedId(isExpanded ? null : meeting.id)
+                  }
+                  className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-gray-50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">
+                      {meeting.title}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                      {meeting.company_name && (
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                          <Building2 className="h-3 w-3" />
                           {meeting.company_name}
                         </span>
-                      ) : (
-                        <span className="text-sm text-gray-400">&mdash;</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
-                        <Calendar className="h-3.5 w-3.5" />
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                        <Calendar className="h-3 w-3" />
                         {formatDate(meeting.meeting_date)}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 text-sm text-gray-500">
-                        <Users className="h-3.5 w-3.5" />
-                        {prospectCount}
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                        <Users className="h-3 w-3" />
+                        {prospectCount} prospect{prospectCount !== 1 ? "s" : ""}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        {alreadyExists ? (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Room exists
-                          </span>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => handleGenerate(meeting)}
-                            loading={isGenerating}
-                            disabled={isGenerating || !!generatingId}
-                          >
-                            <Sparkles className="h-3.5 w-3.5" />
-                            Generate Room
-                          </Button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(meeting)}
-                          disabled={isDeleting}
-                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
-                          title="Delete meeting"
-                        >
-                          {isDeleting ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {!hasSummary && (
+                        <span className="text-xs text-amber-500">
+                          No notes
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions (stop propagation so clicks don't toggle expand) */}
+                  <div
+                    className="flex items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {alreadyExists ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Room exists
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => handleGenerate(meeting)}
+                        loading={isGenerating}
+                        disabled={isGenerating || !!generatingId}
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Generate Room
+                      </Button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(meeting)}
+                      disabled={isDeleting}
+                      className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+                      title="Delete meeting"
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
+
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                  )}
+                </button>
+
+                {/* Expanded notes panel */}
+                {isExpanded && (
+                  <MeetingNotesEditor
+                    meeting={meeting}
+                    onSave={handleSaveSummary}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+function MeetingNotesEditor({
+  meeting,
+  onSave,
+}: {
+  meeting: GranolaMeetingCache;
+  onSave: (meetingId: string, summary: string) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(meeting.summary);
+  const [saving, setSaving] = useState(false);
+
+  // Sync draft if meeting summary changes externally
+  useEffect(() => {
+    if (!editing) setDraft(meeting.summary);
+  }, [meeting.summary, editing]);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await onSave(meeting.id, draft);
+      setEditing(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCancel() {
+    setDraft(meeting.summary);
+    setEditing(false);
+  }
+
+  // Prospect participants
+  const prospects = meeting.participants.filter(
+    (p) =>
+      !p.is_creator &&
+      !p.email?.endsWith("@linkrunner.io") &&
+      p.name !== "Shreyans" &&
+      p.name !== "Lakshith"
+  );
+
+  return (
+    <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-4">
+      {/* Participants */}
+      {prospects.length > 0 && (
+        <div className="mb-4">
+          <h4 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-gray-500">
+            Participants
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {prospects.map((p, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs text-gray-700 ring-1 ring-gray-200"
+              >
+                {p.name}
+                {p.email && (
+                  <span className="ml-1 text-gray-400">{p.email}</span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Notes */}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-gray-500">
+            Meeting Notes
+          </h4>
+          {!editing ? (
+            <button
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleCancel}
+                disabled={saving}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700 disabled:opacity-50"
+              >
+                <X className="h-3 w-3" />
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-1 rounded-md bg-[#4d4bf7] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#3d3bc7] disabled:opacity-50"
+              >
+                {saving ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Save className="h-3 w-3" />
+                )}
+                Save
+              </button>
+            </div>
+          )}
+        </div>
+
+        {editing ? (
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={16}
+            className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-800 placeholder:text-gray-400 focus:border-[#4d4bf7] focus:outline-none focus:ring-2 focus:ring-[#c9d4ff]"
+            placeholder="Add meeting notes..."
+          />
+        ) : meeting.summary ? (
+          <div className="max-h-[500px] overflow-y-auto rounded-lg bg-white p-4 ring-1 ring-gray-200">
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700">
+              {meeting.summary}
+            </pre>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center rounded-lg bg-white py-10 ring-1 ring-gray-200">
+            <p className="text-sm text-gray-400">
+              No notes yet.{" "}
+              <button
+                onClick={() => setEditing(true)}
+                className="font-medium text-[#4d4bf7] hover:underline"
+              >
+                Add notes
+              </button>
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

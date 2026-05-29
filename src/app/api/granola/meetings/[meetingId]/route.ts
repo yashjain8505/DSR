@@ -37,6 +37,51 @@ export async function GET(
 }
 
 /**
+ * PATCH /api/granola/meetings/[meetingId]
+ * Update a cached Granola meeting's summary (notes).
+ */
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ meetingId: string }> }
+) {
+  try {
+    const { meetingId } = await params;
+    const body = await request.json();
+    const admin = createAdminClient();
+
+    const updates: Record<string, unknown> = {};
+    if (body.summary !== undefined) updates.summary = body.summary;
+    if (body.company_name !== undefined) updates.company_name = body.company_name;
+    if (body.contact_email !== undefined) updates.contact_email = body.contact_email;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json(
+        { error: "No fields to update" },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await admin
+      .from("granola_meeting_cache")
+      .update(updates)
+      .eq("id", meetingId)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ meeting: data as GranolaMeetingCache });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * DELETE /api/granola/meetings/[meetingId]
  * Remove a cached Granola meeting.
  */
