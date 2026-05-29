@@ -302,6 +302,7 @@ export interface GranolaMeetingCache {
   meeting_date: string;
   participants: GranolaMeetingParticipant[];
   summary: string;
+  meeting_brief: string;
   company_name: string | null;
   contact_email: string | null;
   synced_at: string;

@@ -51,6 +51,7 @@ export async function PATCH(
 
     const updates: Record<string, unknown> = {};
     if (body.summary !== undefined) updates.summary = body.summary;
+    if (body.meeting_brief !== undefined) updates.meeting_brief = body.meeting_brief;
     if (body.company_name !== undefined) updates.company_name = body.company_name;
     if (body.contact_email !== undefined) updates.contact_email = body.contact_email;
 

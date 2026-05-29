@@ -102,8 +102,10 @@ export async function POST(request: Request) {
 
     const roomId = room.id;
 
-    // 6. Build meeting brief content from Granola summary
-    const briefContent = buildBriefContent(meeting, participants);
+    // 6. Build meeting brief content — prefer structured brief, fall back to raw summary
+    const briefContent = meeting.meeting_brief
+      ? meeting.meeting_brief
+      : buildBriefContent(meeting, participants);
 
     // 7. Create all child rows in parallel
     const [briefResult, subTabsResult, pricingResult, gettingStartedResult] =

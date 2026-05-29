@@ -17,6 +17,11 @@ import {
   Pencil,
   Save,
   X,
+  FileText,
+  ScrollText,
+  Flame,
+  Thermometer,
+  Snowflake,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
@@ -267,6 +272,8 @@ export function GranolaMeetingsPanel({
                 p.name !== "Lakshith"
             ).length;
 
+            const readiness = parseReadiness(meeting.meeting_brief);
+
             return (
               <div
                 key={meeting.id}
@@ -303,7 +310,8 @@ export function GranolaMeetingsPanel({
                         <Users className="h-3 w-3" />
                         {prospectCount} prospect{prospectCount !== 1 ? "s" : ""}
                       </span>
-                      {!hasSummary && (
+                      {readiness && <ReadinessBadge level={readiness} />}
+                      {!hasSummary && !meeting.meeting_brief && (
                         <span className="text-xs text-amber-500">
                           No notes
                         </span>
@@ -353,9 +361,9 @@ export function GranolaMeetingsPanel({
                   )}
                 </button>
 
-                {/* Expanded notes panel */}
+                {/* Expanded panel — brief + transcript */}
                 {isExpanded && (
-                  <MeetingNotesEditor
+                  <MeetingExpandedPanel
                     meeting={meeting}
                     onSave={handleSaveSummary}
                   />
@@ -371,18 +379,95 @@ export function GranolaMeetingsPanel({
 
 /* ------------------------------------------------------------------ */
 
-function MeetingNotesEditor({
+/** Extract readiness level from meeting_brief text */
+function parseReadiness(brief: string): "hot" | "warm" | "cool" | null {
+  if (!brief) return null;
+  const match = brief.match(/READINESS:\s*(Hot|Warm|Cool)/i);
+  if (!match) return null;
+  return match[1].toLowerCase() as "hot" | "warm" | "cool";
+}
+
+/** Readiness badge component */
+function ReadinessBadge({ level }: { level: "hot" | "warm" | "cool" }) {
+  const config = {
+    hot: {
+      label: "Hot",
+      icon: Flame,
+      className: "bg-red-50 text-red-600 ring-red-200",
+    },
+    warm: {
+      label: "Warm",
+      icon: Thermometer,
+      className: "bg-amber-50 text-amber-600 ring-amber-200",
+    },
+    cool: {
+      label: "Cool",
+      icon: Snowflake,
+      className: "bg-blue-50 text-blue-600 ring-blue-200",
+    },
+  };
+  const c = config[level];
+  const Icon = c.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${c.className}`}
+    >
+      <Icon className="h-3 w-3" />
+      {c.label}
+    </span>
+  );
+}
+
+/** Parse brief text into labelled sections for structured rendering */
+function parseBriefSections(
+  brief: string
+): { heading: string; body: string }[] {
+  const sections: { heading: string; body: string }[] = [];
+  // Split on lines that look like section headings (ALL CAPS, possibly with — suffix)
+  const lines = brief.split("\n");
+  let currentHeading = "";
+  let currentBody: string[] = [];
+
+  for (const line of lines) {
+    // Match section headings like "THEIR SITUATION", "PAIN POINTS DISCUSSED", "MEETING SUMMARY — Company"
+    if (/^[A-Z][A-Z\s—:]+/.test(line) && line.trim().length > 3) {
+      if (currentHeading || currentBody.length > 0) {
+        sections.push({
+          heading: currentHeading,
+          body: currentBody.join("\n").trim(),
+        });
+      }
+      currentHeading = line.trim();
+      currentBody = [];
+    } else {
+      currentBody.push(line);
+    }
+  }
+  if (currentHeading || currentBody.length > 0) {
+    sections.push({
+      heading: currentHeading,
+      body: currentBody.join("\n").trim(),
+    });
+  }
+  return sections;
+}
+
+/* ------------------------------------------------------------------ */
+
+function MeetingExpandedPanel({
   meeting,
   onSave,
 }: {
   meeting: GranolaMeetingCache;
   onSave: (meetingId: string, summary: string) => Promise<void>;
 }) {
+  const [activeTab, setActiveTab] = useState<"brief" | "transcript">(
+    meeting.meeting_brief ? "brief" : "transcript"
+  );
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(meeting.summary);
   const [saving, setSaving] = useState(false);
 
-  // Sync draft if meeting summary changes externally
   useEffect(() => {
     if (!editing) setDraft(meeting.summary);
   }, [meeting.summary, editing]);
@@ -413,6 +498,12 @@ function MeetingNotesEditor({
       p.name !== "Lakshith"
   );
 
+  const hasBrief = !!meeting.meeting_brief;
+  const hasTranscript = !!meeting.summary;
+  const briefSections = hasBrief
+    ? parseBriefSections(meeting.meeting_brief)
+    : [];
+
   return (
     <div className="border-t border-gray-100 bg-gray-50/50 px-5 py-4">
       {/* Participants */}
@@ -437,74 +528,126 @@ function MeetingNotesEditor({
         </div>
       )}
 
-      {/* Notes */}
-      <div>
-        <div className="mb-1.5 flex items-center justify-between">
-          <h4 className="text-xs font-medium uppercase tracking-wider text-gray-500">
-            Meeting Notes
-          </h4>
-          {!editing ? (
-            <button
-              onClick={() => setEditing(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
-            >
-              <Pencil className="h-3 w-3" />
-              Edit
-            </button>
+      {/* Tabs — only show when both exist */}
+      {hasBrief && hasTranscript && (
+        <div className="mb-3 flex gap-1 rounded-lg bg-gray-100 p-0.5">
+          <button
+            onClick={() => setActiveTab("brief")}
+            className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              activeTab === "brief"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Meeting Brief
+          </button>
+          <button
+            onClick={() => setActiveTab("transcript")}
+            className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              activeTab === "transcript"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <ScrollText className="h-3.5 w-3.5" />
+            Raw Transcript
+          </button>
+        </div>
+      )}
+
+      {/* Brief view */}
+      {activeTab === "brief" && hasBrief && (
+        <div className="space-y-3">
+          {briefSections.map((section, i) => (
+            <div key={i}>
+              {section.heading && (
+                <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  {section.heading}
+                </h4>
+              )}
+              {section.body && (
+                <div className="rounded-lg bg-white p-3 ring-1 ring-gray-200">
+                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700">
+                    {section.body}
+                  </pre>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Transcript / notes view */}
+      {(activeTab === "transcript" || (!hasBrief && !hasTranscript)) && (
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <h4 className="text-xs font-medium uppercase tracking-wider text-gray-500">
+              {hasBrief ? "Raw Transcript" : "Meeting Notes"}
+            </h4>
+            {!editing ? (
+              <button
+                onClick={() => setEditing(true)}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleCancel}
+                  disabled={saving}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700 disabled:opacity-50"
+                >
+                  <X className="h-3 w-3" />
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="inline-flex items-center gap-1 rounded-md bg-[#4d4bf7] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#3d3bc7] disabled:opacity-50"
+                >
+                  {saving ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Save className="h-3 w-3" />
+                  )}
+                  Save
+                </button>
+              </div>
+            )}
+          </div>
+
+          {editing ? (
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={16}
+              className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-800 placeholder:text-gray-400 focus:border-[#4d4bf7] focus:outline-none focus:ring-2 focus:ring-[#c9d4ff]"
+              placeholder="Add meeting notes..."
+            />
+          ) : hasTranscript ? (
+            <div className="max-h-[500px] overflow-y-auto rounded-lg bg-white p-4 ring-1 ring-gray-200">
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700">
+                {meeting.summary}
+              </pre>
+            </div>
           ) : (
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={handleCancel}
-                disabled={saving}
-                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700 disabled:opacity-50"
-              >
-                <X className="h-3 w-3" />
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center gap-1 rounded-md bg-[#4d4bf7] px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-[#3d3bc7] disabled:opacity-50"
-              >
-                {saving ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Save className="h-3 w-3" />
-                )}
-                Save
-              </button>
+            <div className="flex items-center justify-center rounded-lg bg-white py-10 ring-1 ring-gray-200">
+              <p className="text-sm text-gray-400">
+                No notes yet.{" "}
+                <button
+                  onClick={() => setEditing(true)}
+                  className="font-medium text-[#4d4bf7] hover:underline"
+                >
+                  Add notes
+                </button>
+              </p>
             </div>
           )}
         </div>
-
-        {editing ? (
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={16}
-            className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm text-gray-800 placeholder:text-gray-400 focus:border-[#4d4bf7] focus:outline-none focus:ring-2 focus:ring-[#c9d4ff]"
-            placeholder="Add meeting notes..."
-          />
-        ) : meeting.summary ? (
-          <div className="max-h-[500px] overflow-y-auto rounded-lg bg-white p-4 ring-1 ring-gray-200">
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-700">
-              {meeting.summary}
-            </pre>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center rounded-lg bg-white py-10 ring-1 ring-gray-200">
-            <p className="text-sm text-gray-400">
-              No notes yet.{" "}
-              <button
-                onClick={() => setEditing(true)}
-                className="font-medium text-[#4d4bf7] hover:underline"
-              >
-                Add notes
-              </button>
-            </p>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
