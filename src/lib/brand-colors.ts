@@ -88,6 +88,47 @@ export function domainFromEmail(email: string): string | null {
   return domain;
 }
 
+/**
+ * Guess the company domain from a slug or company name.
+ *
+ * Tries `{slug}.com` first, then `.in`, `.io`, `.app` — returns the first
+ * one that responds with HTTP 200 (HEAD request, 4s timeout). Returns null
+ * if nothing works. This is the fallback when there's no contact_email.
+ */
+export async function domainFromSlug(
+  slug: string
+): Promise<string | null> {
+  // Normalise: "Cambay Tiger" → "cambaytiger", "R for Rabbit" → "rforrabbit"
+  const base = slug
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  if (!base) return null;
+
+  const candidates = [
+    `${base}.com`,
+    `${base}.in`,
+    `${base}.io`,
+    `${base}.app`,
+    `${base}.co`,
+  ];
+
+  for (const domain of candidates) {
+    try {
+      const res = await fetch(`https://${domain}`, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(4000),
+        redirect: "follow",
+      });
+      if (res.ok) return domain;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Logo extraction                                                      */
 /* ------------------------------------------------------------------ */

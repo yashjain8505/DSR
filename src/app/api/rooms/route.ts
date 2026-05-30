@@ -7,6 +7,7 @@ import {
   OVERVIEW_SUB_TAB_SORT_ORDER,
   TRUST_PAGE_URL,
 } from "@/lib/constants";
+import { extractBrandAssets, domainFromEmail, domainFromSlug } from "@/lib/brand-colors";
 import type { CreateRoomPayload, Room } from "@/lib/types";
 
 export async function GET() {
@@ -44,15 +45,42 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient();
 
+    // --- Extract brand assets (logo + color) when possible ---
+    let logoUrl = body.logo_url ?? null;
+    let brandColor: string | null = null;
+
+    // Try to get a domain: from contact_email first, then guess from slug
+    const contactEmail = body.contact_email ?? null;
+    let domain = contactEmail ? domainFromEmail(contactEmail) : null;
+    if (!domain) {
+      domain = await domainFromSlug(body.slug);
+    }
+
+    if (domain) {
+      try {
+        const assets = await extractBrandAssets(domain);
+        if (assets.logoUrl && !logoUrl) logoUrl = assets.logoUrl;
+        if (assets.brandColor) brandColor = assets.brandColor;
+      } catch {
+        /* brand extraction is best-effort */
+      }
+    }
+
+    // Fallback: Google Favicon API for logo if we still don't have one
+    if (!logoUrl && domain) {
+      logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    }
+
     // Create the room
     const { data: room, error: roomError } = await admin
       .from("rooms")
       .insert({
         slug: body.slug,
         company_name: body.company_name,
-        logo_url: body.logo_url ?? null,
+        logo_url: logoUrl,
         contact_name: body.contact_name ?? null,
-        contact_email: body.contact_email ?? null,
+        contact_email: contactEmail,
+        brand_primary_color: brandColor,
       })
       .select()
       .single();

@@ -20,9 +20,16 @@ export function RoomHero({
   contactName,
   onScrollDown,
 }: RoomHeroProps) {
-  const greeting = contactName
-    ? `Dear ${contactName} & ${companyName} team,`
-    : `Dear ${companyName} team,`;
+  // Build greeting with first names: "Dear Dheeraj, Divyanshu & Zypp Electric team,"
+  const greeting = (() => {
+    if (!contactName) return `Dear ${companyName} team,`;
+    const firstNames = contactName
+      .split(",")
+      .map((n) => n.trim().split(" ")[0])
+      .filter(Boolean);
+    if (firstNames.length === 0) return `Dear ${companyName} team,`;
+    return `Dear ${firstNames.join(", ")} & ${companyName} team,`;
+  })();
 
   return (
     <section

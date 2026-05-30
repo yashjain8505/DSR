@@ -72,6 +72,11 @@ export interface PricingTier {
   is_highlighted: boolean;
   cta_label: string;
   cta_url: string;
+  /** "Preferred for" bullet list shown below the CTA. */
+  preferred_for?: string[];
+  /** Optional secondary CTA (e.g. "Calculate pricing"). */
+  secondary_cta_label?: string;
+  secondary_cta_url?: string;
 }
 
 /**

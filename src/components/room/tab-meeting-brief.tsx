@@ -74,15 +74,15 @@ export function TabMeetingBrief({ meetingBrief }: TabMeetingBriefProps) {
           }}
         />
 
+        {/* Snapshot strip (date + attendees) always renders when present */}
+        {brief.snapshot && <SnapshotStrip snapshot={brief.snapshot} />}
+
         {structured ? (
-          <>
-            {brief.snapshot && <SnapshotStrip snapshot={brief.snapshot} />}
-            <div className="space-y-8 px-6 py-8 sm:px-10 sm:py-10">
-              {brief.sections.map((section) => (
-                <Section key={section.key} section={section} />
-              ))}
-            </div>
-          </>
+          <div className="space-y-8 px-6 py-8 sm:px-10 sm:py-10">
+            {brief.sections.map((section) => (
+              <Section key={section.key} section={section} />
+            ))}
+          </div>
         ) : (
           <div className="px-6 py-8 sm:px-10 sm:py-10">
             <MarkdownRenderer

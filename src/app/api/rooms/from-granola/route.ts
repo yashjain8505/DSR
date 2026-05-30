@@ -7,7 +7,7 @@ import {
   OVERVIEW_SUB_TAB_SORT_ORDER,
   TRUST_PAGE_URL,
 } from "@/lib/constants";
-import { extractBrandAssets, domainFromEmail } from "@/lib/brand-colors";
+import { extractBrandAssets, domainFromEmail, domainFromSlug } from "@/lib/brand-colors";
 import type { GranolaMeetingCache, GranolaMeetingParticipant } from "@/lib/types";
 
 // This route makes an external LLM call (customer-POV brief rewrite) on top of a
@@ -58,20 +58,35 @@ export async function POST(request: Request) {
 
     // 2. Extract prospect info from participants
     const participants = meeting.participants as GranolaMeetingParticipant[];
-    const prospect = findProspectContact(participants);
+    const prospects = findProspectContacts(participants);
+    const prospect = prospects[0] ?? null;
     const companyName = meeting.company_name || prospect?.company || "Unknown";
 
     // 3. Extract brand assets (logo + color) from prospect's website
     let brandColor: string | null = null;
     let logoUrl: string | null = null;
     const contactEmail = meeting.contact_email ?? prospect?.email;
+
+    // Try email domain first, then guess domain from company name
+    let domain: string | null = null;
     if (contactEmail) {
-      const domain = domainFromEmail(contactEmail);
-      if (domain) {
+      domain = domainFromEmail(contactEmail);
+    }
+    if (!domain) {
+      domain = await domainFromSlug(companyName);
+    }
+    if (domain) {
+      try {
         const assets = await extractBrandAssets(domain);
         brandColor = assets.brandColor;
         logoUrl = assets.logoUrl;
+      } catch {
+        /* brand extraction is best-effort */
       }
+    }
+    // Fallback logo via Google Favicon API
+    if (!logoUrl && domain) {
+      logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
     }
 
     // 4. Generate a unique slug
@@ -91,7 +106,9 @@ export async function POST(request: Request) {
       .insert({
         slug,
         company_name: companyName,
-        contact_name: prospect?.name ?? null,
+        contact_name: prospects.length > 0
+          ? prospects.map((p) => p.name).join(", ")
+          : null,
         contact_email: meeting.contact_email ?? prospect?.email ?? null,
         logo_url: logoUrl,
         brand_primary_color: brandColor,
@@ -191,19 +208,18 @@ export async function POST(request: Request) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Find the main prospect contact (first non-Linkrunner participant).
+ * Find ALL prospect contacts (non-Linkrunner participants).
+ * Returns them in the order they appear in the participants list.
  */
-function findProspectContact(
+function findProspectContacts(
   participants: GranolaMeetingParticipant[]
-): GranolaMeetingParticipant | null {
-  return (
-    participants.find(
-      (p) =>
-        !p.is_creator &&
-        !p.email?.endsWith("@linkrunner.io") &&
-        p.name !== "Shreyans" &&
-        p.name !== "Lakshith"
-    ) ?? null
+): GranolaMeetingParticipant[] {
+  return participants.filter(
+    (p) =>
+      !p.is_creator &&
+      !p.email?.endsWith("@linkrunner.io") &&
+      p.name !== "Shreyans" &&
+      p.name !== "Lakshith"
   );
 }
 
@@ -346,8 +362,11 @@ const CUSTOMER_POV_SYSTEM_PROMPT = `You are editing an internal sales-meeting br
 
 Rules:
 - Write in the second person ("you", "your"). Never refer to the customer in the third person ("they", "their", "the customer", or the company name as the subject of analysis).
-- Preserve every fact, number, product name, and pricing figure exactly. Do not invent, infer, or remove facts.
-- Keep it well-structured in Markdown. Use warm, customer-facing section headings such as: Your Situation, Pain Points, What We Showed You, Questions & Answers, Security & Compliance, Pricing, Next Steps. Map internal headings ("THEIR SITUATION", "WHAT WE SHOWED THEM", "THEIR QUESTIONS", "PRICING DISCUSSED", etc.) onto these.
+- Preserve every fact, number, and product name exactly. Do not invent, infer, or remove facts.
+- Do NOT include any pricing information, pricing sections, or cost/pricing figures. Pricing is handled in a separate tab.
+- In the attendees/participants line, only list the prospect's team. Remove all Linkrunner team members (Shreyans, Lakshith, Yash, etc.).
+- Do not use em-dashes or en-dashes. Use a hyphen with spaces ( - ) instead.
+- Keep it well-structured in Markdown. Use warm, customer-facing section headings such as: Your Situation, Pain Points, What We Showed You, Questions & Answers, Security & Compliance, Next Steps. Map internal headings ("THEIR SITUATION", "WHAT WE SHOWED THEM", "THEIR QUESTIONS", etc.) onto these.
 - Remove internal sales-triage language and any qualifier that could read as doubt about handling the customer's scale. Never use phrases like "very high volume" or "extremely high volume" — state scale with the concrete numbers only (e.g. "3.5M downloads in ~6 months").
 - Keep "Linkrunner" as the product name. Keep the tone confident, warm, and concise.
 - Output ONLY the rewritten Markdown brief. No preamble, no explanation, no code fences.`;

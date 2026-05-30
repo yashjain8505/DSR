@@ -41,7 +41,7 @@ export const CANONICAL_SECTIONS: {
   title: string;
   match: RegExp;
 }[] = [
-  { key: "situation", title: "Your Situation", match: /situation|background|context|current\s+(state|setup)|about\s+(them|the\s+company|you|your)/i },
+  { key: "situation", title: "Your Situation", match: /situation|background|context|current\s+(state|setup)|\bsetup\b|about\s+(them|the\s+company|you|your)/i },
   { key: "pain_points", title: "Pain Points", match: /pain|challenge|problem|frustrat/i },
   { key: "what_we_showed", title: "What We Showed You", match: /what\s+we\s+showed|showed\s+(them|you)|we\s+(demo|covered|walked)|demo(nstrat)?|covered\s+in/i },
   { key: "questions", title: "Questions & Answers", match: /question|q\s*&\s*a|q&a/i },
@@ -75,6 +75,13 @@ function headerText(line: string): string | null {
   if (letters.length >= 3 && seg === seg.toUpperCase()) {
     return cleanHeader(seg);
   }
+
+  // Short plain-text line matching a known canonical section name — catches
+  // Granola/LLM-reformatted briefs that use bare "Your Situation", "Pain Points"
+  // etc. without any markdown heading syntax.
+  if (t.length < 40 && !/[.!?;,]$/.test(t)) {
+    if (CANONICAL_SECTIONS.some((c) => c.match.test(t))) return cleanHeader(t);
+  }
   return null;
 }
 
@@ -95,6 +102,11 @@ function stripMarker(line: string): { text: string; ordered: boolean } {
   }
   // Drop markdown checkbox syntax: [ ] / [x]
   t = t.replace(/^\[[ xX]\]\s*/, "");
+  // Strip bold markers (**text**) so items render as plain text — the structured
+  // view uses <span>, not a markdown renderer, so literal ** looks broken.
+  t = t.replace(/\*\*/g, "");
+  // Replace em-dashes and en-dashes with plain hyphens.
+  t = t.replace(/\s*[—–]\s*/g, " - ");
   return { text: t.trim(), ordered };
 }
 
@@ -115,6 +127,41 @@ function titleCase(s: string): string {
 
 function isSnapshotHeader(h: string): boolean {
   return /summary|snapshot|overview|recap|attendees/i.test(h);
+}
+
+/** Remove Linkrunner team members from the attendees string. */
+function stripLinkrunnerAttendees(attendees: string): string {
+  // Standard MoM format uses · to separate prospect and LR teams:
+  // "Prospect1 (Company) · LR1, LR2 (Linkrunner)"
+  if (/[·•]/.test(attendees)) {
+    const segments = attendees.split(/\s*[·•]\s*/);
+    const prospect = segments.filter((s) => !/\blinkrunner\b/i.test(s));
+    return prospect.join(" · ").trim() || attendees;
+  }
+  // Comma-separated: split on commas NOT inside parentheses, then filter.
+  // Handles "Krishna (CTO & Co-founder, Chai Biscuit), Shreyans (Linkrunner)".
+  const parts = splitOutsideParens(attendees);
+  const prospect = parts.filter((p) => !/\blinkrunner\b/i.test(p));
+  return prospect.join(", ").trim() || attendees;
+}
+
+/** Split a string on commas that are outside parentheses. */
+function splitOutsideParens(str: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of str) {
+    if (ch === "(") depth++;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    if (ch === "," && depth === 0) {
+      parts.push(cur.trim());
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
 }
 
 interface RawBlock {
@@ -149,19 +196,24 @@ export function parseBrief(content: string): BriefData {
 
   for (const block of blocks) {
     const bodyLines = block.lines.filter((l) => l.trim());
+    // Strip markdown bold so **Date:** and **Attendees:** lines are recognized.
+    const bodyPlain = bodyLines.map((l) => l.replace(/\*\*/g, "").trim());
     const isSnapshot =
       (block.header !== null && isSnapshotHeader(block.header)) ||
       (snapshot === null &&
         sections.length === 0 &&
-        bodyLines.some((l) => /^(date|attendees|participants)\s*:/i.test(l.trim())));
+        bodyPlain.some((l) => /^(date|attendees|participants)\s*:/i.test(l)));
 
     if (isSnapshot) {
-      const date = matchField(bodyLines, /^date\s*:\s*(.+)$/i);
+      const date = matchField(bodyPlain, /^date\s*:\s*(.+)$/i);
       const attendees =
-        matchField(bodyLines, /^attendees\s*:\s*(.+)$/i) ||
-        matchField(bodyLines, /^participants\s*:\s*(.+)$/i);
+        matchField(bodyPlain, /^attendees\s*:\s*(.+)$/i) ||
+        matchField(bodyPlain, /^participants\s*:\s*(.+)$/i);
       if (date || attendees) {
-        snapshot = { date: date ?? "", attendees: attendees ?? "" };
+        snapshot = {
+          date: date ?? "",
+          attendees: stripLinkrunnerAttendees(attendees ?? ""),
+        };
       }
       continue;
     }
@@ -199,7 +251,11 @@ export function parseBrief(content: string): BriefData {
     return ai - bi;
   });
 
-  return { snapshot, sections };
+  // Pricing has its own dedicated tab — strip it from the brief so it's never
+  // shown twice and the prospect doesn't see raw numbers in the recap.
+  const withoutPricing = sections.filter((s) => !/\bpric/i.test(s.title));
+
+  return { snapshot, sections: withoutPricing };
 }
 
 function matchField(lines: string[], re: RegExp): string | null {
@@ -215,7 +271,10 @@ function matchField(lines: string[], re: RegExp): string | null {
  * Below this bar we keep the raw markdown so unusual briefs aren't mangled.
  */
 export function hasStructure(data: BriefData): boolean {
-  return data.snapshot !== null || data.sections.length >= 2;
+  // Require at least two recognized sections to render the structured view.
+  // A snapshot alone (date + attendees, no body) should fall back to the
+  // markdown renderer rather than showing an empty structured card.
+  return data.sections.length >= 2;
 }
 
 /** Serialize structured brief data back to canonical markdown for storage. */
