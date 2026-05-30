@@ -50,14 +50,61 @@ export interface OverviewSubTab {
 
 /**
  * Pricing content for a room.
+ *
+ * `pricing_data` is a jsonb column. Legacy rows may store a bare
+ * `PricingTier[]`; new rows store the richer `PricingData` object.
+ * Use `normalizePricingData()` to handle both shapes.
  */
 export interface Pricing {
   id: string;
   room_id: string;
   content: string;
-  pricing_data: PricingTier[] | null;
+  pricing_data: PricingData | PricingTier[] | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Personalized pricing quote shown at the top of the pricing tab.
+ * All fields are set per-customer by the admin.
+ */
+export interface PricingQuote {
+  estimated_volume: number;
+  per_install_price: number;
+  currency: string;
+  free_threshold: number;
+  value_props: string[];
+}
+
+/**
+ * A volume bracket — "at X installs/mo, the per-install price is Y".
+ */
+export interface VolumeTier {
+  volume: number;
+  per_install_price: number;
+}
+
+/**
+ * A competitor's pricing for side-by-side comparison.
+ */
+export interface CompetitorPricing {
+  name: string;
+  per_install_price: number;
+  pricing_model: string;
+  notes?: string;
+}
+
+/**
+ * Full pricing configuration stored in pricing_data jsonb.
+ */
+export interface PricingData {
+  quote?: PricingQuote;
+  /** Volume-based pricing brackets shown as cards. */
+  volume_tiers?: VolumeTier[];
+  /** Competitor pricing for comparison section. */
+  competitor_pricing?: CompetitorPricing[];
+  /** Legacy plan-based tiers (Free/Growth/Enterprise). Kept for compat. */
+  tiers?: PricingTier[];
 }
 
 /**
@@ -77,6 +124,18 @@ export interface PricingTier {
   /** Optional secondary CTA (e.g. "Calculate pricing"). */
   secondary_cta_label?: string;
   secondary_cta_url?: string;
+}
+
+/**
+ * Normalize pricing_data from DB. Legacy rows store a bare PricingTier[];
+ * new rows store a PricingData object with { quote?, volume_tiers?, tiers? }.
+ */
+export function normalizePricingData(
+  raw: PricingData | PricingTier[] | null,
+): PricingData {
+  if (!raw) return {};
+  if (Array.isArray(raw)) return { tiers: raw };
+  return raw;
 }
 
 /**

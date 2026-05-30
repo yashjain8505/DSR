@@ -390,7 +390,12 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
         {(activeTab === "product" || activeTab === "why_linkrunner") && (
           <OverviewSubTabRenderer subTab={getActiveOverviewSubTab()} assets={data.assets} />
         )}
-        {activeTab === "pricing" && <TabPricing pricing={data.pricing} />}
+        {activeTab === "pricing" && (
+          <TabPricing
+            pricing={data.pricing}
+            companyName={data.room.company_name}
+          />
+        )}
         {activeTab === "case_studies" && (
           <TabCaseStudies caseStudies={data.case_studies} />
         )}

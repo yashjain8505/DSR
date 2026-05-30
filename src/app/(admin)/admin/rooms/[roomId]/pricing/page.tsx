@@ -2,53 +2,76 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
-import type { Pricing, PricingTier } from "@/lib/types";
+import type {
+  Pricing,
+  PricingQuote,
+  PricingData,
+  VolumeTier,
+  CompetitorPricing,
+} from "@/lib/types";
+import { normalizePricingData } from "@/lib/types";
 
-const emptyTier: PricingTier = {
-  name: "",
-  price: "",
-  billing_period: "",
-  description: "",
-  features: [],
-  is_highlighted: false,
-  cta_label: "Get Started",
-  cta_url: "",
-  preferred_for: [],
-  secondary_cta_label: "",
-  secondary_cta_url: "",
+const defaultQuote: PricingQuote = {
+  estimated_volume: 0,
+  per_install_price: 0.7,
+  currency: "₹",
+  free_threshold: 25000,
+  value_props: [
+    "All core features included",
+    "Postpaid monthly billing",
+    "No annual lock-in",
+    "Dedicated support",
+  ],
 };
 
 export default function PricingEditorPage() {
   const { roomId } = useParams<{ roomId: string }>();
 
   const [content, setContent] = useState("");
-  const [tiers, setTiers] = useState<PricingTier[]>([]);
+  const [quote, setQuote] = useState<PricingQuote>({ ...defaultQuote });
+  const [showQuote, setShowQuote] = useState(false);
+  const [volumeTiers, setVolumeTiers] = useState<VolumeTier[]>([]);
+  const [competitors, setCompetitors] = useState<CompetitorPricing[]>([]);
   const [mode, setMode] = useState<"markdown" | "structured">("markdown");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     async function fetchPricing() {
       try {
         const res = await fetch(`/api/rooms/${roomId}/pricing`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error);
 
-        const pricing: Pricing = data.pricing;
+        const pricing: Pricing = json.pricing;
         setContent(pricing.content);
-        setTiers(pricing.pricing_data ?? []);
+
+        const normalized = normalizePricingData(pricing.pricing_data);
+
+        if (normalized.quote) {
+          setQuote(normalized.quote);
+          setShowQuote(true);
+        }
+        if (normalized.volume_tiers) {
+          setVolumeTiers(normalized.volume_tiers);
+        }
+        if (normalized.competitor_pricing) {
+          setCompetitors(normalized.competitor_pricing);
+        }
+
         setMode(
-          pricing.pricing_data && pricing.pricing_data.length > 0
+          normalized.volume_tiers?.length ||
+            normalized.quote ||
+            normalized.competitor_pricing?.length
             ? "structured"
-            : "markdown"
+            : "markdown",
         );
       } catch {
         setError("Failed to load pricing");
@@ -59,33 +82,62 @@ export default function PricingEditorPage() {
     fetchPricing();
   }, [roomId]);
 
-  function addTier() {
-    setTiers((prev) => [...prev, { ...emptyTier }]);
+  /* ---- quote helpers ---- */
+
+  function updateQuote<K extends keyof PricingQuote>(
+    field: K,
+    value: PricingQuote[K],
+  ) {
+    setQuote((prev) => ({ ...prev, [field]: value }));
   }
 
-  function removeTier(index: number) {
-    setTiers((prev) => prev.filter((_, i) => i !== index));
+  /* ---- volume tier helpers ---- */
+
+  function addVolumeTier() {
+    setVolumeTiers((prev) => [
+      ...prev,
+      { volume: 0, per_install_price: quote.per_install_price },
+    ]);
   }
 
-  function updateTier(index: number, field: keyof PricingTier, value: unknown) {
-    setTiers((prev) =>
-      prev.map((t, i) => (i === index ? { ...t, [field]: value } : t))
+  function removeVolumeTier(index: number) {
+    setVolumeTiers((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateVolumeTier(
+    index: number,
+    field: keyof VolumeTier,
+    value: number,
+  ) {
+    setVolumeTiers((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)),
     );
   }
 
-  function moveTier(index: number, direction: "up" | "down") {
-    setTiers((prev) => {
-      const next = [...prev];
-      const target = direction === "up" ? index - 1 : index + 1;
-      if (target < 0 || target >= next.length) return prev;
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
+  /* ---- competitor helpers ---- */
+
+  function addCompetitor() {
+    setCompetitors((prev) => [
+      ...prev,
+      { name: "", per_install_price: 0, pricing_model: "Per install" },
+    ]);
   }
 
-  function toggleCollapse(index: number) {
-    setCollapsed((prev) => ({ ...prev, [index]: !prev[index] }));
+  function removeCompetitor(index: number) {
+    setCompetitors((prev) => prev.filter((_, i) => i !== index));
   }
+
+  function updateCompetitor(
+    index: number,
+    field: keyof CompetitorPricing,
+    value: string | number,
+  ) {
+    setCompetitors((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
+    );
+  }
+
+  /* ---- save ---- */
 
   async function handleSave() {
     setError("");
@@ -93,15 +145,30 @@ export default function PricingEditorPage() {
     setSaving(true);
 
     try {
-      const payload: { content: string; pricing_data?: PricingTier[] } = {
-        content,
-      };
+      const pricingData: PricingData = {};
 
-      if (mode === "structured" && tiers.length > 0) {
-        payload.pricing_data = tiers;
-      } else {
-        payload.pricing_data = [];
+      if (showQuote && quote.estimated_volume > 0) {
+        pricingData.quote = quote;
       }
+      if (volumeTiers.length > 0) {
+        pricingData.volume_tiers = volumeTiers.filter((t) => t.volume > 0);
+      }
+      if (competitors.length > 0) {
+        pricingData.competitor_pricing = competitors.filter(
+          (c) => c.name.trim() && c.per_install_price > 0,
+        );
+      }
+
+      const hasData =
+        pricingData.quote ||
+        (pricingData.volume_tiers?.length ?? 0) > 0 ||
+        (pricingData.competitor_pricing?.length ?? 0) > 0;
+
+      const payload: { content: string; pricing_data: PricingData | never[] } =
+        {
+          content,
+          pricing_data: mode === "structured" && hasData ? pricingData : [],
+        };
 
       const res = await fetch(`/api/rooms/${roomId}/pricing`, {
         method: "PUT",
@@ -109,8 +176,8 @@ export default function PricingEditorPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
 
       setSuccess("Pricing saved");
       setTimeout(() => setSuccess(""), 3000);
@@ -120,6 +187,15 @@ export default function PricingEditorPage() {
       setSaving(false);
     }
   }
+
+  /* ---- computed preview ---- */
+
+  const monthlyCost = quote.estimated_volume * quote.per_install_price;
+  const fmtCost =
+    quote.currency +
+    monthlyCost.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+
+  /* ---- render ---- */
 
   if (loading) {
     return (
@@ -156,7 +232,7 @@ export default function PricingEditorPage() {
           size="sm"
           onClick={() => setMode("structured")}
         >
-          Structured Tiers
+          Structured
         </Button>
       </div>
 
@@ -171,224 +247,343 @@ export default function PricingEditorPage() {
           />
         </div>
       ) : (
-        <div className="space-y-4">
-          {/* Markdown fallback content */}
+        <div className="space-y-6">
+          {/* ═══════════════ CUSTOMER QUOTE ═══════════════ */}
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Customer Quote
+                </h2>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  Personalized pricing breakdown for this prospect
+                </p>
+              </div>
+              <Toggle
+                checked={showQuote}
+                onChange={setShowQuote}
+                label="Show quote"
+              />
+            </div>
+
+            {showQuote && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <Input
+                    label="Estimated Volume"
+                    type="number"
+                    value={quote.estimated_volume || ""}
+                    onChange={(e) =>
+                      updateQuote(
+                        "estimated_volume",
+                        parseInt(e.target.value) || 0,
+                      )
+                    }
+                    placeholder="150000"
+                  />
+                  <Input
+                    label="Per-Install Price"
+                    type="number"
+                    step="0.01"
+                    value={quote.per_install_price || ""}
+                    onChange={(e) =>
+                      updateQuote(
+                        "per_install_price",
+                        parseFloat(e.target.value) || 0,
+                      )
+                    }
+                    placeholder="0.70"
+                  />
+                  <Input
+                    label="Currency"
+                    value={quote.currency}
+                    onChange={(e) => updateQuote("currency", e.target.value)}
+                    placeholder="₹"
+                  />
+                  <Input
+                    label="Free Threshold"
+                    type="number"
+                    value={quote.free_threshold || ""}
+                    onChange={(e) =>
+                      updateQuote(
+                        "free_threshold",
+                        parseInt(e.target.value) || 0,
+                      )
+                    }
+                    placeholder="25000"
+                  />
+                </div>
+
+                {/* Live preview */}
+                {quote.estimated_volume > 0 && (
+                  <div className="rounded-lg border border-indigo-100 bg-white p-4">
+                    <p className="text-xs font-medium text-gray-400">
+                      Preview
+                    </p>
+                    <p className="mt-1 text-lg font-bold text-gray-900">
+                      {fmtCost}
+                      <span className="text-sm font-normal text-gray-400">
+                        /mo
+                      </span>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {quote.estimated_volume.toLocaleString("en-IN")} x{" "}
+                      {quote.currency}
+                      {quote.per_install_price}
+                      {quote.free_threshold > 0 && (
+                        <span>
+                          {" "}
+                          (first{" "}
+                          {quote.free_threshold.toLocaleString("en-IN")} free,
+                          one-time)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <Input
+                  label="Value Propositions (comma-separated)"
+                  value={quote.value_props.join(", ")}
+                  onChange={(e) =>
+                    updateQuote(
+                      "value_props",
+                      e.target.value
+                        .split(",")
+                        .map((v) => v.trim())
+                        .filter(Boolean),
+                    )
+                  }
+                  placeholder="All core features included, Postpaid monthly billing, No annual lock-in"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ═══════════════ VOLUME TIERS ═══════════════ */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <div className="mb-1">
+              <h2 className="text-base font-semibold text-gray-900">
+                Volume Pricing
+              </h2>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Show what the per-install price looks like at different volumes
+              </p>
+            </div>
+
+            {volumeTiers.length > 0 && (
+              <div className="mt-4 space-y-3">
+                {/* Header row */}
+                <div className="grid grid-cols-[1fr_1fr_auto] gap-4 px-1">
+                  <p className="text-xs font-medium text-gray-400">
+                    Monthly Volume
+                  </p>
+                  <p className="text-xs font-medium text-gray-400">
+                    Per-Install Price ({quote.currency})
+                  </p>
+                  <div className="w-8" />
+                </div>
+
+                {volumeTiers.map((vt, index) => {
+                  return (
+                    <div
+                      key={index}
+                      className="grid grid-cols-[1fr_1fr_auto] items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 p-3"
+                    >
+                      <Input
+                        type="number"
+                        value={vt.volume || ""}
+                        onChange={(e) =>
+                          updateVolumeTier(
+                            index,
+                            "volume",
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
+                        placeholder="100000"
+                      />
+                      <div className="flex items-center gap-3">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={vt.per_install_price || ""}
+                          onChange={(e) =>
+                            updateVolumeTier(
+                              index,
+                              "per_install_price",
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
+                          placeholder="0.70"
+                        />
+                        {vt.volume > 0 && (
+                          <p className="shrink-0 text-xs text-gray-400">
+                            = {quote.currency}
+                            {(vt.volume * vt.per_install_price).toLocaleString(
+                              "en-IN",
+                              { maximumFractionDigits: 0 },
+                            )}
+                            /mo
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500"
+                        onClick={() => removeVolumeTier(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-4">
+              <Button variant="secondary" size="sm" onClick={addVolumeTier}>
+                <Plus className="h-4 w-4" />
+                Add Volume Tier
+              </Button>
+            </div>
+          </div>
+
+          {/* ═══════════════ COMPETITOR COMPARISON ═══════════════ */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50/30 p-6">
+            <div className="mb-1">
+              <h2 className="text-base font-semibold text-gray-900">
+                Competitor Comparison
+              </h2>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Show how much competitors charge vs Linkrunner (uses the
+                customer&apos;s estimated volume for the comparison)
+              </p>
+            </div>
+
+            {competitors.length > 0 && (
+              <div className="mt-4 space-y-3">
+                {/* Header row */}
+                <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 px-1">
+                  <p className="text-xs font-medium text-gray-400">
+                    Competitor
+                  </p>
+                  <p className="text-xs font-medium text-gray-400">
+                    Per-Install Price ({quote.currency})
+                  </p>
+                  <p className="text-xs font-medium text-gray-400">
+                    Pricing Model
+                  </p>
+                  <div className="w-8" />
+                </div>
+
+                {competitors.map((comp, index) => {
+                  const compMonthly =
+                    quote.estimated_volume * comp.per_install_price;
+                  return (
+                    <div
+                      key={index}
+                      className="space-y-2 rounded-lg border border-amber-100 bg-white p-3"
+                    >
+                      <div className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-4">
+                        <Input
+                          value={comp.name}
+                          onChange={(e) =>
+                            updateCompetitor(index, "name", e.target.value)
+                          }
+                          placeholder="AppsFlyer"
+                        />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={comp.per_install_price || ""}
+                          onChange={(e) =>
+                            updateCompetitor(
+                              index,
+                              "per_install_price",
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
+                          placeholder="5.00"
+                        />
+                        <Input
+                          value={comp.pricing_model}
+                          onChange={(e) =>
+                            updateCompetitor(
+                              index,
+                              "pricing_model",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="Per conversion"
+                        />
+                        <button
+                          type="button"
+                          className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500"
+                          onClick={() => removeCompetitor(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Inline preview */}
+                      {comp.name &&
+                        comp.per_install_price > 0 &&
+                        quote.estimated_volume > 0 && (
+                          <div className="flex items-center gap-3 px-1">
+                            <p className="text-xs text-gray-400">
+                              {comp.name}:{" "}
+                              <span className="font-medium text-gray-600">
+                                {quote.currency}
+                                {compMonthly.toLocaleString("en-IN", {
+                                  maximumFractionDigits: 0,
+                                })}
+                                /mo
+                              </span>
+                            </p>
+                            {compMonthly > monthlyCost && (
+                              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                {Math.round(
+                                  ((compMonthly - monthlyCost) / compMonthly) *
+                                    100,
+                                )}
+                                % cheaper with Linkrunner
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                      {/* Notes */}
+                      <Input
+                        value={comp.notes ?? ""}
+                        onChange={(e) =>
+                          updateCompetitor(index, "notes", e.target.value)
+                        }
+                        placeholder="Optional note (e.g. Requires annual contract)"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-4">
+              <Button variant="secondary" size="sm" onClick={addCompetitor}>
+                <Plus className="h-4 w-4" />
+                Add Competitor
+              </Button>
+            </div>
+          </div>
+
+          {/* ═══════════════ NOTES ═══════════════ */}
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <Textarea
-              label="Additional Pricing Notes (Markdown, shown below tiers)"
+              label="Additional Notes (Markdown, shown below pricing)"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
-              placeholder="Optional notes below the pricing tiers..."
+              placeholder="Optional notes below the pricing cards..."
             />
           </div>
-
-          {/* Pricing tiers */}
-          {tiers.map((tier, index) => {
-            const isCollapsed = collapsed[index];
-            return (
-              <div
-                key={index}
-                className={`rounded-xl border bg-white ${
-                  tier.is_highlighted
-                    ? "border-indigo-300 ring-1 ring-indigo-200"
-                    : "border-gray-200"
-                }`}
-              >
-                {/* Tier header — always visible */}
-                <div className="flex items-center gap-3 px-6 py-4">
-                  <GripVertical className="h-4 w-4 shrink-0 text-gray-300" />
-                  <button
-                    type="button"
-                    className="flex flex-1 items-center gap-2 text-left"
-                    onClick={() => toggleCollapse(index)}
-                  >
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      Tier {index + 1}
-                      {tier.name ? `: ${tier.name}` : ""}
-                    </h3>
-                    {tier.is_highlighted && (
-                      <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
-                        Recommended
-                      </span>
-                    )}
-                  </button>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30"
-                      onClick={() => moveTier(index, "up")}
-                      disabled={index === 0}
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30"
-                      onClick={() => moveTier(index, "down")}
-                      disabled={index === tiers.length - 1}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
-                      onClick={() => removeTier(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                      onClick={() => toggleCollapse(index)}
-                    >
-                      {isCollapsed ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronUp className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Tier body — collapsible */}
-                {!isCollapsed && (
-                  <div className="border-t border-gray-100 px-6 pb-6 pt-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <Input
-                        label="Plan Name"
-                        value={tier.name}
-                        onChange={(e) =>
-                          updateTier(index, "name", e.target.value)
-                        }
-                        placeholder="e.g. Growth"
-                      />
-                      <Input
-                        label="Price"
-                        value={tier.price}
-                        onChange={(e) =>
-                          updateTier(index, "price", e.target.value)
-                        }
-                        placeholder="e.g. $99 or Pay-as-you-go"
-                      />
-                      <Input
-                        label="Billing Period"
-                        value={tier.billing_period}
-                        onChange={(e) =>
-                          updateTier(index, "billing_period", e.target.value)
-                        }
-                        placeholder="e.g. month (leave empty for custom)"
-                      />
-                      <div className="flex items-end pb-1">
-                        <Toggle
-                          checked={tier.is_highlighted}
-                          onChange={(val) =>
-                            updateTier(index, "is_highlighted", val)
-                          }
-                          label="Recommended"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          label="Subtitle"
-                          value={tier.description}
-                          onChange={(e) =>
-                            updateTier(index, "description", e.target.value)
-                          }
-                          placeholder="e.g. No credit card needed. No calendar expiry."
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          label="Features (comma-separated)"
-                          value={tier.features.join(", ")}
-                          onChange={(e) =>
-                            updateTier(
-                              index,
-                              "features",
-                              e.target.value
-                                .split(",")
-                                .map((f) => f.trim())
-                                .filter(Boolean)
-                            )
-                          }
-                          placeholder="25,000 attributed installs, All core features, ..."
-                        />
-                      </div>
-
-                      {/* CTA fields */}
-                      <Input
-                        label="CTA Label"
-                        value={tier.cta_label}
-                        onChange={(e) =>
-                          updateTier(index, "cta_label", e.target.value)
-                        }
-                        placeholder="e.g. Start the Growth plan"
-                      />
-                      <Input
-                        label="CTA URL"
-                        value={tier.cta_url}
-                        onChange={(e) =>
-                          updateTier(index, "cta_url", e.target.value)
-                        }
-                        placeholder="https://..."
-                      />
-
-                      {/* Secondary CTA */}
-                      <Input
-                        label="Secondary CTA Label (optional)"
-                        value={tier.secondary_cta_label ?? ""}
-                        onChange={(e) =>
-                          updateTier(
-                            index,
-                            "secondary_cta_label",
-                            e.target.value
-                          )
-                        }
-                        placeholder="e.g. Calculate pricing"
-                      />
-                      <Input
-                        label="Secondary CTA URL"
-                        value={tier.secondary_cta_url ?? ""}
-                        onChange={(e) =>
-                          updateTier(
-                            index,
-                            "secondary_cta_url",
-                            e.target.value
-                          )
-                        }
-                        placeholder="https://..."
-                      />
-
-                      {/* Preferred for */}
-                      <div className="col-span-2">
-                        <Input
-                          label="Preferred For (comma-separated)"
-                          value={(tier.preferred_for ?? []).join(", ")}
-                          onChange={(e) =>
-                            updateTier(
-                              index,
-                              "preferred_for",
-                              e.target.value
-                                .split(",")
-                                .map((f) => f.trim())
-                                .filter(Boolean)
-                            )
-                          }
-                          placeholder="Growing app teams, Reliable install measurement, ..."
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          <Button variant="secondary" onClick={addTier}>
-            <Plus className="h-4 w-4" />
-            Add Tier
-          </Button>
         </div>
       )}
     </div>

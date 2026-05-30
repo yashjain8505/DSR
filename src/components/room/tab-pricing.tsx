@@ -1,26 +1,43 @@
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
-import type { Pricing, PricingTier } from "@/lib/types";
+import { Check, Sparkles, TrendingDown, ArrowRight } from "lucide-react";
+import type {
+  Pricing,
+  PricingQuote,
+  VolumeTier,
+  CompetitorPricing,
+} from "@/lib/types";
+import { normalizePricingData } from "@/lib/types";
 
 interface TabPricingProps {
   pricing: Pricing;
+  companyName: string;
 }
 
 /**
  * Pricing tab — prospect-facing.
  *
- * When `pricing_data` contains structured tiers it renders a card grid
- * inspired by linkrunner.io/pricing: light gradient backdrop, three
- * side-by-side cards, the highlighted tier in the center with a colored
- * border and "Recommended" badge. Each card shows plan name, price,
- * feature list, CTA(s), and an optional "Preferred for" section.
- *
- * Falls back to rendering `pricing.content` as markdown when no tiers
- * are defined.
+ * Layout:
+ * 1. "Pricing for {company}" heading
+ * 2. Side-by-side: Quote card (left) + Volume tiers stacked (right)
+ * 3. Competitor pricing comparison section
+ * 4. Optional markdown notes at the bottom
  */
-export function TabPricing({ pricing }: TabPricingProps) {
-  if (!pricing.pricing_data || pricing.pricing_data.length === 0) {
+export function TabPricing({ pricing, companyName }: TabPricingProps) {
+  const data = normalizePricingData(pricing.pricing_data);
+  const { quote, volume_tiers, competitor_pricing } = data;
+
+  const hasStructured = !!quote || (volume_tiers && volume_tiers.length > 0);
+
+  // Markdown-only fallback
+  if (!hasStructured) {
+    if (!pricing.content) {
+      return (
+        <div className="mx-auto max-w-3xl py-12 text-center text-gray-400">
+          Pricing details will appear here once configured.
+        </div>
+      );
+    }
     return (
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
@@ -33,35 +50,99 @@ export function TabPricing({ pricing }: TabPricingProps) {
     );
   }
 
-  const tiers = pricing.pricing_data;
+  const currency = quote?.currency ?? "₹";
+  const hasQuote = quote && quote.estimated_volume > 0;
+  const hasTiers = volume_tiers && volume_tiers.length > 0;
+  const hasCompetitors =
+    competitor_pricing && competitor_pricing.length > 0;
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-5xl">
       {/* Header */}
       <div className="mb-10 text-center">
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-          Pricing
+          Pricing for {companyName}
         </h2>
-        <p className="mx-auto mt-3 max-w-lg text-base text-gray-500">
-          Choose the plan that fits your needs
-        </p>
       </div>
 
-      {/* Tier cards */}
-      <div
-        className={cn(
-          "mx-auto grid items-start gap-6 lg:gap-8",
-          tiers.length === 1 && "max-w-md grid-cols-1",
-          tiers.length === 2 && "max-w-3xl grid-cols-1 sm:grid-cols-2",
-          tiers.length >= 3 && "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
-        )}
-      >
-        {tiers.map((tier, i) => (
-          <TierCard key={i} tier={tier} />
-        ))}
-      </div>
+      {/* ═══════════════ MAIN PRICING SECTION ═══════════════ */}
+      {/* Side-by-side: Quote card (left) + Volume tiers (right) */}
+      {hasQuote && hasTiers ? (
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_auto]">
+          <QuoteCard quote={quote} />
+          <div className="flex flex-col gap-3 lg:w-72">
+            <div className="mb-1 flex items-center gap-2">
+              <TrendingDown className="h-4 w-4 text-[var(--brand-primary)]" />
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                Volume pricing
+              </h3>
+            </div>
+            {volume_tiers.map((vt, i) => (
+              <VolumeTierCard
+                key={i}
+                tier={vt}
+                currency={currency}
+                isLowest={
+                  vt.per_install_price ===
+                  Math.min(...volume_tiers.map((t) => t.per_install_price))
+                }
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Only quote, no tiers */}
+          {hasQuote && <QuoteCard quote={quote} />}
 
-      {/* Optional markdown notes below cards */}
+          {/* Only tiers, no quote */}
+          {hasTiers && !hasQuote && (
+            <div>
+              <div className="mb-5 flex items-center gap-2">
+                <TrendingDown className="h-4 w-4 text-[var(--brand-primary)]" />
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                  Volume pricing
+                </h3>
+              </div>
+              <div
+                className={cn(
+                  "grid gap-4",
+                  volume_tiers.length === 1 &&
+                    "max-w-sm grid-cols-1",
+                  volume_tiers.length === 2 &&
+                    "max-w-2xl grid-cols-1 sm:grid-cols-2",
+                  volume_tiers.length >= 3 &&
+                    "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+                )}
+              >
+                {volume_tiers.map((vt, i) => (
+                  <VolumeTierCard
+                    key={i}
+                    tier={vt}
+                    currency={currency}
+                    isLowest={
+                      vt.per_install_price ===
+                      Math.min(
+                        ...volume_tiers.map((t) => t.per_install_price),
+                      )
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ═══════════════ COMPETITOR COMPARISON ═══════════════ */}
+      {hasCompetitors && hasQuote && (
+        <CompetitorSection
+          competitors={competitor_pricing}
+          quote={quote}
+        />
+      )}
+
+      {/* Optional markdown notes */}
       {pricing.content && (
         <div className="mx-auto mt-12 max-w-3xl rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
           <MarkdownRenderer content={pricing.content} />
@@ -72,131 +153,353 @@ export function TabPricing({ pricing }: TabPricingProps) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Personalized Quote Card                                           */
+/* ------------------------------------------------------------------ */
 
-function TierCard({ tier }: { tier: PricingTier }) {
-  const highlighted = tier.is_highlighted;
-  const preferredFor = tier.preferred_for ?? [];
+function QuoteCard({ quote }: { quote: PricingQuote }) {
+  const {
+    estimated_volume,
+    per_install_price,
+    currency,
+    free_threshold,
+    value_props,
+  } = quote;
+
+  // Free installs are a one-time credit, not monthly. Monthly cost is the
+  // full volume multiplied by the per-install price.
+  const monthlyCost = estimated_volume * per_install_price;
 
   return (
-    <div
-      className={cn(
-        "relative flex flex-col rounded-2xl bg-white transition-shadow",
-        highlighted
-          ? "border-2 border-[var(--brand-primary)] shadow-lg ring-1 ring-[var(--brand-primary)]/20"
-          : "border border-gray-200 shadow-sm",
-      )}
-    >
-      {/* Recommended badge */}
-      {highlighted && (
-        <div className="px-6 pt-5 pb-0">
-          <span className="text-sm font-semibold text-[var(--brand-primary)]">
-            Recommended
-          </span>
-        </div>
-      )}
+    <div className="overflow-hidden rounded-2xl border border-[var(--brand-primary)]/30 bg-white shadow-lg">
+      {/* Header bar */}
+      <div className="flex items-center gap-2 bg-[var(--brand-primary)] px-6 py-3">
+        <Sparkles className="h-4 w-4 text-white/80" />
+        <span className="text-sm font-semibold tracking-wide text-white">
+          Your Quote
+        </span>
+      </div>
 
-      <div
-        className={cn(
-          "flex flex-1 flex-col px-6 pb-8",
-          highlighted ? "pt-3" : "pt-6",
-        )}
-      >
-        {/* Plan name + subtitle */}
-        <h3 className="text-xl font-bold text-gray-900">{tier.name}</h3>
-        {tier.description && (
-          <p className="mt-1 text-sm leading-5 text-gray-500">
-            {tier.description}
-          </p>
-        )}
-
-        {/* Price */}
-        <div className="mt-5 flex items-baseline gap-1">
-          <span className="text-4xl font-extrabold tracking-tight text-gray-900">
-            {tier.price}
-          </span>
-          {tier.billing_period && (
-            <span className="text-base font-medium text-gray-500">
-              /{tier.billing_period}
-            </span>
+      <div className="px-6 py-6 sm:px-8 sm:py-8">
+        {/* Key metrics */}
+        <dl className="space-y-4">
+          <QuoteRow
+            label="Estimated volume"
+            value={`${fmtNum(estimated_volume)} installs/mo`}
+          />
+          <QuoteRow
+            label="Per-install price"
+            value={fmtPrice(per_install_price, currency)}
+          />
+          {free_threshold > 0 && (
+            <QuoteRow
+              label="Free to start"
+              value={`First ${fmtNum(free_threshold)} installs free`}
+              muted
+            />
           )}
-        </div>
+        </dl>
 
-        {/* Feature list */}
-        {tier.features.length > 0 && (
-          <ul className="mt-7 flex-1 space-y-3">
-            {tier.features.map((feature, j) => (
-              <li key={j} className="flex items-start gap-3">
-                <Check
-                  className={cn(
-                    "mt-0.5 h-4 w-4 shrink-0",
-                    highlighted
-                      ? "text-[var(--brand-primary)]"
-                      : "text-gray-400",
-                  )}
-                />
-                <span className="text-sm leading-5 text-gray-700">
-                  {feature}
-                </span>
-              </li>
+        {/* Divider + total */}
+        <div className="my-5 border-t border-gray-200" />
+
+        <div className="flex items-baseline justify-between">
+          <dt className="text-sm font-medium text-gray-500">
+            Estimated monthly
+          </dt>
+          <dd className="text-3xl font-extrabold tracking-tight text-gray-900">
+            {currency}
+            {fmtNum(monthlyCost)}
+            <span className="text-base font-medium text-gray-400">/mo</span>
+          </dd>
+        </div>
+        <p className="mt-1 text-right text-xs text-gray-400">
+          {fmtNum(estimated_volume)} x {fmtPrice(per_install_price, currency)}
+        </p>
+
+        {/* Value propositions */}
+        {value_props.length > 0 && (
+          <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+            {value_props.map((prop, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-primary)]" />
+                <span className="text-sm text-gray-600">{prop}</span>
+              </div>
             ))}
-          </ul>
-        )}
-
-        {/* CTA buttons */}
-        <div className="mt-8 space-y-3">
-          {tier.cta_url && (
-            <a
-              href={tier.cta_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                "block w-full rounded-lg px-4 py-3 text-center text-sm font-semibold transition-colors",
-                highlighted
-                  ? "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-dark)]"
-                  : "border border-gray-300 bg-white text-gray-900 hover:bg-gray-50",
-              )}
-            >
-              {tier.cta_label || "Get Started"}
-            </a>
-          )}
-          {tier.secondary_cta_url && (
-            <a
-              href={tier.secondary_cta_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-center text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-50"
-            >
-              {tier.secondary_cta_label || "Learn more"}
-            </a>
-          )}
-        </div>
-
-        {/* Preferred for */}
-        {preferredFor.length > 0 && (
-          <div className="mt-8 border-t border-gray-100 pt-6">
-            <p className="mb-3 text-sm font-medium text-gray-400">
-              Preferred for
-            </p>
-            <ul className="space-y-2.5">
-              {preferredFor.map((item, j) => (
-                <li key={j} className="flex items-start gap-3">
-                  <Check
-                    className={cn(
-                      "mt-0.5 h-4 w-4 shrink-0",
-                      highlighted
-                        ? "text-[var(--brand-primary)]"
-                        : "text-gray-400",
-                    )}
-                  />
-                  <span className="text-sm leading-5 text-gray-600">
-                    {item}
-                  </span>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
       </div>
     </div>
   );
+}
+
+function QuoteRow({
+  label,
+  value,
+  muted,
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between">
+      <dt className="text-sm font-medium text-gray-500">{label}</dt>
+      <dd
+        className={cn(
+          "text-lg font-semibold",
+          muted ? "text-gray-400" : "text-gray-900",
+        )}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Volume Tier Card (compact for stacked view)                       */
+/* ------------------------------------------------------------------ */
+
+function VolumeTierCard({
+  tier,
+  currency,
+  isLowest,
+}: {
+  tier: VolumeTier;
+  currency: string;
+  isLowest: boolean;
+}) {
+  const monthly = tier.volume * tier.per_install_price;
+
+  return (
+    <div
+      className={cn(
+        "relative rounded-2xl bg-white px-5 py-5 transition-shadow",
+        isLowest
+          ? "border-2 border-[var(--brand-primary)] shadow-md"
+          : "border border-gray-200 shadow-sm",
+      )}
+    >
+      {isLowest && (
+        <span className="absolute -top-3 left-4 rounded-full bg-[var(--brand-primary)] px-3 py-0.5 text-xs font-semibold text-white">
+          Best value
+        </span>
+      )}
+
+      <div className="flex items-baseline justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium text-gray-500">
+            {fmtNum(tier.volume)} installs/mo
+          </p>
+          <p className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
+            {fmtPrice(tier.per_install_price, currency)}
+            <span className="text-sm font-medium text-gray-400">
+              /install
+            </span>
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-medium text-gray-400">Monthly</p>
+          <p className="text-base font-bold text-gray-900">
+            {currency}
+            {fmtNum(monthly)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Competitor Comparison Section                                     */
+/* ------------------------------------------------------------------ */
+
+function CompetitorSection({
+  competitors,
+  quote,
+}: {
+  competitors: CompetitorPricing[];
+  quote: PricingQuote;
+}) {
+  const { estimated_volume, per_install_price, currency } = quote;
+  const linkrunnerMonthly = estimated_volume * per_install_price;
+
+  return (
+    <div className="mt-14">
+      <div className="mb-6 text-center">
+        <h3 className="text-xl font-bold text-gray-900">
+          How we compare
+        </h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Estimated monthly cost at {fmtNum(estimated_volume)} installs/mo
+        </p>
+      </div>
+
+      <div
+        className={cn(
+          "grid gap-4",
+          competitors.length === 1 && "max-w-3xl mx-auto grid-cols-1 sm:grid-cols-2",
+          competitors.length === 2 && "max-w-4xl mx-auto grid-cols-1 sm:grid-cols-3",
+          competitors.length >= 3 && "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
+        )}
+      >
+        {/* Linkrunner card — always first, highlighted */}
+        <LinkrunnerCompareCard
+          monthlyCost={linkrunnerMonthly}
+          perInstall={per_install_price}
+          currency={currency}
+          volume={estimated_volume}
+        />
+
+        {/* Competitor cards */}
+        {competitors.map((comp, i) => {
+          const compMonthly = estimated_volume * comp.per_install_price;
+          const savings = compMonthly - linkrunnerMonthly;
+          const savingsPct =
+            compMonthly > 0
+              ? Math.round((savings / compMonthly) * 100)
+              : 0;
+
+          return (
+            <CompetitorCard
+              key={i}
+              competitor={comp}
+              monthlyCost={compMonthly}
+              currency={currency}
+              volume={estimated_volume}
+              savings={savings}
+              savingsPct={savingsPct}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function LinkrunnerCompareCard({
+  monthlyCost,
+  perInstall,
+  currency,
+  volume,
+}: {
+  monthlyCost: number;
+  perInstall: number;
+  currency: string;
+  volume: number;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--brand-primary)] bg-white shadow-md">
+      {/* Accent bar */}
+      <div className="bg-[var(--brand-primary)] px-5 py-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-white">
+          Linkrunner
+        </span>
+      </div>
+      <div className="px-5 py-5">
+        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+          Monthly cost
+        </p>
+        <p className="mt-1 text-3xl font-extrabold tracking-tight text-gray-900">
+          {currency}
+          {fmtNum(monthlyCost)}
+        </p>
+
+        <div className="mt-4 space-y-2 text-sm text-gray-500">
+          <div className="flex justify-between">
+            <span>Per install</span>
+            <span className="font-medium text-gray-900">
+              {fmtPrice(perInstall, currency)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Volume</span>
+            <span className="font-medium text-gray-900">
+              {fmtNum(volume)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompetitorCard({
+  competitor,
+  monthlyCost,
+  currency,
+  volume,
+  savings,
+  savingsPct,
+}: {
+  competitor: CompetitorPricing;
+  monthlyCost: number;
+  currency: string;
+  volume: number;
+  savings: number;
+  savingsPct: number;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm">
+      {/* Header */}
+      <div className="border-b border-gray-200 bg-gray-100 px-5 py-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+          {competitor.name}
+        </span>
+      </div>
+      <div className="px-5 py-5">
+        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+          Monthly cost
+        </p>
+        <p className="mt-1 text-3xl font-extrabold tracking-tight text-gray-400">
+          {currency}
+          {fmtNum(monthlyCost)}
+        </p>
+
+        <div className="mt-4 space-y-2 text-sm text-gray-400">
+          <div className="flex justify-between">
+            <span>{competitor.pricing_model}</span>
+            <span className="font-medium">
+              {fmtPrice(competitor.per_install_price, currency)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Volume</span>
+            <span className="font-medium">{fmtNum(volume)}</span>
+          </div>
+        </div>
+
+        {/* Savings callout */}
+        {savings > 0 && (
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
+            <ArrowRight className="h-3.5 w-3.5 text-green-600" />
+            <span className="text-xs font-semibold text-green-700">
+              Save {currency}
+              {fmtNum(savings)}/mo ({savingsPct}%) with Linkrunner
+            </span>
+          </div>
+        )}
+
+        {competitor.notes && (
+          <p className="mt-3 text-xs text-gray-400 italic">
+            {competitor.notes}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Formatting helpers                                                */
+/* ------------------------------------------------------------------ */
+
+function fmtNum(n: number): string {
+  return n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+}
+
+function fmtPrice(n: number, currency: string): string {
+  if (n >= 1)
+    return `${currency}${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+  return `${currency}${n.toFixed(2)}`;
 }
