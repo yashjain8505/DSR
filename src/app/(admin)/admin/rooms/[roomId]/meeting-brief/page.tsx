@@ -2,10 +2,21 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Download, Calendar, Users, Building2 } from "lucide-react";
+import {
+  Download,
+  Calendar,
+  Users,
+  Building2,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Toggle } from "@/components/ui/toggle";
 import { Dialog } from "@/components/ui/dialog";
 import { TabMeetingBrief } from "@/components/room/tab-meeting-brief";
 import { TabNextSteps } from "@/components/room/tab-next-steps";
@@ -13,14 +24,21 @@ import {
   parseBrief,
   hasStructure,
   serializeBrief,
-  parseNextSteps,
-  serializeNextSteps,
   CANONICAL_SECTIONS,
   type BriefData,
 } from "@/lib/meeting-brief";
+import {
+  parseNextStepsData,
+  serializeNextStepsData,
+  makeStep,
+  emptyNextStepsData,
+  type NextStepsData,
+  type NextStep,
+  type TeamKey,
+} from "@/lib/next-steps";
 import { computePalette } from "@/lib/palette";
 import type { MeetingBrief, GranolaMeetingCache } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 /** One editable section: items live as one-per-line text in `body`. */
 interface EditSection {
@@ -80,11 +98,16 @@ export default function MeetingBriefPage() {
   const [sections, setSections] = useState<EditSection[]>(() =>
     seedSections({ snapshot: null, sections: [] }),
   );
-  const [nextStepsText, setNextStepsText] = useState("");
+  const [nextStepsData, setNextStepsData] = useState<NextStepsData>(() =>
+    emptyNextStepsData(),
+  );
 
-  // Raw markdown state (legacy / escape hatch)
+  // Raw markdown state for the recap escape hatch.
   const [rawContent, setRawContent] = useState("");
-  const [rawNextSteps, setRawNextSteps] = useState("");
+
+  // Customer identity for next-steps team tags + a faithful preview.
+  const [customerLogoUrl, setCustomerLogoUrl] = useState<string | null>(null);
+  const [customerName, setCustomerName] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,12 +127,11 @@ export default function MeetingBriefPage() {
   const loadFromStrings = useCallback(
     (content: string, nextStepsStr: string) => {
       setRawContent(content);
-      setRawNextSteps(nextStepsStr);
       const parsed = parseBrief(content);
       setSnapshotDate(parsed.snapshot?.date ?? "");
       setSnapshotAttendees(parsed.snapshot?.attendees ?? "");
       setSections(seedSections(parsed));
-      setNextStepsText(parseNextSteps(nextStepsStr).join("\n"));
+      setNextStepsData(parseNextStepsData(nextStepsStr));
       // New/empty or cleanly-structured briefs edit as sections; freeform
       // legacy content stays in raw markdown so nothing is mangled.
       setMode(!content.trim() || hasStructure(parsed) ? "structured" : "markdown");
@@ -131,7 +153,22 @@ export default function MeetingBriefPage() {
         setLoading(false);
       }
     }
+    async function fetchRoom() {
+      // Customer logo + name power the next-steps team tags and preview.
+      // Non-blocking: failure just falls back to a generic "Customer" label.
+      try {
+        const res = await fetch(`/api/rooms/${roomId}`);
+        const data = await res.json();
+        if (res.ok && data.room) {
+          setCustomerLogoUrl(data.room.logo_url ?? null);
+          setCustomerName(data.room.company_name ?? "");
+        }
+      } catch {
+        /* ignore — team tags still render with a fallback monogram */
+      }
+    }
     fetchBrief();
+    fetchRoom();
   }, [roomId, loadFromStrings]);
 
   function buildBriefData(): BriefData {
@@ -153,15 +190,15 @@ export default function MeetingBriefPage() {
   function currentContent(): string {
     return mode === "markdown" ? rawContent : serializeBrief(buildBriefData());
   }
-  function currentNextStepsMd(): string {
-    return mode === "markdown"
-      ? rawNextSteps
-      : serializeNextSteps(linesToItems(nextStepsText));
+  function currentNextSteps(): string {
+    return serializeNextStepsData(nextStepsData);
   }
 
+  // The Markdown/Structured toggle governs only the recap content. Next steps
+  // is always edited via the structured action-plan editor, so its rich fields
+  // (completion, date, team tags) can never be lost in a markdown round-trip.
   function switchToMarkdown() {
     setRawContent(serializeBrief(buildBriefData()));
-    setRawNextSteps(serializeNextSteps(linesToItems(nextStepsText)));
     setMode("markdown");
   }
   function switchToStructured() {
@@ -169,7 +206,6 @@ export default function MeetingBriefPage() {
     setSnapshotDate(parsed.snapshot?.date ?? "");
     setSnapshotAttendees(parsed.snapshot?.attendees ?? "");
     setSections(seedSections(parsed));
-    setNextStepsText(parseNextSteps(rawNextSteps).join("\n"));
     setMode("structured");
   }
 
@@ -177,6 +213,42 @@ export default function MeetingBriefPage() {
     setSections((prev) =>
       prev.map((s) => (s.key === key ? { ...s, body } : s)),
     );
+  }
+
+  /* ---- Next-steps (mutual action plan) mutations ---- */
+  function setShowTeamLogos(showTeamLogos: boolean) {
+    setNextStepsData((prev) => ({
+      ...prev,
+      config: { ...prev.config, showTeamLogos },
+    }));
+  }
+  function addStep() {
+    setNextStepsData((prev) => ({
+      ...prev,
+      steps: [...prev.steps, makeStep()],
+    }));
+  }
+  function updateStep(updated: NextStep) {
+    setNextStepsData((prev) => ({
+      ...prev,
+      steps: prev.steps.map((s) => (s.id === updated.id ? updated : s)),
+    }));
+  }
+  function removeStep(id: string) {
+    setNextStepsData((prev) => ({
+      ...prev,
+      steps: prev.steps.filter((s) => s.id !== id),
+    }));
+  }
+  function moveStep(id: string, dir: -1 | 1) {
+    setNextStepsData((prev) => {
+      const idx = prev.steps.findIndex((s) => s.id === id);
+      const j = idx + dir;
+      if (idx < 0 || j < 0 || j >= prev.steps.length) return prev;
+      const steps = [...prev.steps];
+      [steps[idx], steps[j]] = [steps[j], steps[idx]];
+      return { ...prev, steps };
+    });
   }
 
   async function handleSave() {
@@ -189,7 +261,7 @@ export default function MeetingBriefPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: currentContent(),
-          next_steps: currentNextStepsMd(),
+          next_steps: currentNextSteps(),
         }),
       });
       const data = await res.json();
@@ -329,11 +401,17 @@ export default function MeetingBriefPage() {
           <TabMeetingBrief
             meetingBrief={{ content: currentContent() } as MeetingBrief}
           />
-          <TabNextSteps nextSteps={currentNextStepsMd()} />
+          <TabNextSteps
+            nextSteps={currentNextSteps()}
+            customerLogoUrl={customerLogoUrl}
+            customerName={customerName}
+          />
         </div>
-      ) : mode === "structured" ? (
+      ) : (
         <div className="space-y-6">
-          {/* Snapshot */}
+          {mode === "structured" ? (
+            <>
+              {/* Snapshot */}
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-500">
               Meeting Snapshot
@@ -384,27 +462,10 @@ export default function MeetingBriefPage() {
             </div>
           </div>
 
-          {/* Next steps */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-500">
-              Next Steps
-            </h2>
-            <p className="mb-4 text-sm text-gray-500">
-              One step per line &mdash; rendered as a numbered checklist.
-            </p>
-            <Textarea
-              value={nextStepsText}
-              onChange={(e) => setNextStepsText(e.target.value)}
-              rows={6}
-              placeholder={
-                "Send pricing and deck over email\nSchedule a follow-up call\nSet up a shared WhatsApp group"
-              }
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            </>
+          ) : (
+            <>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             Editing raw markdown. Switch to{" "}
             <button
               type="button"
@@ -427,17 +488,53 @@ export default function MeetingBriefPage() {
               placeholder="Write the meeting brief here... Markdown is supported."
             />
           </div>
+            </>
+          )}
+
+          {/* Next Steps — shared mutual action plan editor (both edit modes) */}
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
-              Next Steps
-            </h2>
-            <Textarea
-              label="Next steps (Markdown supported)"
-              value={rawNextSteps}
-              onChange={(e) => setRawNextSteps(e.target.value)}
-              rows={6}
-              placeholder="- Send email with pricing and deck&#10;- Schedule follow-up call"
-            />
+            <div className="mb-1 flex items-center justify-between gap-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+                Next Steps
+              </h2>
+              <Toggle
+                checked={nextStepsData.config.showTeamLogos}
+                onChange={setShowTeamLogos}
+                label="Show team logos"
+              />
+            </div>
+            <p className="mb-5 text-sm text-gray-500">
+              A shared action plan &mdash; mark items done, set a date, and choose
+              which team owns each step.
+            </p>
+            <div className="space-y-3">
+              {nextStepsData.steps.map((step, i) => (
+                <StepEditorRow
+                  key={step.id}
+                  step={step}
+                  index={i}
+                  total={nextStepsData.steps.length}
+                  customerName={customerName}
+                  onChange={updateStep}
+                  onRemove={removeStep}
+                  onMove={moveStep}
+                />
+              ))}
+              {nextStepsData.steps.length === 0 && (
+                <p className="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-400">
+                  No steps yet. Add your first action item below.
+                </p>
+              )}
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={addStep}
+              className="mt-4"
+            >
+              <Plus className="h-4 w-4" />
+              Add step
+            </Button>
           </div>
         </div>
       )}
@@ -521,5 +618,156 @@ export default function MeetingBriefPage() {
         )}
       </Dialog>
     </div>
+  );
+}
+
+/** One editable next-step row: completion, title, description, date, teams. */
+function StepEditorRow({
+  step,
+  index,
+  total,
+  customerName,
+  onChange,
+  onRemove,
+  onMove,
+}: {
+  step: NextStep;
+  index: number;
+  total: number;
+  customerName: string;
+  onChange: (step: NextStep) => void;
+  onRemove: (id: string) => void;
+  onMove: (id: string, dir: -1 | 1) => void;
+}) {
+  function toggleTeam(team: TeamKey) {
+    const teams = step.teams.includes(team)
+      ? step.teams.filter((t) => t !== team)
+      : [...step.teams, team];
+    onChange({ ...step, teams });
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-4">
+      <div className="flex items-start gap-3">
+        {/* Completed toggle */}
+        <button
+          type="button"
+          onClick={() => onChange({ ...step, completed: !step.completed })}
+          aria-pressed={step.completed}
+          title={step.completed ? "Mark as not done" : "Mark as done"}
+          className={cn(
+            "mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+            step.completed
+              ? "border-[#4d4bf7] bg-[#4d4bf7] text-white"
+              : "border-gray-300 bg-white text-transparent hover:border-[#4d4bf7]",
+          )}
+        >
+          <Check className="h-3.5 w-3.5" strokeWidth={3} />
+        </button>
+
+        {/* Fields */}
+        <div className="flex-1 space-y-2.5">
+          <Input
+            value={step.title}
+            onChange={(e) => onChange({ ...step, title: e.target.value })}
+            placeholder="Step title (e.g. Send pricing & deck)"
+          />
+          <Input
+            value={step.description}
+            onChange={(e) => onChange({ ...step, description: e.target.value })}
+            placeholder="Optional description"
+          />
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">
+                Date
+              </label>
+              <input
+                type="date"
+                value={step.date ?? ""}
+                onChange={(e) =>
+                  onChange({ ...step, date: e.target.value || null })
+                }
+                className="rounded-lg border border-[#d1d5db] px-3 py-2 text-sm text-[#0f172a] focus:border-[#4d4bf7] focus:outline-none focus:ring-2 focus:ring-[#c9d4ff]"
+              />
+            </div>
+            <div>
+              <span className="mb-1 block text-xs font-medium text-gray-500">
+                Owned by
+              </span>
+              <div className="flex items-center gap-2">
+                <TeamChip
+                  active={step.teams.includes("linkrunner")}
+                  label="Linkrunner"
+                  onClick={() => toggleTeam("linkrunner")}
+                />
+                <TeamChip
+                  active={step.teams.includes("customer")}
+                  label={customerName || "Customer"}
+                  onClick={() => toggleTeam("customer")}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Row controls */}
+        <div className="flex shrink-0 flex-col items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onMove(step.id, -1)}
+            disabled={index === 0}
+            title="Move up"
+            className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(step.id, 1)}
+            disabled={index === total - 1}
+            title="Move down"
+            className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onRemove(step.id)}
+            title="Remove step"
+            className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** A pill toggle for assigning a team to a step. */
+function TeamChip({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+        active
+          ? "border-[#4d4bf7] bg-[#e6ecff] text-[#4d4bf7]"
+          : "border-gray-200 bg-white text-gray-500 hover:border-gray-300",
+      )}
+    >
+      {label}
+    </button>
   );
 }

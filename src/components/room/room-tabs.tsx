@@ -381,7 +381,11 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
           <TabMeetingBrief meetingBrief={data.meeting_brief} />
         )}
         {activeTab === "meeting_brief" && activeRecapSub === "next_steps" && (
-          <TabNextSteps nextSteps={data.meeting_brief?.next_steps ?? ""} />
+          <TabNextSteps
+            nextSteps={data.meeting_brief?.next_steps ?? ""}
+            customerLogoUrl={data.room.logo_url}
+            customerName={data.room.company_name}
+          />
         )}
         {(activeTab === "product" || activeTab === "why_linkrunner") && (
           <OverviewSubTabRenderer subTab={getActiveOverviewSubTab()} assets={data.assets} />
