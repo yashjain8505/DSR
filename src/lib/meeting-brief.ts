@@ -41,9 +41,10 @@ export const CANONICAL_SECTIONS: {
   title: string;
   match: RegExp;
 }[] = [
-  { key: "situation", title: "Their Situation", match: /situation|background|context|current\s+(state|setup)|about\s+(them|the\s+company)/i },
+  { key: "situation", title: "Your Situation", match: /situation|background|context|current\s+(state|setup)|about\s+(them|the\s+company|you|your)/i },
   { key: "pain_points", title: "Pain Points", match: /pain|challenge|problem|frustrat/i },
-  { key: "what_we_showed", title: "What We Showed You", match: /what\s+we\s+showed|showed\s+them|we\s+(demo|covered|walked)|demo(nstrat)?|covered\s+in/i },
+  { key: "what_we_showed", title: "What We Showed You", match: /what\s+we\s+showed|showed\s+(them|you)|we\s+(demo|covered|walked)|demo(nstrat)?|covered\s+in/i },
+  { key: "questions", title: "Questions & Answers", match: /question|q\s*&\s*a|q&a/i },
   { key: "security", title: "Security & Compliance", match: /security|compliance|privacy|soc\s?2|gdpr|iso\b/i },
   { key: "why_it_matters", title: "Why It Matters", match: /why\s+(it\s+)?matters|why\s+linkrunner|value|outcome|impact|fit\b|results?/i },
 ];

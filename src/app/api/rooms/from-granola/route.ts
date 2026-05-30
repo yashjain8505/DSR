@@ -107,8 +107,10 @@ export async function POST(request: Request) {
       ? meeting.meeting_brief
       : buildBriefContent(meeting, participants);
 
-    // Split structured brief into recap content and next steps
-    const { content: briefContent, nextSteps } = splitBriefContent(rawBrief);
+    // Split structured brief into recap content and next steps, then scrub any
+    // internal sales-triage language so the brief reads from the customer's POV.
+    const { content: rawContent, nextSteps } = splitBriefContent(rawBrief);
+    const briefContent = sanitizeBriefForCustomer(rawContent);
 
     // 7. Create all child rows in parallel
     const [briefResult, subTabsResult, pricingResult, gettingStartedResult] =
@@ -285,4 +287,25 @@ function splitBriefContent(brief: string): {
     .trim();
 
   return { content, nextSteps: nextStepsBody };
+}
+
+/**
+ * Scrub internal sales-triage language from a brief before it becomes
+ * customer-facing. The Granola-sourced brief is written for internal triage
+ * (third person, blunt qualifiers), but the prospect reads this verbatim in the
+ * "What we discussed so far" tab. This is a defense-in-depth safety net for a
+ * small, exact set of known patterns — it does NOT rewrite prose. The durable
+ * fix is authoring briefs customer-POV at the source (see scripts/granola/moms).
+ */
+function sanitizeBriefForCustomer(content: string): string {
+  return content
+    // "Very high volume (3.5M in ~6 months)" -> "3.5M in ~6 months": keep the
+    // concrete number, drop the qualifier a prospect reads as "Linkrunner
+    // can't handle our scale".
+    .replace(/\b(?:very|extremely)\s+high\s+volume\s*\(([^)]+)\)/gi, "$1")
+    // Bare "very/extremely high volume" -> neutral, flattering phrasing.
+    .replace(/\b(?:very|extremely)\s+high\s+volume\b/gi, "significant scale")
+    // Third-person volume framing -> second person.
+    .replace(/\bat their volume\b/gi, "at your volume")
+    .trim();
 }

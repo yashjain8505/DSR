@@ -7,6 +7,7 @@ import {
   FileText,
   Calendar,
   Users,
+  HelpCircle,
 } from "lucide-react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { parseBrief, hasStructure, type BriefSection } from "@/lib/meeting-brief";
@@ -24,6 +25,7 @@ const SECTION_STYLE: Record<
   situation: { Icon: Building2, accent: "brand" },
   pain_points: { Icon: TriangleAlert, accent: "amber" },
   what_we_showed: { Icon: Sparkles, accent: "brand" },
+  questions: { Icon: HelpCircle, accent: "brand" },
   security: { Icon: ShieldCheck, accent: "brand" },
   why_it_matters: { Icon: Target, accent: "brand" },
 };
