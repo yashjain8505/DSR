@@ -10,6 +10,12 @@ import {
 import { extractBrandAssets, domainFromEmail } from "@/lib/brand-colors";
 import type { GranolaMeetingCache, GranolaMeetingParticipant } from "@/lib/types";
 
+// This route makes an external LLM call (customer-POV brief rewrite) on top of a
+// brand-asset fetch and several DB writes, so give it generous execution
+// headroom. Deployment platforms cap this to their plan limit — it's advisory.
+// (Next.js route segment config.)
+export const maxDuration = 30;
+
 /**
  * POST /api/rooms/from-granola
  * Creates a new room from a cached Granola meeting.
@@ -107,10 +113,12 @@ export async function POST(request: Request) {
       ? meeting.meeting_brief
       : buildBriefContent(meeting, participants);
 
-    // Split structured brief into recap content and next steps, then scrub any
-    // internal sales-triage language so the brief reads from the customer's POV.
+    // Split structured brief into recap content and next steps, then rewrite the
+    // recap into the customer's POV. rewriteBriefForCustomer uses an LLM when
+    // ANTHROPIC_API_KEY is set and falls back to a deterministic scrub otherwise,
+    // so the prospect never reads internal triage language in "What we discussed".
     const { content: rawContent, nextSteps } = splitBriefContent(rawBrief);
-    const briefContent = sanitizeBriefForCustomer(rawContent);
+    const briefContent = await rewriteBriefForCustomer(rawContent);
 
     // 7. Create all child rows in parallel
     const [briefResult, subTabsResult, pricingResult, gettingStartedResult] =
@@ -290,22 +298,124 @@ function splitBriefContent(brief: string): {
 }
 
 /**
- * Scrub internal sales-triage language from a brief before it becomes
- * customer-facing. The Granola-sourced brief is written for internal triage
- * (third person, blunt qualifiers), but the prospect reads this verbatim in the
- * "What we discussed so far" tab. This is a defense-in-depth safety net for a
- * small, exact set of known patterns — it does NOT rewrite prose. The durable
- * fix is authoring briefs customer-POV at the source (see scripts/granola/moms).
+ * Deterministic scrub of internal sales-triage language. The Granola-sourced
+ * brief is written for internal triage (third person, blunt qualifiers, ALL-CAPS
+ * template headers), but the prospect reads this in the "What we discussed so
+ * far" tab. This runs as the FALLBACK whenever the LLM rewrite is unavailable.
+ * It only touches an exact, safe set of patterns — it deliberately does NOT
+ * rewrite third-person prose, because blind pronoun swaps corrupt legitimate
+ * references (e.g. "Meta handles deduplication on their end").
  */
 function sanitizeBriefForCustomer(content: string): string {
-  return content
-    // "Very high volume (3.5M in ~6 months)" -> "3.5M in ~6 months": keep the
-    // concrete number, drop the qualifier a prospect reads as "Linkrunner
-    // can't handle our scale".
-    .replace(/\b(?:very|extremely)\s+high\s+volume\s*\(([^)]+)\)/gi, "$1")
-    // Bare "very/extremely high volume" -> neutral, flattering phrasing.
-    .replace(/\b(?:very|extremely)\s+high\s+volume\b/gi, "significant scale")
-    // Third-person volume framing -> second person.
-    .replace(/\bat their volume\b/gi, "at your volume")
-    .trim();
+  let out = content;
+
+  // Normalize the known internal ALL-CAPS template headers to customer-facing
+  // titles. Anchored to whole header lines (tolerating leading #/** decoration
+  // and a trailing colon) so inline mentions inside prose are left untouched.
+  const headerRewrites: Array<[string, string]> = [
+    ["their situation", "Your Situation"],
+    ["pain points discussed", "Pain Points"],
+    ["pain points", "Pain Points"],
+    ["what we showed them", "What We Showed You"],
+    ["their questions", "Questions & Answers"],
+    ["pricing discussed", "Pricing"],
+  ];
+  for (const [from, to] of headerRewrites) {
+    const re = new RegExp(
+      `^(\\s*#{0,6}\\s*\\**\\s*)${from}(\\s*\\**\\s*:?\\s*)$`,
+      "gim"
+    );
+    out = out.replace(re, `$1${to}$2`);
+  }
+
+  return (
+    out
+      // "Very high volume (3.5M in ~6 months)" -> "3.5M in ~6 months": keep the
+      // concrete number, drop the qualifier a prospect reads as "Linkrunner
+      // can't handle our scale".
+      .replace(/\b(?:very|extremely)\s+high\s+volume\s*\(([^)]+)\)/gi, "$1")
+      // Bare "very/extremely high volume" -> neutral, flattering phrasing.
+      .replace(/\b(?:very|extremely)\s+high\s+volume\b/gi, "significant scale")
+      // Third-person volume framing -> second person.
+      .replace(/\bat their volume\b/gi, "at your volume")
+      .trim()
+  );
+}
+
+const CUSTOMER_POV_SYSTEM_PROMPT = `You are editing an internal sales-meeting brief so it can be shown to the customer in a "What we discussed so far" recap inside their sales room. Rewrite it so it reads as if the customer is reading it.
+
+Rules:
+- Write in the second person ("you", "your"). Never refer to the customer in the third person ("they", "their", "the customer", or the company name as the subject of analysis).
+- Preserve every fact, number, product name, and pricing figure exactly. Do not invent, infer, or remove facts.
+- Keep it well-structured in Markdown. Use warm, customer-facing section headings such as: Your Situation, Pain Points, What We Showed You, Questions & Answers, Security & Compliance, Pricing, Next Steps. Map internal headings ("THEIR SITUATION", "WHAT WE SHOWED THEM", "THEIR QUESTIONS", "PRICING DISCUSSED", etc.) onto these.
+- Remove internal sales-triage language and any qualifier that could read as doubt about handling the customer's scale. Never use phrases like "very high volume" or "extremely high volume" — state scale with the concrete numbers only (e.g. "3.5M downloads in ~6 months").
+- Keep "Linkrunner" as the product name. Keep the tone confident, warm, and concise.
+- Output ONLY the rewritten Markdown brief. No preamble, no explanation, no code fences.`;
+
+/**
+ * Rewrite a meeting-brief recap into the customer's point of view.
+ *
+ * Primary path: an Anthropic LLM call (plain fetch — no SDK dependency added),
+ * gated on ANTHROPIC_API_KEY. This fixes third-person prose, internal headers,
+ * and tone in one pass. Fallback: the deterministic sanitizeBriefForCustomer
+ * scrub — used when no key is set, the brief is empty, the request errors, or it
+ * times out. The function therefore always returns safe, customer-readable
+ * content and never throws (so it can't fail room creation).
+ *
+ * Set ANTHROPIC_MODEL to a model your account supports; the default is a fast,
+ * low-cost model that is more than enough for this short rewrite.
+ */
+async function rewriteBriefForCustomer(content: string): Promise<string> {
+  const sanitized = sanitizeBriefForCustomer(content);
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey || !sanitized.trim()) return sanitized;
+
+  const model = process.env.ANTHROPIC_MODEL || "claude-3-5-haiku-latest";
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        system: CUSTOMER_POV_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: sanitized }],
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.warn(
+        `[from-granola] brief rewrite failed (${res.status}); using deterministic fallback. ${detail}`.trim()
+      );
+      return sanitized;
+    }
+
+    const data = (await res.json()) as {
+      content?: Array<{ type?: string; text?: string }>;
+    };
+    const text = (data.content ?? [])
+      .map((block) => (block.type === "text" ? block.text ?? "" : ""))
+      .join("")
+      .trim();
+
+    return text || sanitized;
+  } catch (err) {
+    console.warn(
+      "[from-granola] brief rewrite errored; using deterministic fallback.",
+      err
+    );
+    return sanitized;
+  } finally {
+    clearTimeout(timer);
+  }
 }
