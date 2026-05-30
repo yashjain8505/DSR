@@ -4,10 +4,57 @@ import { Check, Sparkles, TrendingDown, ArrowRight } from "lucide-react";
 import type {
   Pricing,
   PricingQuote,
+  PricingData,
   VolumeTier,
   CompetitorPricing,
 } from "@/lib/types";
 import { normalizePricingData } from "@/lib/types";
+
+/* ------------------------------------------------------------------ */
+/*  Default pricing — shown when admin hasn't configured anything      */
+/*  Based on linkrunner.io/pricing INR tiers.                          */
+/* ------------------------------------------------------------------ */
+
+const DEFAULT_PRICING: PricingData = {
+  quote: {
+    estimated_volume: 100000,
+    per_install_price: 0.9,
+    currency: "₹",
+    free_threshold: 25000,
+    value_props: [
+      "All core features included",
+      "Postpaid monthly billing",
+      "No annual lock-in",
+      "Dedicated support",
+    ],
+  },
+  volume_tiers: [
+    { volume: 50000, per_install_price: 1.0 },
+    { volume: 100000, per_install_price: 0.9 },
+    { volume: 300000, per_install_price: 0.8 },
+    { volume: 500000, per_install_price: 0.7 },
+  ],
+  competitor_pricing: [
+    {
+      name: "AppsFlyer",
+      per_install_price: 5.0,
+      pricing_model: "Per conversion",
+      notes: "Requires annual contract",
+    },
+    {
+      name: "Adjust",
+      per_install_price: 4.5,
+      pricing_model: "Per attribution",
+      notes: "Annual commitment required",
+    },
+    {
+      name: "Branch",
+      per_install_price: 4.0,
+      pricing_model: "Per MAU",
+      notes: "Enterprise plan only for full features",
+    },
+  ],
+};
 
 interface TabPricingProps {
   pricing: Pricing;
@@ -22,22 +69,23 @@ interface TabPricingProps {
  * 2. Side-by-side: Quote card (left) + Volume tiers stacked (right)
  * 3. Competitor pricing comparison section
  * 4. Optional markdown notes at the bottom
+ *
+ * Falls back to default Linkrunner pricing when nothing is configured.
  */
 export function TabPricing({ pricing, companyName }: TabPricingProps) {
-  const data = normalizePricingData(pricing.pricing_data);
+  const raw = normalizePricingData(pricing.pricing_data);
+
+  const hasCustomData =
+    !!raw.quote ||
+    (raw.volume_tiers && raw.volume_tiers.length > 0) ||
+    (raw.competitor_pricing && raw.competitor_pricing.length > 0);
+
+  // Use custom data if configured, otherwise fall back to defaults
+  const data = hasCustomData ? raw : DEFAULT_PRICING;
   const { quote, volume_tiers, competitor_pricing } = data;
 
-  const hasStructured = !!quote || (volume_tiers && volume_tiers.length > 0);
-
-  // Markdown-only fallback
-  if (!hasStructured) {
-    if (!pricing.content) {
-      return (
-        <div className="mx-auto max-w-3xl py-12 text-center text-gray-400">
-          Pricing details will appear here once configured.
-        </div>
-      );
-    }
+  // Markdown-only mode (admin chose markdown and typed content)
+  if (!hasCustomData && pricing.content) {
     return (
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
