@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Download } from "lucide-react";
+import { ChevronDown, Download, ExternalLink } from "lucide-react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { YouTubeEmbed } from "@/components/room/youtube-embed";
 import { IframeEmbed } from "@/components/room/iframe-embed";
@@ -160,6 +160,18 @@ export function SubTabContent({
     case "customers_references":
       return <CustomersReferences />;
 
+    case "how_it_works":
+      return (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+          {content ? (
+            <MarkdownRenderer content={content} />
+          ) : (
+            <p className="text-sm text-gray-500">Content coming soon.</p>
+          )}
+          <DocsCallout />
+        </div>
+      );
+
     default:
       return <FallbackContent content={content} />;
   }
@@ -197,5 +209,38 @@ function FallbackContent({ content }: { content: string }) {
     <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
       <MarkdownRenderer content={content} />
     </div>
+  );
+}
+
+/**
+ * Branded link to the live docs. docs.linkrunner.io can't be iframed
+ * (X-Frame-Options: DENY), so we surface the integration steps inline and
+ * point to the full reference here. Shown on the How It Works sub-tab.
+ */
+function DocsCallout() {
+  return (
+    <a
+      href="https://docs.linkrunner.io"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-8 flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-5 transition-colors hover:border-[var(--brand-primary)] sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <p className="font-semibold text-gray-900">
+          Full integration guide &amp; API reference
+        </p>
+        <p className="mt-0.5 text-sm text-gray-600">
+          Complete SDK setup, code samples, and the latest docs at
+          docs.linkrunner.io
+        </p>
+      </div>
+      <span
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white"
+        style={{ backgroundColor: "var(--brand-primary)" }}
+      >
+        Open docs
+        <ExternalLink className="h-4 w-4" />
+      </span>
+    </a>
   );
 }
