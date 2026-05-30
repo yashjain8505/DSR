@@ -7,6 +7,7 @@ import { YouTubeEmbed } from "@/components/room/youtube-embed";
 import { IframeEmbed } from "@/components/room/iframe-embed";
 import { CustomersReferences } from "@/components/room/customers-references";
 import { SecurityCompliance } from "@/components/room/security-compliance";
+import { IntegrationsPage } from "@/components/room/integrations";
 import { OVERVIEW_SUB_TAB_LABELS } from "@/lib/constants";
 import type { OverviewSubTab, Asset } from "@/lib/types";
 import type { OverviewSubTabKey } from "@/lib/constants";
@@ -116,6 +117,9 @@ export function SubTabContent({
 
     case "security_compliance":
       return <SecurityCompliance />;
+
+    case "integrations":
+      return <IntegrationsPage />;
 
     case "company_deck": {
       const pdfUrl = subTab.iframe_url || asset?.url || "";
