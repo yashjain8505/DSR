@@ -64,6 +64,7 @@ export function RoomFunnelCard({ room }: RoomFunnelCardProps) {
         <div className="border-b border-gray-50 px-4 py-2">
           <Sparkline
             data={room.sparkline}
+            dates={room.sparkline_dates}
             height={32}
             color={hasActivity ? "#4d4bf7" : "#d1d5db"}
           />

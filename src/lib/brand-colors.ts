@@ -14,11 +14,9 @@
 
 import sharp from "sharp";
 
-export interface BrandPalette {
-  primary: string;
-  primaryLight: string;
-  primaryDark: string;
-}
+// Re-export client-safe palette utilities so existing server-side
+// imports from "@/lib/brand-colors" keep working.
+export { computePalette, type BrandPalette } from "./palette";
 
 export interface BrandAssets {
   logoUrl: string | null;
@@ -88,36 +86,6 @@ export function domainFromEmail(email: string): string | null {
   ];
   if (generic.includes(domain)) return null;
   return domain;
-}
-
-/**
- * Compute a full brand palette from a primary hex color.
- */
-export function computePalette(hex: string): BrandPalette {
-  const rgb = hexToRgb(hex);
-  if (!rgb) {
-    return { primary: hex, primaryLight: "#f0f0f5", primaryDark: "#333333" };
-  }
-
-  // Light: HSL-based tint that's always visibly colored regardless of how dark
-  // the brand color is. Preserves hue, ensures min saturation, keeps lightness
-  // high enough to read dark text against but clearly branded.
-  const hsl = rgbToHsl(rgb);
-  const lightHsl = {
-    h: hsl.h,
-    s: Math.max(hsl.s, 0.45), // ensure minimum 45% saturation so tint is obvious
-    l: 0.92, // clearly tinted, not just off-white
-  };
-  const light = hslToRgb(lightHsl);
-
-  // Dark: darken by 20%
-  const dark = darken(rgb, 0.2);
-
-  return {
-    primary: hex,
-    primaryLight: rgbToHex(light),
-    primaryDark: rgbToHex(dark),
-  };
 }
 
 /* ------------------------------------------------------------------ */

@@ -1,4 +1,6 @@
+import { ArrowRight } from "lucide-react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
+import { parseNextSteps } from "@/lib/meeting-brief";
 
 interface TabNextStepsProps {
   nextSteps: string;
@@ -6,11 +8,13 @@ interface TabNextStepsProps {
 
 /**
  * Next Steps tab content.
- * Renders actionable next steps as a checklist-style card
- * with brand-colored accents.
+ * Renders steps as a numbered, scannable checklist. Content that doesn't
+ * parse into discrete steps falls back to the plain markdown renderer.
  */
 export function TabNextSteps({ nextSteps }: TabNextStepsProps) {
-  const hasContent = !!nextSteps?.trim();
+  const content = nextSteps ?? "";
+  const steps = parseNextSteps(content);
+  const hasContent = !!content.trim();
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -49,9 +53,15 @@ export function TabNextSteps({ nextSteps }: TabNextStepsProps) {
 
         {/* Body */}
         <div className="px-6 py-8 sm:px-10 sm:py-10">
-          {hasContent ? (
+          {steps.length > 0 ? (
+            <ol className="space-y-3">
+              {steps.map((step, i) => (
+                <StepRow key={i} index={i} text={step} />
+              ))}
+            </ol>
+          ) : hasContent ? (
             <MarkdownRenderer
-              content={nextSteps}
+              content={content}
               className="[&_h1]:text-[var(--brand-primary-dark)] [&_h2]:text-[var(--brand-primary-dark)] [&_h3]:text-[var(--brand-primary-dark)] [&_li]:leading-7 [&_ul]:space-y-1 [&_ol]:space-y-1"
             />
           ) : (
@@ -62,5 +72,34 @@ export function TabNextSteps({ nextSteps }: TabNextStepsProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+function StepRow({ index, text }: { index: number; text: string }) {
+  return (
+    <li
+      className="flex items-start gap-4 rounded-xl border p-4 transition-colors"
+      style={{
+        borderColor: "color-mix(in srgb, var(--brand-primary) 12%, #e5e7eb)",
+        background: "color-mix(in srgb, var(--brand-primary) 4%, #ffffff)",
+      }}
+    >
+      <span
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+        style={{
+          background: "var(--brand-primary)",
+          color: "#ffffff",
+        }}
+      >
+        {index + 1}
+      </span>
+      <span className="flex-1 pt-0.5 text-[15px] leading-7 text-gray-700">
+        {text}
+      </span>
+      <ArrowRight
+        className="mt-1.5 h-4 w-4 shrink-0"
+        style={{ color: "color-mix(in srgb, var(--brand-primary) 50%, #ffffff)" }}
+      />
+    </li>
   );
 }

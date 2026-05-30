@@ -116,6 +116,32 @@ export const UNLOCKABLE_TABS: Record<string, MainTabKey> = {
 };
 
 /**
+ * Sub-tabs managed globally via Assets — not editable per-room.
+ * These are hidden from the room overview editor.
+ */
+export const ASSET_MANAGED_SUB_TABS: readonly OverviewSubTabKey[] = [
+  "what_is_linkrunner",
+  "product_demo",
+  "features",
+  "how_it_works",
+  "company_deck",
+  "differentiators",
+  "integrations",
+  "security_compliance",
+];
+
+/**
+ * Sub-tabs that ARE customizable per room (currently none from overview,
+ * but leaving infrastructure in place).
+ */
+export const ROOM_CUSTOMIZABLE_SUB_TABS: readonly OverviewSubTabKey[] =
+  OVERVIEW_SUB_TAB_KEYS.filter(
+    (k) =>
+      !(ASSET_MANAGED_SUB_TABS as readonly string[]).includes(k) &&
+      k !== "customers_references" // hard-coded in code
+  );
+
+/**
  * Analytics event types.
  */
 export const EVENT_TYPES = {

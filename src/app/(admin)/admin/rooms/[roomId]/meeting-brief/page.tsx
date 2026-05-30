@@ -4,17 +4,88 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Download, Calendar, Users, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog } from "@/components/ui/dialog";
-import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
+import { TabMeetingBrief } from "@/components/room/tab-meeting-brief";
+import { TabNextSteps } from "@/components/room/tab-next-steps";
+import {
+  parseBrief,
+  hasStructure,
+  serializeBrief,
+  parseNextSteps,
+  serializeNextSteps,
+  CANONICAL_SECTIONS,
+  type BriefData,
+} from "@/lib/meeting-brief";
+import { computePalette } from "@/lib/palette";
 import type { MeetingBrief, GranolaMeetingCache } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
+
+/** One editable section: items live as one-per-line text in `body`. */
+interface EditSection {
+  key: string;
+  title: string;
+  canonical: boolean;
+  body: string;
+}
+
+// Preview uses the default brand palette; the live prospect page applies the
+// room's own color. Exact hue is verified there — here we confirm structure.
+const PREVIEW_PALETTE = computePalette("#4d4bf7");
+const PREVIEW_VARS = {
+  "--brand-primary": PREVIEW_PALETTE.primary,
+  "--brand-primary-light": PREVIEW_PALETTE.primaryLight,
+  "--brand-primary-dark": PREVIEW_PALETTE.primaryDark,
+} as React.CSSProperties;
+
+/** Seed the five canonical sections (always shown), then append any extras. */
+function seedSections(data: BriefData): EditSection[] {
+  const byKey = new Map(data.sections.map((s) => [s.key, s]));
+  const out: EditSection[] = CANONICAL_SECTIONS.map((c) => ({
+    key: c.key,
+    title: c.title,
+    canonical: true,
+    body: byKey.get(c.key)?.items.join("\n") ?? "",
+  }));
+  const canonicalKeys = new Set(CANONICAL_SECTIONS.map((c) => c.key));
+  for (const s of data.sections) {
+    if (!canonicalKeys.has(s.key)) {
+      out.push({
+        key: s.key,
+        title: s.title,
+        canonical: false,
+        body: s.items.join("\n"),
+      });
+    }
+  }
+  return out;
+}
+
+function linesToItems(text: string): string[] {
+  return text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
 
 export default function MeetingBriefPage() {
   const { roomId } = useParams<{ roomId: string }>();
 
-  const [content, setContent] = useState("");
-  const [nextSteps, setNextSteps] = useState("");
+  const [mode, setMode] = useState<"structured" | "markdown">("structured");
+
+  // Structured state
+  const [snapshotDate, setSnapshotDate] = useState("");
+  const [snapshotAttendees, setSnapshotAttendees] = useState("");
+  const [sections, setSections] = useState<EditSection[]>(() =>
+    seedSections({ snapshot: null, sections: [] }),
+  );
+  const [nextStepsText, setNextStepsText] = useState("");
+
+  // Raw markdown state (legacy / escape hatch)
+  const [rawContent, setRawContent] = useState("");
+  const [rawNextSteps, setRawNextSteps] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -23,11 +94,28 @@ export default function MeetingBriefPage() {
 
   // Granola import state
   const [granolaDlgOpen, setGranolaDlgOpen] = useState(false);
-  const [granolaMeetings, setGranolaMeetings] = useState<
-    GranolaMeetingCache[]
-  >([]);
+  const [granolaMeetings, setGranolaMeetings] = useState<GranolaMeetingCache[]>(
+    [],
+  );
   const [granolaLoading, setGranolaLoading] = useState(false);
   const [granolaError, setGranolaError] = useState("");
+
+  /** Populate every field from a content + next-steps markdown pair. */
+  const loadFromStrings = useCallback(
+    (content: string, nextStepsStr: string) => {
+      setRawContent(content);
+      setRawNextSteps(nextStepsStr);
+      const parsed = parseBrief(content);
+      setSnapshotDate(parsed.snapshot?.date ?? "");
+      setSnapshotAttendees(parsed.snapshot?.attendees ?? "");
+      setSections(seedSections(parsed));
+      setNextStepsText(parseNextSteps(nextStepsStr).join("\n"));
+      // New/empty or cleanly-structured briefs edit as sections; freeform
+      // legacy content stays in raw markdown so nothing is mangled.
+      setMode(!content.trim() || hasStructure(parsed) ? "structured" : "markdown");
+    },
+    [],
+  );
 
   useEffect(() => {
     async function fetchBrief() {
@@ -36,8 +124,7 @@ export default function MeetingBriefPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         const brief: MeetingBrief = data.meeting_brief;
-        setContent(brief.content);
-        setNextSteps(brief.next_steps ?? "");
+        loadFromStrings(brief.content ?? "", brief.next_steps ?? "");
       } catch {
         setError("Failed to load meeting brief");
       } finally {
@@ -45,23 +132,68 @@ export default function MeetingBriefPage() {
       }
     }
     fetchBrief();
-  }, [roomId]);
+  }, [roomId, loadFromStrings]);
+
+  function buildBriefData(): BriefData {
+    const snapshot =
+      snapshotDate.trim() || snapshotAttendees.trim()
+        ? { date: snapshotDate.trim(), attendees: snapshotAttendees.trim() }
+        : null;
+    const built = sections
+      .map((s) => ({
+        key: s.key,
+        title: s.title,
+        ordered: false,
+        items: linesToItems(s.body),
+      }))
+      .filter((s) => s.items.length > 0);
+    return { snapshot, sections: built };
+  }
+
+  function currentContent(): string {
+    return mode === "markdown" ? rawContent : serializeBrief(buildBriefData());
+  }
+  function currentNextStepsMd(): string {
+    return mode === "markdown"
+      ? rawNextSteps
+      : serializeNextSteps(linesToItems(nextStepsText));
+  }
+
+  function switchToMarkdown() {
+    setRawContent(serializeBrief(buildBriefData()));
+    setRawNextSteps(serializeNextSteps(linesToItems(nextStepsText)));
+    setMode("markdown");
+  }
+  function switchToStructured() {
+    const parsed = parseBrief(rawContent);
+    setSnapshotDate(parsed.snapshot?.date ?? "");
+    setSnapshotAttendees(parsed.snapshot?.attendees ?? "");
+    setSections(seedSections(parsed));
+    setNextStepsText(parseNextSteps(rawNextSteps).join("\n"));
+    setMode("structured");
+  }
+
+  function updateSection(key: string, body: string) {
+    setSections((prev) =>
+      prev.map((s) => (s.key === key ? { ...s, body } : s)),
+    );
+  }
 
   async function handleSave() {
     setError("");
     setSuccess("");
     setSaving(true);
-
     try {
       const res = await fetch(`/api/rooms/${roomId}/meeting-brief`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, next_steps: nextSteps }),
+        body: JSON.stringify({
+          content: currentContent(),
+          next_steps: currentNextStepsMd(),
+        }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-
       setSuccess("Meeting brief saved");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -81,7 +213,7 @@ export default function MeetingBriefPage() {
       setGranolaMeetings(data.meetings);
     } catch (err) {
       setGranolaError(
-        err instanceof Error ? err.message : "Failed to load Granola meetings"
+        err instanceof Error ? err.message : "Failed to load Granola meetings",
       );
     } finally {
       setGranolaLoading(false);
@@ -94,20 +226,15 @@ export default function MeetingBriefPage() {
   }
 
   function handleSelectMeeting(meeting: GranolaMeetingCache) {
-    // Prefer structured meeting_brief if available
     const rawBrief = meeting.meeting_brief || "";
 
     if (rawBrief) {
-      // Split structured brief into content and next steps
-      const { content: briefContent, nextStepsText } =
+      const { content: briefContent, nextStepsText: importedSteps } =
         splitImportedBrief(rawBrief);
-      setContent(briefContent);
-      setNextSteps(nextStepsText);
+      loadFromStrings(briefContent, importedSteps);
     } else {
-      // Fallback: build markdown from meeting data
       const header = `# ${meeting.title}\n\n`;
       const dateLine = `**Date:** ${formatDate(meeting.meeting_date)}\n\n`;
-
       const participantNames = meeting.participants
         .map((p) => {
           const parts = [p.name];
@@ -118,8 +245,7 @@ export default function MeetingBriefPage() {
       const participantsLine = participantNames
         ? `**Participants:** ${participantNames}\n\n---\n\n`
         : "---\n\n";
-
-      setContent(header + dateLine + participantsLine + meeting.summary);
+      loadFromStrings(header + dateLine + participantsLine + meeting.summary, "");
     }
 
     setGranolaDlgOpen(false);
@@ -133,7 +259,7 @@ export default function MeetingBriefPage() {
     nextStepsText: string;
   } {
     const nextStepsMatch = brief.match(
-      /\n(NEXT STEPS\b[\s\S]*?)(?=\nREADINESS:|$)/i
+      /\n(NEXT STEPS\b[\s\S]*?)(?=\nREADINESS:|$)/i,
     );
     if (!nextStepsMatch) {
       return {
@@ -166,13 +292,18 @@ export default function MeetingBriefPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Meeting Brief</h1>
         <div className="flex items-center gap-3">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleOpenGranola}
-          >
+          <Button variant="secondary" size="sm" onClick={handleOpenGranola}>
             <Download className="h-4 w-4" />
             Import from Granola
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              mode === "structured" ? switchToMarkdown() : switchToStructured()
+            }
+          >
+            {mode === "structured" ? "Markdown" : "Structured"}
           </Button>
           <Button
             variant="ghost"
@@ -190,53 +321,126 @@ export default function MeetingBriefPage() {
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
       {success && <p className="mb-4 text-sm text-green-600">{success}</p>}
 
-      {/* What We Discussed */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
-          What we discussed so far
-        </h2>
-        {showPreview ? (
-          <div className="min-h-[200px]">
-            {content ? (
-              <MarkdownRenderer content={content} />
-            ) : (
-              <p className="text-sm text-gray-400">Nothing to preview</p>
-            )}
-          </div>
-        ) : (
-          <Textarea
-            label="Content (Markdown supported)"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={14}
-            placeholder="Write the meeting brief here... Markdown is supported."
+      {showPreview ? (
+        <div
+          style={PREVIEW_VARS}
+          className="space-y-10 rounded-xl border border-gray-200 bg-gray-50 p-6 sm:p-8"
+        >
+          <TabMeetingBrief
+            meetingBrief={{ content: currentContent() } as MeetingBrief}
           />
-        )}
-      </div>
+          <TabNextSteps nextSteps={currentNextStepsMd()} />
+        </div>
+      ) : mode === "structured" ? (
+        <div className="space-y-6">
+          {/* Snapshot */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              Meeting Snapshot
+            </h2>
+            <p className="mb-4 text-sm text-gray-500">
+              Shown as a summary strip at the top of the recap.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Date"
+                value={snapshotDate}
+                onChange={(e) => setSnapshotDate(e.target.value)}
+                placeholder="May 28, 2026"
+              />
+              <Input
+                label="Attendees"
+                value={snapshotAttendees}
+                onChange={(e) => setSnapshotAttendees(e.target.value)}
+                placeholder="Yash (Linkrunner), Priya & Arjun (Chai Shots)"
+              />
+            </div>
+          </div>
 
-      {/* Next Steps */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
-          Next Steps
-        </h2>
-        {showPreview ? (
-          <div className="min-h-[100px]">
-            {nextSteps ? (
-              <MarkdownRenderer content={nextSteps} />
-            ) : (
-              <p className="text-sm text-gray-400">No next steps yet</p>
-            )}
+          {/* Sections */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              What we discussed so far
+            </h2>
+            <p className="mb-5 text-sm text-gray-500">
+              One item per line &mdash; each line becomes a bullet. Leave a
+              section empty to hide it.
+            </p>
+            <div className="space-y-5">
+              {sections.map((section) => (
+                <Textarea
+                  key={section.key}
+                  label={
+                    section.canonical
+                      ? section.title
+                      : `${section.title} (extra)`
+                  }
+                  value={section.body}
+                  onChange={(e) => updateSection(section.key, e.target.value)}
+                  rows={4}
+                  placeholder="One point per line..."
+                />
+              ))}
+            </div>
           </div>
-        ) : (
-          <Textarea
-            label="Next steps (Markdown supported)"
-            value={nextSteps}
-            onChange={(e) => setNextSteps(e.target.value)}
-            rows={6}
-            placeholder="- [ ] Send email with pricing and deck&#10;- [ ] Schedule follow-up call&#10;- [ ] Make WhatsApp group"
-          />
-        )}
-      </div>
+
+          {/* Next steps */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              Next Steps
+            </h2>
+            <p className="mb-4 text-sm text-gray-500">
+              One step per line &mdash; rendered as a numbered checklist.
+            </p>
+            <Textarea
+              value={nextStepsText}
+              onChange={(e) => setNextStepsText(e.target.value)}
+              rows={6}
+              placeholder={
+                "Send pricing and deck over email\nSchedule a follow-up call\nSet up a shared WhatsApp group"
+              }
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Editing raw markdown. Switch to{" "}
+            <button
+              type="button"
+              className="font-semibold underline"
+              onClick={switchToStructured}
+            >
+              Structured
+            </button>{" "}
+            to edit as visual sections.
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              What we discussed so far
+            </h2>
+            <Textarea
+              label="Content (Markdown supported)"
+              value={rawContent}
+              onChange={(e) => setRawContent(e.target.value)}
+              rows={14}
+              placeholder="Write the meeting brief here... Markdown is supported."
+            />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+              Next Steps
+            </h2>
+            <Textarea
+              label="Next steps (Markdown supported)"
+              value={rawNextSteps}
+              onChange={(e) => setRawNextSteps(e.target.value)}
+              rows={6}
+              placeholder="- Send email with pricing and deck&#10;- Schedule follow-up call"
+            />
+          </div>
+        </div>
+      )}
 
       {/* ---- Granola Import Dialog ---- */}
       <Dialog

@@ -212,6 +212,7 @@ export interface CrossRoomAnalytics {
   };
   rooms: RoomAnalyticsCard[];
   daily_activity: DailyActivity[];
+  recent_visitors: CrossRoomVisitorEntry[];
 }
 
 export interface RoomAnalyticsCard {
@@ -225,6 +226,7 @@ export interface RoomAnalyticsCard {
   video_plays: number;
   unique_visitors: number;
   sparkline: number[];
+  sparkline_dates: string[];
   last_activity: string | null;
 }
 
@@ -235,6 +237,15 @@ export interface DailyActivity {
   email_gate_submit: number;
   video_play: number;
   link_click: number;
+}
+
+export interface CrossRoomVisitorEntry {
+  email: string;
+  name: string | null;
+  company: string | null;
+  rooms_visited: { room_id: string; company_name: string }[];
+  total_events: number;
+  last_active: string;
 }
 
 /**

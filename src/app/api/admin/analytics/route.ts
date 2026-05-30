@@ -4,6 +4,7 @@ import type {
   CrossRoomAnalytics,
   RoomAnalyticsCard,
   DailyActivity,
+  CrossRoomVisitorEntry,
 } from "@/lib/types";
 
 /**
@@ -25,26 +26,36 @@ export async function GET(request: NextRequest) {
     const admin = createAdminClient();
 
     // Run all queries in parallel
-    const [roomsResult, eventsResult, visitsResult] = await Promise.all([
-      admin
-        .from("rooms")
-        .select("id, slug, company_name, logo_url, created_at")
-        .order("created_at", { ascending: false }),
+    const [roomsResult, eventsResult, visitsResult, visitorsResult] =
+      await Promise.all([
+        admin
+          .from("rooms")
+          .select("id, slug, company_name, logo_url, created_at")
+          .order("created_at", { ascending: false }),
 
-      admin
-        .from("analytics_events")
-        .select("room_id, visitor_id, event_type, created_at")
-        .gte("created_at", since),
+        admin
+          .from("analytics_events")
+          .select("room_id, visitor_id, event_type, created_at")
+          .gte("created_at", since),
 
-      admin
-        .from("room_visits")
-        .select("room_id, visitor_id, last_visited_at")
-        .order("last_visited_at", { ascending: false }),
-    ]);
+        admin
+          .from("room_visits")
+          .select(
+            "room_id, visitor_id, last_visited_at, visitors!inner(id, email, name, company)"
+          )
+          .order("last_visited_at", { ascending: false }),
+
+        admin
+          .from("visitors")
+          .select("id, email, name, company, created_at")
+          .order("created_at", { ascending: false })
+          .limit(200),
+      ]);
 
     const rooms = roomsResult.data ?? [];
     const events = eventsResult.data ?? [];
     const visits = visitsResult.data ?? [];
+    const visitors = visitorsResult.data ?? [];
 
     // --- Single-pass event aggregation ---
 
@@ -152,6 +163,7 @@ export async function GET(request: NextRequest) {
         video_plays: roomVideoPlays.get(rid) ?? 0,
         unique_visitors: roomUniqueVisitors.get(rid)?.size ?? 0,
         sparkline,
+        sparkline_dates: sparklineDates,
         last_activity: roomLastActivity.get(rid) ?? null,
       };
     });
@@ -183,6 +195,75 @@ export async function GET(request: NextRequest) {
     const activeRooms = new Set(events.map((e) => e.room_id)).size;
     const totalUniqueVisitors = allUniqueVisitors.size;
 
+    // --- Build recent visitors with room context ---
+
+    // Map room_id → company_name for quick lookup
+    const roomNameMap = new Map(rooms.map((r) => [r.id, r.company_name]));
+
+    // Map visitor_id → visitor info
+    const visitorMap = new Map(
+      visitors.map((v) => [v.id, v])
+    );
+
+    // Group visits by visitor
+    const visitorRoomMap = new Map<
+      string,
+      { rooms: { room_id: string; company_name: string }[]; lastActive: string }
+    >();
+    for (const v of visits) {
+      const vid = v.visitor_id;
+      const existing = visitorRoomMap.get(vid);
+      const roomEntry = {
+        room_id: v.room_id,
+        company_name: roomNameMap.get(v.room_id) ?? "Unknown",
+      };
+      if (existing) {
+        // Add room if not already listed
+        if (!existing.rooms.some((r) => r.room_id === v.room_id)) {
+          existing.rooms.push(roomEntry);
+        }
+        if (v.last_visited_at > existing.lastActive) {
+          existing.lastActive = v.last_visited_at;
+        }
+      } else {
+        visitorRoomMap.set(vid, {
+          rooms: [roomEntry],
+          lastActive: v.last_visited_at,
+        });
+      }
+    }
+
+    // Count events per visitor
+    const visitorEventCount = new Map<string, number>();
+    for (const ev of events) {
+      if (ev.visitor_id) {
+        visitorEventCount.set(
+          ev.visitor_id,
+          (visitorEventCount.get(ev.visitor_id) ?? 0) + 1
+        );
+      }
+    }
+
+    // Assemble visitor entries
+    const recentVisitors: CrossRoomVisitorEntry[] = [];
+    for (const [vid, data] of visitorRoomMap) {
+      const visitor = visitorMap.get(vid);
+      if (!visitor) continue;
+      recentVisitors.push({
+        email: visitor.email,
+        name: visitor.name,
+        company: visitor.company,
+        rooms_visited: data.rooms,
+        total_events: visitorEventCount.get(vid) ?? 0,
+        last_active: data.lastActive,
+      });
+    }
+    // Sort by last active desc
+    recentVisitors.sort(
+      (a, b) =>
+        new Date(b.last_active).getTime() - new Date(a.last_active).getTime()
+    );
+
     const response: CrossRoomAnalytics = {
       kpis: {
         total_page_views: totalPageViews,
@@ -196,6 +277,7 @@ export async function GET(request: NextRequest) {
       },
       rooms: roomCards,
       daily_activity: dailyActivity,
+      recent_visitors: recentVisitors,
     };
 
     return NextResponse.json(response);

@@ -5,6 +5,8 @@ import { ChevronDown, Download } from "lucide-react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { YouTubeEmbed } from "@/components/room/youtube-embed";
 import { IframeEmbed } from "@/components/room/iframe-embed";
+import { CustomersReferences } from "@/components/room/customers-references";
+import { SecurityCompliance } from "@/components/room/security-compliance";
 import { OVERVIEW_SUB_TAB_LABELS } from "@/lib/constants";
 import type { OverviewSubTab, Asset } from "@/lib/types";
 import type { OverviewSubTabKey } from "@/lib/constants";
@@ -113,22 +115,7 @@ export function SubTabContent({
       );
 
     case "security_compliance":
-      return iframeUrl ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
-          <IframeEmbed
-            url={iframeUrl}
-            height={700}
-            title="Security & Compliance"
-          />
-          {content && (
-            <div className="mt-6">
-              <MarkdownRenderer content={content} />
-            </div>
-          )}
-        </div>
-      ) : (
-        <FallbackContent content={content} />
-      );
+      return <SecurityCompliance />;
 
     case "company_deck": {
       const pdfUrl = subTab.iframe_url || asset?.url || "";
@@ -166,6 +153,9 @@ export function SubTabContent({
       );
     }
 
+    case "customers_references":
+      return <CustomersReferences />;
+
     default:
       return <FallbackContent content={content} />;
   }
@@ -188,6 +178,7 @@ function PdfEmbed({ url, title }: { url: string; title: string }) {
     </div>
   );
 }
+
 
 function FallbackContent({ content }: { content: string }) {
   if (!content) {

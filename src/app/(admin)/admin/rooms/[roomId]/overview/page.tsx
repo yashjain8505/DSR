@@ -1,253 +1,174 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Package, ExternalLink, Check } from "lucide-react";
 import {
+  ASSET_MANAGED_SUB_TABS,
   OVERVIEW_SUB_TAB_LABELS,
-  PRODUCT_SUB_TABS,
-  WHY_LINKRUNNER_SUB_TABS,
 } from "@/lib/constants";
-import { cn } from "@/lib/utils";
-import type { OverviewSubTab } from "@/lib/types";
-
-type SubTabDraft = {
-  id: string;
-  sub_tab_key: string;
-  content: string;
-  youtube_url: string;
-  iframe_url: string;
-};
+import type { OverviewSubTab, Asset } from "@/lib/types";
+import { CustomersReferences } from "@/components/room/customers-references";
 
 export default function OverviewEditorPage() {
   const { roomId } = useParams<{ roomId: string }>();
 
-  const [subTabs, setSubTabs] = useState<SubTabDraft[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [openTab, setOpenTab] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchSubTabs() {
+    async function fetchAssets() {
       try {
-        const res = await fetch(`/api/rooms/${roomId}/overview-sub-tabs`);
+        const res = await fetch("/api/assets");
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-
-        const tabs: OverviewSubTab[] = data.overview_sub_tabs;
-        setSubTabs(
-          tabs.map((t) => ({
-            id: t.id,
-            sub_tab_key: t.sub_tab_key,
-            content: t.content,
-            youtube_url: t.youtube_url ?? "",
-            iframe_url: t.iframe_url ?? "",
-          }))
-        );
-        if (tabs.length > 0) setOpenTab(tabs[0].id);
+        if (res.ok) setAssets(data.assets ?? []);
       } catch {
-        setError("Failed to load overview sub-tabs");
+        /* best-effort */
       } finally {
         setLoading(false);
       }
     }
-    fetchSubTabs();
+    fetchAssets();
   }, [roomId]);
-
-  function updateTab(id: string, field: keyof SubTabDraft, value: string) {
-    setSubTabs((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [field]: value } : t))
-    );
-  }
-
-  async function handleSave() {
-    setError("");
-    setSuccess("");
-    setSaving(true);
-
-    try {
-      const payload = subTabs.map((t) => {
-        const update: Record<string, unknown> = {
-          id: t.id,
-          content: t.content,
-        };
-        if (t.sub_tab_key === "product_demo") {
-          update.youtube_url = t.youtube_url || null;
-        }
-        if (t.sub_tab_key === "security_compliance") {
-          update.iframe_url = t.iframe_url || null;
-        }
-        return update;
-      });
-
-      const res = await fetch(`/api/rooms/${roomId}/overview-sub-tabs`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      setSuccess("Overview sub-tabs saved");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
         <div className="h-8 w-48 rounded bg-gray-200" />
-        <div className="h-96 rounded-xl bg-gray-100" />
+        <div className="h-64 rounded-xl bg-gray-100" />
       </div>
     );
   }
 
+  // Check which asset-managed sub-tabs have content
+  const populatedCategories = new Set(
+    assets.filter((a) => a.content?.trim()).map((a) => a.category)
+  );
+
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           Product & Why Linkrunner
         </h1>
-        <Button onClick={handleSave} loading={saving}>
-          Save All
-        </Button>
+        <p className="mt-1 text-sm text-gray-500">
+          These sections use shared content from the global Assets library
+        </p>
       </div>
 
-      {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
-      {success && <p className="mb-4 text-sm text-green-600">{success}</p>}
-
-      {/* Product sub-tabs group */}
-      <div className="space-y-2">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#4d4bf7]">
-          Product Tab
-        </h2>
-        {subTabs
-          .filter((t) =>
-            (PRODUCT_SUB_TABS as readonly string[]).includes(t.sub_tab_key)
-          )
-          .map((tab) => (
-            <SubTabAccordionItem
-              key={tab.id}
-              tab={tab}
-              isOpen={openTab === tab.id}
-              onToggle={() =>
-                setOpenTab(openTab === tab.id ? null : tab.id)
-              }
-              onUpdate={updateTab}
-            />
-          ))}
+      {/* Info card */}
+      <div className="mb-8 rounded-xl border border-[#4d4bf7]/20 bg-[#e6ecff]/30 p-6">
+        <div className="flex items-start gap-3">
+          <Package className="mt-0.5 h-5 w-5 shrink-0 text-[#4d4bf7]" />
+          <div>
+            <p className="text-sm font-medium text-gray-900">
+              Content managed in Assets
+            </p>
+            <p className="mt-1 text-sm text-gray-600">
+              The Product and Why Linkrunner tabs use the same content across
+              every customer room. To edit what prospects see, update the content
+              in the{" "}
+              <Link
+                href="/admin/assets"
+                className="inline-flex items-center gap-1 font-medium text-[#4d4bf7] hover:underline"
+              >
+                Assets page
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Why Linkrunner sub-tabs group */}
-      <div className="mt-8 space-y-2">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#4d4bf7]">
-          Why Linkrunner Tab
+      {/* Status grid showing which sections have content */}
+      <div className="space-y-6">
+        <SectionGroup
+          label="Product Tab"
+          keys={["what_is_linkrunner", "product_demo", "features", "how_it_works", "company_deck"]}
+          populated={populatedCategories}
+        />
+        <SectionGroup
+          label="Why Linkrunner Tab"
+          keys={["differentiators", "integrations", "customers_references", "security_compliance"]}
+          populated={populatedCategories}
+        />
+      </div>
+
+      {/* Customers & References live preview */}
+      <div className="mt-8">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#4d4bf7]">
+          Customers &amp; References
         </h2>
-        {subTabs
-          .filter((t) =>
-            (WHY_LINKRUNNER_SUB_TABS as readonly string[]).includes(
-              t.sub_tab_key
-            )
-          )
-          .map((tab) => (
-            <SubTabAccordionItem
-              key={tab.id}
-              tab={tab}
-              isOpen={openTab === tab.id}
-              onToggle={() =>
-                setOpenTab(openTab === tab.id ? null : tab.id)
-              }
-              onUpdate={updateTab}
-            />
-          ))}
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <p className="mb-6 text-sm text-gray-500">
+            This logo wall is built in and shows the same in every room. Logos
+            are managed in code (
+            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+              customers-references.tsx
+            </code>
+            ).
+          </p>
+          <CustomersReferences />
+        </div>
       </div>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-
-function SubTabAccordionItem({
-  tab,
-  isOpen,
-  onToggle,
-  onUpdate,
+function SectionGroup({
+  label,
+  keys,
+  populated,
 }: {
-  tab: SubTabDraft;
-  isOpen: boolean;
-  onToggle: () => void;
-  onUpdate: (id: string, field: keyof SubTabDraft, value: string) => void;
+  label: string;
+  keys: string[];
+  populated: Set<string>;
 }) {
-  const label =
-    OVERVIEW_SUB_TAB_LABELS[
-      tab.sub_tab_key as keyof typeof OVERVIEW_SUB_TAB_LABELS
-    ] ?? tab.sub_tab_key;
-
   return (
-    <div className="rounded-xl border border-gray-200 bg-white">
-      {/* Accordion header */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className={cn(
-          "flex w-full items-center justify-between px-6 py-4 text-left",
-          "hover:bg-gray-50 transition-colors rounded-xl"
-        )}
-      >
-        <span className="text-sm font-semibold text-gray-900">{label}</span>
-        {isOpen ? (
-          <ChevronDown className="h-4 w-4 text-gray-400" />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-gray-400" />
-        )}
-      </button>
+    <div>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#4d4bf7]">
+        {label}
+      </h2>
+      <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
+        {keys.map((key) => {
+          const displayLabel =
+            OVERVIEW_SUB_TAB_LABELS[key as keyof typeof OVERVIEW_SUB_TAB_LABELS] ?? key;
+          const isHardCoded = key === "customers_references";
+          const hasContent = isHardCoded || populated.has(key);
 
-      {/* Accordion body */}
-      {isOpen && (
-        <div className="border-t border-gray-200 px-6 py-4">
-          <div className="flex flex-col gap-4">
-            <Textarea
-              label="Content (Markdown)"
-              value={tab.content}
-              onChange={(e) => onUpdate(tab.id, "content", e.target.value)}
-              rows={10}
-              placeholder="Write content here..."
-            />
-
-            {tab.sub_tab_key === "product_demo" && (
-              <Input
-                label="YouTube Video URL"
-                placeholder="https://www.youtube.com/watch?v=..."
-                value={tab.youtube_url}
-                onChange={(e) =>
-                  onUpdate(tab.id, "youtube_url", e.target.value)
-                }
-              />
-            )}
-
-            {tab.sub_tab_key === "security_compliance" && (
-              <Input
-                label="Iframe URL"
-                placeholder="https://trust.linkrunner.io"
-                value={tab.iframe_url}
-                onChange={(e) =>
-                  onUpdate(tab.id, "iframe_url", e.target.value)
-                }
-              />
-            )}
-          </div>
-        </div>
-      )}
+          return (
+            <div
+              key={key}
+              className="flex items-center justify-between px-5 py-3.5"
+            >
+              <span className="text-sm font-medium text-gray-700">
+                {displayLabel}
+              </span>
+              <div className="flex items-center gap-2">
+                {hasContent ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                    <Check className="h-3 w-3" />
+                    {isHardCoded ? "Built-in" : "Content added"}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">
+                    Empty
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-2 flex justify-end">
+        <Link
+          href="/admin/assets"
+          className="text-xs font-medium text-[#4d4bf7] hover:underline"
+        >
+          Edit in Assets →
+        </Link>
+      </div>
     </div>
   );
 }
