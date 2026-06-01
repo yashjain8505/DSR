@@ -93,14 +93,15 @@ export function SubTabDropdownSection({
 export function SubTabContent({
   subTab,
   assets = [],
+  companyName,
 }: {
   subTab: OverviewSubTab;
   assets?: Asset[];
+  companyName?: string;
 }) {
   const asset = assets.find((a) => a.category === subTab.sub_tab_key);
   const content = subTab.content || asset?.content || "";
   const youtubeUrl = subTab.youtube_url || asset?.url || "";
-  const iframeUrl = subTab.iframe_url || asset?.url || "";
 
   switch (subTab.sub_tab_key) {
     case "product_demo":
@@ -160,7 +161,7 @@ export function SubTabContent({
     }
 
     case "what_is_linkrunner":
-      return <WhatIsLinkrunner />;
+      return <WhatIsLinkrunner companyName={companyName} />;
 
     case "features":
       return <FeaturesBento />;

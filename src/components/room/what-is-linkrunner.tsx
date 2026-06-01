@@ -117,7 +117,11 @@ const SETUP_STEPS = [
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function WhatIsLinkrunner() {
+export function WhatIsLinkrunner({
+  companyName = "Your app",
+}: {
+  companyName?: string;
+}) {
   return (
     <div className="space-y-8">
       <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr] lg:items-stretch">
@@ -141,7 +145,7 @@ export function WhatIsLinkrunner() {
           </div>
         </div>
 
-        <ProductConsole />
+        <ProductConsole companyName={companyName} />
       </section>
 
       <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
@@ -278,7 +282,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ProductConsole() {
+function ProductConsole({ companyName }: { companyName: string }) {
   return (
     <div className="rounded-lg border border-gray-900 bg-gray-950 p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
@@ -296,7 +300,7 @@ function ProductConsole() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase text-gray-400">
-              CARS24 acquisition
+              {companyName} acquisition
             </p>
             <p className="mt-1 text-lg font-bold text-gray-950">
               Channel performance

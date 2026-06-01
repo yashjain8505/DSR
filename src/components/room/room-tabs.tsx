@@ -291,6 +291,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
           <OverviewTabRenderer
             subTab={getOverviewTab(activeTab)}
             assets={data.assets}
+            companyName={data.room.company_name}
           />
         )}
         {activeTab === "pricing" && (
@@ -315,9 +316,11 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
 function OverviewTabRenderer({
   subTab,
   assets = [],
+  companyName,
 }: {
   subTab: OverviewSubTab | null;
   assets?: Asset[];
+  companyName: string;
 }) {
   if (!subTab) {
     return (
@@ -329,7 +332,11 @@ function OverviewTabRenderer({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <SubTabContent subTab={subTab} assets={assets} />
+      <SubTabContent
+        subTab={subTab}
+        assets={assets}
+        companyName={companyName}
+      />
     </div>
   );
 }
