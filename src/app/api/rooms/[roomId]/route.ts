@@ -20,6 +20,7 @@ export async function GET(
       caseStudiesResult,
       comparisonsResult,
       gettingStartedResult,
+      customerRefsResult,
       assetsResult,
     ] = await Promise.all([
       supabase.from("rooms").select("*").eq("id", roomId).single(),
@@ -50,6 +51,11 @@ export async function GET(
         .eq("room_id", roomId)
         .single(),
       supabase
+        .from("customer_references")
+        .select("*")
+        .eq("room_id", roomId)
+        .order("sort_order", { ascending: true }),
+      supabase
         .from("assets")
         .select("*")
         .order("category")
@@ -71,6 +77,7 @@ export async function GET(
       case_studies: caseStudiesResult.data ?? [],
       comparisons: comparisonsResult.data ?? [],
       getting_started: gettingStartedResult.data,
+      customer_references: customerRefsResult.data ?? [],
       assets: assetsResult.data ?? [],
     };
 

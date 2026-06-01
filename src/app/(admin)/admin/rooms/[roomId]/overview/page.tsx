@@ -9,7 +9,7 @@ import {
   OVERVIEW_SUB_TAB_LABELS,
 } from "@/lib/constants";
 import type { OverviewSubTab, Asset } from "@/lib/types";
-import { CustomersReferences } from "@/components/room/customers-references";
+
 
 export default function OverviewEditorPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -90,28 +90,12 @@ export default function OverviewEditorPage() {
         />
         <SectionGroup
           label="Why Linkrunner Tab"
-          keys={["differentiators", "integrations", "customers_references", "security_compliance"]}
+          keys={["integrations", "security_compliance"]}
           populated={populatedCategories}
         />
       </div>
 
-      {/* Customers & References live preview */}
-      <div className="mt-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#4d4bf7]">
-          Customers &amp; References
-        </h2>
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <p className="mb-6 text-sm text-gray-500">
-            This logo wall is built in and shows the same in every room. Logos
-            are managed in code (
-            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
-              customers-references.tsx
-            </code>
-            ).
-          </p>
-          <CustomersReferences />
-        </div>
-      </div>
+      {/* Customer References are now managed per-room via the dedicated admin page */}
     </div>
   );
 }
@@ -134,8 +118,7 @@ function SectionGroup({
         {keys.map((key) => {
           const displayLabel =
             OVERVIEW_SUB_TAB_LABELS[key as keyof typeof OVERVIEW_SUB_TAB_LABELS] ?? key;
-          const isHardCoded = key === "customers_references";
-          const hasContent = isHardCoded || populated.has(key);
+          const hasContent = populated.has(key);
 
           return (
             <div
@@ -149,7 +132,7 @@ function SectionGroup({
                 {hasContent ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
                     <Check className="h-3 w-3" />
-                    {isHardCoded ? "Built-in" : "Content added"}
+                    Content added
                   </span>
                 ) : (
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">

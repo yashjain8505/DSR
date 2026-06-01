@@ -33,6 +33,7 @@ import { TabPricing } from "@/components/room/tab-pricing";
 import { TabCaseStudies } from "@/components/room/tab-case-studies";
 import { TabComparisons } from "@/components/room/tab-comparisons";
 import { TabGettingStarted } from "@/components/room/tab-getting-started";
+import { CustomersReferences } from "@/components/room/customers-references";
 import { SubTabContent } from "@/components/room/tab-overview";
 import type { Asset, OverviewSubTab, RoomWithContent } from "@/lib/types";
 
@@ -50,8 +51,8 @@ const TAB_ICONS: Record<MainTabKey, React.ElementType> = {
   company_deck: Presentation,
 
   integrations: Plug,
-  customers_references: Users,
   security_compliance: ShieldCheck,
+  customers_references: Users,
   pricing: CreditCard,
   case_studies: BookOpen,
   comparison: GitCompareArrows,
@@ -294,6 +295,9 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
             companyName={data.room.company_name}
           />
         )}
+        {activeTab === "customers_references" && (
+          <CustomersReferences references={data.customer_references} />
+        )}
         {activeTab === "pricing" && (
           <TabPricing pricing={data.pricing} companyName={data.room.company_name} />
         )}
@@ -346,6 +350,9 @@ function OverviewTabRenderer({
 function computeVisibleTabs(data: RoomWithContent): MainTabKey[] {
   const tabs: MainTabKey[] = [...ALWAYS_VISIBLE_TABS];
 
+  if (data.room.tab_customers_references_visible) {
+    tabs.push("customers_references");
+  }
   if (data.room.tab_case_studies_visible) {
     tabs.push("case_studies");
   }

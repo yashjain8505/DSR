@@ -14,6 +14,7 @@ export interface Room {
   tab_case_studies_visible: boolean;
   tab_comparison_visible: boolean;
   tab_getting_started_visible: boolean;
+  tab_customers_references_visible: boolean;
   brand_primary_color: string | null;
   notes: string;
   created_at: string;
@@ -139,6 +140,20 @@ export function normalizePricingData(
 }
 
 /**
+ * Customer reference logo entry (per-room, admin-managed).
+ */
+export interface CustomerReference {
+  id: string;
+  room_id: string;
+  name: string;
+  logo_url: string;
+  is_visible: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * Case study entry.
  */
 export interface CaseStudy {
@@ -235,6 +250,7 @@ export interface RoomWithContent {
   case_studies: CaseStudy[];
   comparisons: Comparison[];
   getting_started: GettingStarted;
+  customer_references: CustomerReference[];
   assets: Asset[];
 }
 
@@ -344,6 +360,7 @@ export interface UpdateRoomPayload {
   tab_case_studies_visible?: boolean;
   tab_comparison_visible?: boolean;
   tab_getting_started_visible?: boolean;
+  tab_customers_references_visible?: boolean;
   brand_primary_color?: string | null;
   notes?: string;
 }

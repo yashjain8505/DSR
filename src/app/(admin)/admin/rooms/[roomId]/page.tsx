@@ -28,6 +28,7 @@ export default function RoomSettingsPage() {
   const [contactEmail, setContactEmail] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [tabCustomersReferences, setTabCustomersReferences] = useState(false);
   const [tabCaseStudies, setTabCaseStudies] = useState(false);
   const [tabComparison, setTabComparison] = useState(false);
   const [tabGettingStarted, setTabGettingStarted] = useState(false);
@@ -48,6 +49,7 @@ export default function RoomSettingsPage() {
         setContactEmail(r.contact_email ?? "");
         setLogoUrl(r.logo_url ?? "");
         setIsActive(r.is_active);
+        setTabCustomersReferences(r.tab_customers_references_visible);
         setTabCaseStudies(r.tab_case_studies_visible);
         setTabComparison(r.tab_comparison_visible);
         setTabGettingStarted(r.tab_getting_started_visible);
@@ -77,6 +79,7 @@ export default function RoomSettingsPage() {
           contact_email: contactEmail.trim() || null,
           logo_url: logoUrl.trim() || null,
           is_active: isActive,
+          tab_customers_references_visible: tabCustomersReferences,
           tab_case_studies_visible: tabCaseStudies,
           tab_comparison_visible: tabComparison,
           tab_getting_started_visible: tabGettingStarted,
@@ -199,6 +202,11 @@ export default function RoomSettingsPage() {
             visible. Toggle additional tabs below.
           </p>
           <div className="flex flex-col gap-3">
+            <Toggle
+              checked={tabCustomersReferences}
+              onChange={setTabCustomersReferences}
+              label="Our Customers & References"
+            />
             <Toggle
               checked={tabCaseStudies}
               onChange={setTabCaseStudies}

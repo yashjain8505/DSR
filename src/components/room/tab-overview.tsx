@@ -5,7 +5,6 @@ import { ChevronDown, Download, ExternalLink } from "lucide-react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { YouTubeEmbed } from "@/components/room/youtube-embed";
 import { IframeEmbed } from "@/components/room/iframe-embed";
-import { CustomersReferences } from "@/components/room/customers-references";
 import { SecurityCompliance } from "@/components/room/security-compliance";
 import { IntegrationsPage } from "@/components/room/integrations";
 import { FeaturesBento } from "@/components/room/features-bento";
@@ -165,9 +164,6 @@ export function SubTabContent({
 
     case "features":
       return <FeaturesBento />;
-
-    case "customers_references":
-      return <CustomersReferences />;
 
     case "how_it_works":
       return (

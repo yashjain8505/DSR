@@ -9,7 +9,6 @@ export const OVERVIEW_SUB_TAB_KEYS = [
   "how_it_works",
   "company_deck",
   "integrations",
-  "customers_references",
   "security_compliance",
 ] as const;
 
@@ -25,7 +24,6 @@ export const OVERVIEW_SUB_TAB_LABELS: Record<OverviewSubTabKey, string> = {
   how_it_works: "How It Works",
   company_deck: "Company Deck",
   integrations: "Integrations",
-  customers_references: "Our Customers & References",
   security_compliance: "Security & Compliance",
 };
 
@@ -39,8 +37,7 @@ export const OVERVIEW_SUB_TAB_SORT_ORDER: Record<OverviewSubTabKey, number> = {
   how_it_works: 3,
   company_deck: 4,
   integrations: 5,
-  customers_references: 6,
-  security_compliance: 7,
+  security_compliance: 6,
 };
 
 /**
@@ -59,7 +56,6 @@ export const PRODUCT_SUB_TABS: OverviewSubTabKey[] = [
  */
 export const WHY_LINKRUNNER_SUB_TABS: OverviewSubTabKey[] = [
   "integrations",
-  "customers_references",
   "security_compliance",
 ];
 
@@ -70,6 +66,7 @@ export const MAIN_TAB_KEYS = [
   "meeting_brief",
   ...OVERVIEW_SUB_TAB_KEYS,
   "pricing",
+  "customers_references",
   "case_studies",
   "comparison",
   "getting_started",
@@ -84,6 +81,7 @@ export const MAIN_TAB_LABELS: Record<MainTabKey, string> = {
   meeting_brief: "Recap",
   ...OVERVIEW_SUB_TAB_LABELS,
   pricing: "Pricing",
+  customers_references: "Our Customers & References",
   case_studies: "Case Studies",
   comparison: "How We Compare",
   getting_started: "Getting Started",
@@ -103,6 +101,7 @@ export const ALWAYS_VISIBLE_TABS: MainTabKey[] = [
  * Maps tab key to the corresponding boolean column in the rooms table.
  */
 export const UNLOCKABLE_TABS: Record<string, MainTabKey> = {
+  tab_customers_references_visible: "customers_references",
   tab_case_studies_visible: "case_studies",
   tab_comparison_visible: "comparison",
   tab_getting_started_visible: "getting_started",
@@ -128,9 +127,7 @@ export const ASSET_MANAGED_SUB_TABS: readonly OverviewSubTabKey[] = [
  */
 export const ROOM_CUSTOMIZABLE_SUB_TABS: readonly OverviewSubTabKey[] =
   OVERVIEW_SUB_TAB_KEYS.filter(
-    (k) =>
-      !(ASSET_MANAGED_SUB_TABS as readonly string[]).includes(k) &&
-      k !== "customers_references" // hard-coded in code
+    (k) => !(ASSET_MANAGED_SUB_TABS as readonly string[]).includes(k)
   );
 
 /**

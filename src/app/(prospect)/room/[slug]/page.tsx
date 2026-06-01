@@ -68,6 +68,7 @@ export default async function RoomPage({ params }: PageProps) {
     caseStudiesResult,
     comparisonsResult,
     gettingStartedResult,
+    customerRefsResult,
     assetsResult,
   ] = await Promise.all([
     supabase
@@ -97,6 +98,11 @@ export default async function RoomPage({ params }: PageProps) {
       .eq("room_id", room.id)
       .single(),
     supabase
+      .from("customer_references")
+      .select("*")
+      .eq("room_id", room.id)
+      .order("sort_order", { ascending: true }),
+    supabase
       .from("assets")
       .select("*")
       .order("category")
@@ -111,6 +117,7 @@ export default async function RoomPage({ params }: PageProps) {
     case_studies: caseStudiesResult.data ?? [],
     comparisons: comparisonsResult.data ?? [],
     getting_started: gettingStartedResult.data,
+    customer_references: customerRefsResult.data ?? [],
     assets: assetsResult.data ?? [],
   };
 
