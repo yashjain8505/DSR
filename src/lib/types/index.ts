@@ -15,6 +15,7 @@ export interface Room {
   tab_comparison_visible: boolean;
   tab_getting_started_visible: boolean;
   tab_customers_references_visible: boolean;
+  comparison_competitors: string[];
   brand_primary_color: string | null;
   notes: string;
   created_at: string;
@@ -363,6 +364,7 @@ export interface UpdateRoomPayload {
   tab_comparison_visible?: boolean;
   tab_getting_started_visible?: boolean;
   tab_customers_references_visible?: boolean;
+  comparison_competitors?: string[];
   brand_primary_color?: string | null;
   notes?: string;
 }

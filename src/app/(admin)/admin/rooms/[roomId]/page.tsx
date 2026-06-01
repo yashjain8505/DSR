@@ -32,6 +32,9 @@ export default function RoomSettingsPage() {
   const [tabCaseStudies, setTabCaseStudies] = useState(false);
   const [tabComparison, setTabComparison] = useState(false);
   const [tabGettingStarted, setTabGettingStarted] = useState(false);
+  const [compareAppsflyer, setCompareAppsflyer] = useState(true);
+  const [compareAdjust, setCompareAdjust] = useState(true);
+  const [compareBranch, setCompareBranch] = useState(true);
   const [brandColor, setBrandColor] = useState("");
 
   useEffect(() => {
@@ -53,6 +56,10 @@ export default function RoomSettingsPage() {
         setTabCaseStudies(r.tab_case_studies_visible);
         setTabComparison(r.tab_comparison_visible);
         setTabGettingStarted(r.tab_getting_started_visible);
+        const comps: string[] = r.comparison_competitors ?? ["appsflyer", "adjust", "branch"];
+        setCompareAppsflyer(comps.includes("appsflyer"));
+        setCompareAdjust(comps.includes("adjust"));
+        setCompareBranch(comps.includes("branch"));
         setBrandColor(r.brand_primary_color ?? "");
       } catch {
         setError("Failed to load room");
@@ -83,6 +90,11 @@ export default function RoomSettingsPage() {
           tab_case_studies_visible: tabCaseStudies,
           tab_comparison_visible: tabComparison,
           tab_getting_started_visible: tabGettingStarted,
+          comparison_competitors: [
+            ...(compareAppsflyer ? ["appsflyer"] : []),
+            ...(compareAdjust ? ["adjust"] : []),
+            ...(compareBranch ? ["branch"] : []),
+          ],
           brand_primary_color: brandColor.trim() || null,
         }),
       });
@@ -221,6 +233,34 @@ export default function RoomSettingsPage() {
               checked={tabGettingStarted}
               onChange={setTabGettingStarted}
               label="Getting Started"
+            />
+          </div>
+        </section>
+
+        {/* Comparison competitors */}
+        <section className="rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            Comparison Table
+          </h2>
+          <p className="mb-4 text-sm text-gray-500">
+            Choose which competitors to show in the &ldquo;How We Compare&rdquo;
+            tab. Toggle each on or off.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Toggle
+              checked={compareAppsflyer}
+              onChange={setCompareAppsflyer}
+              label="AppsFlyer"
+            />
+            <Toggle
+              checked={compareAdjust}
+              onChange={setCompareAdjust}
+              label="Adjust"
+            />
+            <Toggle
+              checked={compareBranch}
+              onChange={setCompareBranch}
+              label="Branch"
             />
           </div>
         </section>

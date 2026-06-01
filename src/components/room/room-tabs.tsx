@@ -305,7 +305,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
           <TabCaseStudies caseStudies={data.case_studies} />
         )}
         {activeTab === "comparison" && (
-          <TabComparisons comparisons={data.comparisons} />
+          <TabComparisons competitors={data.room.comparison_competitors ?? ["appsflyer", "adjust", "branch"]} />
         )}
         {activeTab === "getting_started" && (
           <TabGettingStarted gettingStarted={data.getting_started} />
