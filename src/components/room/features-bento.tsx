@@ -1,18 +1,20 @@
 "use client";
 
 import {
-  Link2,
   BarChart3,
-  ShieldCheck,
-  Zap,
-  Globe,
-  Lock,
+  Bot,
   Code2,
-  TrendingUp,
-  IndianRupee,
+  Database,
+  Globe,
   Headphones,
+  IndianRupee,
+  Link2,
+  Lock,
   Network,
+  ShieldCheck,
   Smartphone,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -27,7 +29,7 @@ interface BentoCard {
   /** Optional large metric callout (e.g. "35+", "<200KB") */
   metric?: string;
   metricLabel?: string;
-  /** Grid span: "wide" = 2 cols, "tall" = 2 rows, "hero" = 2×2, default = 1×1 */
+  /** Grid span: "wide" = 2 cols, "tall" = 2 rows, "hero" = 2x2, default = 1x1 */
   span?: "wide" | "tall" | "hero";
   /** Visual accent style */
   accent?: "brand" | "dark" | "gradient" | "subtle";
@@ -35,100 +37,146 @@ interface BentoCard {
 
 const FEATURES: BentoCard[] = [
   {
-    icon: <Link2 className="h-6 w-6" />,
-    title: "Deep Linking",
+    icon: <Bot className="h-6 w-6" />,
+    title: "AI Attribution Analyst",
     description:
-      "One link handles iOS, Android, and web routing automatically. Supports deferred deep linking — users land on the right in-app screen even after installing.",
-    metric: "1",
-    metricLabel: "link, every platform",
+      "Ask why CAC moved, which channel is creating higher-quality users, or where a postback stopped firing. Linkrunner reads the campaign and event graph for you.",
+    metric: "AI",
+    metricLabel: "built into the MMP",
     span: "wide",
     accent: "brand",
   },
   {
-    icon: <Network className="h-6 w-6" />,
-    title: "35+ Integrations",
+    icon: <Link2 className="h-6 w-6" />,
+    title: "Deep Links + Deferred Routing",
     description:
-      "Automated postbacks to Meta, Google, TikTok, Snapchat, and 30+ ad networks. Plus analytics platforms like Mixpanel, Amplitude, and CleverTap.",
+      "One link handles iOS, Android, web, QR, influencer, referral, and paid campaigns. Users land on the right screen even after installing.",
+    accent: "subtle",
+  },
+  {
+    icon: <Network className="h-6 w-6" />,
+    title: "Partner Postbacks",
+    description:
+      "Send conversion events back to Meta, Google, TikTok, Snap, affiliates, analytics, and BI from one normalized event stream.",
     metric: "35+",
-    metricLabel: "ad networks & tools",
+    metricLabel: "partners and tools",
     accent: "dark",
   },
   {
-    icon: <BarChart3 className="h-6 w-6" />,
-    title: "Real-Time Analytics",
+    icon: <Database className="h-6 w-6" />,
+    title: "Event Pipeline",
     description:
-      "See installs, events, and revenue updating live — not 24 hours later. Cohort analysis, retention curves, and ROAS by acquisition source.",
-    accent: "subtle",
-  },
-  {
-    icon: <ShieldCheck className="h-6 w-6" />,
-    title: "Fraud Detection",
-    description:
-      "Built-in anomaly detection flags click flooding, click injection, SDK spoofing, and device farms before bad traffic drains your budget.",
-    accent: "subtle",
-  },
-  {
-    icon: <TrendingUp className="h-6 w-6" />,
-    title: "Multi-Touch Attribution",
-    description:
-      "Track the full user journey across channels. Last-click, first-click, and multi-touch models — see the complete picture.",
-    accent: "subtle",
-  },
-  {
-    icon: <Code2 className="h-6 w-6" />,
-    title: "5-Minute SDK Setup",
-    description:
-      "Under 200KB. Three lines of code. Supports iOS, Android, React Native, Flutter, and Unity. The fastest MMP integration in the market.",
-    metric: "<200",
-    metricLabel: "KB SDK size",
+      "Track installs, opens, signups, purchases, subscriptions, referrals, and custom milestones without flattening your growth model.",
+    metric: "50M",
+    metricLabel: "events/mo included",
     span: "wide",
     accent: "gradient",
   },
   {
-    icon: <Smartphone className="h-6 w-6" />,
-    title: "SKAdNetwork 4.0",
+    icon: <BarChart3 className="h-6 w-6" />,
+    title: "ROAS + Cohort Reporting",
     description:
-      "Full SKAN compliance with coarse and fine-grained conversion values. iOS attribution without compromising user privacy.",
+      "Read installs, revenue, retention, and payback by source, campaign, creative, deep link, and audience cohort as events arrive.",
+    accent: "subtle",
+  },
+  {
+    icon: <ShieldCheck className="h-6 w-6" />,
+    title: "Fraud + Data Quality",
+    description:
+      "Flag click flooding, suspicious conversion patterns, broken partner mappings, missing events, and spend spikes before budgets drift.",
+    accent: "subtle",
+  },
+  {
+    icon: <Smartphone className="h-6 w-6" />,
+    title: "SKAN + Privacy Attribution",
+    description:
+      "Map SKAN conversion values, support iOS privacy constraints, and keep measurement useful without relying on shady shortcuts.",
+    accent: "subtle",
+  },
+  {
+    icon: <Code2 className="h-6 w-6" />,
+    title: "SDK + Server Events",
+    description:
+      "Start with a lightweight app SDK, then enrich attribution with server-confirmed purchases, subscriptions, and lifecycle events.",
+    metric: "<10",
+    metricLabel: "min setup target",
+    accent: "subtle",
+  },
+  {
+    icon: <TrendingUp className="h-6 w-6" />,
+    title: "Campaign Intelligence",
+    description:
+      "Summaries, anomalies, and recommendations sit next to the metrics so teams can move budgets with context.",
     accent: "subtle",
   },
   {
     icon: <Zap className="h-6 w-6" />,
-    title: "Revenue Tracking",
+    title: "Realtime Operations",
     description:
-      "Attribute revenue to acquisition sources. In-app purchases, subscriptions, and ad revenue with automatic currency conversion.",
+      "Monitor live campaign health, link routing, partner delivery, and revenue events while acquisition is still running.",
     accent: "subtle",
   },
 ];
 
 const DIFFERENTIATORS: BentoCard[] = [
   {
-    icon: <IndianRupee className="h-6 w-6" />,
-    title: "Transparent Pricing",
+    icon: <Bot className="h-6 w-6" />,
+    title: "AI-native, not dashboard-native",
     description:
-      "No per-install fees that scale with your success. Flat-rate tiers — your costs don't spike when your campaigns work. Teams save 5–10× vs. legacy MMPs.",
+      "Legacy MMPs show reports. Linkrunner watches the measurement graph, explains changes, and points the team toward the next fix or budget move.",
     span: "wide",
     accent: "brand",
   },
   {
-    icon: <Globe className="h-6 w-6" />,
-    title: "India-First, Global-Ready",
+    icon: <IndianRupee className="h-6 w-6" />,
+    title: "Measure more without being punished",
     description:
-      "Built for the Indian app ecosystem — UPI-first flows, regional language deep linking, Jio-era device fragmentation. Global infrastructure on AWS edge.",
+      "Teams should not hide useful events because every signal becomes a bill shock. Linkrunner is built for rich event tracking from day one.",
     accent: "dark",
   },
   {
     icon: <Lock className="h-6 w-6" />,
-    title: "Privacy Without Compromise",
+    title: "Privacy-aware by design",
     description:
-      "No probabilistic fingerprinting, no device graphs. Every attribution is deterministic and consent-based. GDPR & CCPA compliant out of the box.",
+      "SKAN, consent boundaries, fraud controls, and partner data rules are part of the workflow instead of a late compliance project.",
+    accent: "subtle",
+  },
+  {
+    icon: <Globe className="h-6 w-6" />,
+    title: "Built for Indian growth stacks",
+    description:
+      "Affiliate networks, QR-to-app journeys, UPI-heavy funnels, regional campaigns, and global paid channels can live in one measurement layer.",
     accent: "subtle",
   },
   {
     icon: <Headphones className="h-6 w-6" />,
-    title: "Founder-Led Support",
+    title: "Migration that ships",
     description:
-      "No ticket queues. Our founding team handles onboarding, migration, and support directly. When something breaks at 2 AM, we pick up the phone.",
+      "The team helps map events, validate partner postbacks, compare old MMP data, and catch the boring issues that usually delay rollout.",
     accent: "subtle",
+  },
+];
+
+const COMPARISON_ROWS = [
+  {
+    question: "Campaign question",
+    legacy: "Open five reports and reconcile manually",
+    linkrunner: "Ask the AI workspace and inspect the evidence",
+  },
+  {
+    question: "Event depth",
+    legacy: "Track fewer signals to control cost",
+    linkrunner: "Send richer events so attribution gets smarter",
+  },
+  {
+    question: "Partner debugging",
+    legacy: "Opaque postback failures and slow tickets",
+    linkrunner: "Health checks, alerts, and migration support",
+  },
+  {
+    question: "Privacy operations",
+    legacy: "SKAN and consent rules handled as side projects",
+    linkrunner: "Privacy mapping lives inside the MMP workflow",
   },
 ];
 
@@ -143,7 +191,7 @@ export function FeaturesBento() {
       <div>
         <SectionHeader
           title="Core Features"
-          subtitle="Everything you need to measure, attribute, and grow your mobile app."
+          subtitle="The MMP layer: attribution, deep links, events, postbacks, privacy, fraud, and an AI analyst on top."
         />
         <BentoGrid cards={FEATURES} />
       </div>
@@ -153,12 +201,13 @@ export function FeaturesBento() {
 
 export function DifferentiatorsBento() {
   return (
-    <div>
+    <div className="space-y-6">
       <SectionHeader
-        title="Why Teams Switch to Linkrunner"
-        subtitle="Built different from day one — not another legacy MMP clone."
+        title="What Makes Us Different"
+        subtitle="Linkrunner is built for teams that want MMP-grade measurement without legacy MMP drag."
       />
       <BentoGrid cards={DIFFERENTIATORS} />
+      <ComparisonStrip />
     </div>
   );
 }
@@ -206,17 +255,13 @@ function BentoCardComponent({ card }: { card: BentoCard }) {
 
   return (
     <div
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-6 transition-shadow duration-300 hover:shadow-lg ${spanClass} ${accentStyles.container}`}
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-lg border p-6 transition-shadow duration-300 hover:shadow-lg ${spanClass} ${accentStyles.container}`}
     >
-      {/* Background decoration */}
-      <div className={`pointer-events-none absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full opacity-[0.07] blur-2xl transition-opacity duration-300 group-hover:opacity-[0.12] ${accentStyles.blob}`} />
-      <div className={`pointer-events-none absolute bottom-0 left-0 h-24 w-24 -translate-x-6 translate-y-6 rounded-full opacity-[0.05] blur-xl ${accentStyles.blob}`} />
-
       {/* Content */}
       <div>
         {/* Icon */}
         <div
-          className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${accentStyles.iconBg}`}
+          className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${accentStyles.iconBg}`}
         >
           <span className={accentStyles.iconColor}>{card.icon}</span>
         </div>
@@ -251,13 +296,43 @@ function BentoCardComponent({ card }: { card: BentoCard }) {
   );
 }
 
+function ComparisonStrip() {
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="grid gap-px bg-gray-200 md:grid-cols-[0.8fr_1fr_1fr]">
+        <div className="bg-gray-50 p-4 text-xs font-semibold uppercase text-gray-500">
+          Decision point
+        </div>
+        <div className="bg-gray-50 p-4 text-xs font-semibold uppercase text-gray-500">
+          Legacy MMP
+        </div>
+        <div className="bg-[color:var(--brand-primary)]/10 p-4 text-xs font-semibold uppercase text-[var(--brand-primary)]">
+          Linkrunner
+        </div>
+        {COMPARISON_ROWS.map((row) => (
+          <div key={row.question} className="contents">
+            <div className="bg-white p-4 text-sm font-semibold text-gray-900">
+              {row.question}
+            </div>
+            <div className="bg-white p-4 text-sm leading-6 text-gray-600">
+              {row.legacy}
+            </div>
+            <div className="bg-white p-4 text-sm font-medium leading-6 text-gray-900">
+              {row.linkrunner}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Accent style resolver                                              */
 /* ------------------------------------------------------------------ */
 
 interface AccentStyleSet {
   container: string;
-  blob: string;
   iconBg: string;
   iconColor: string;
   title: string;
@@ -272,7 +347,6 @@ function getAccentStyles(accent?: string): AccentStyleSet {
       return {
         container:
           "border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-primary)]/[0.03]",
-        blob: "bg-[var(--brand-primary)]",
         iconBg: "bg-[color:var(--brand-primary)]/10",
         iconColor: "text-[var(--brand-primary)]",
         title: "text-gray-900",
@@ -283,7 +357,6 @@ function getAccentStyles(accent?: string): AccentStyleSet {
     case "dark":
       return {
         container: "border-gray-900 bg-gray-900 text-white",
-        blob: "bg-white",
         iconBg: "bg-white/10",
         iconColor: "text-white",
         title: "text-white",
@@ -295,7 +368,6 @@ function getAccentStyles(accent?: string): AccentStyleSet {
       return {
         container:
           "border-transparent bg-gradient-to-br from-[color:var(--brand-primary)]/5 via-white to-indigo-50",
-        blob: "bg-indigo-500",
         iconBg: "bg-[color:var(--brand-primary)]/10",
         iconColor: "text-[var(--brand-primary)]",
         title: "text-gray-900",
@@ -307,7 +379,6 @@ function getAccentStyles(accent?: string): AccentStyleSet {
       // "subtle"
       return {
         container: "border-gray-200 bg-white",
-        blob: "bg-gray-400",
         iconBg: "bg-gray-100",
         iconColor: "text-gray-700",
         title: "text-gray-900",
