@@ -72,8 +72,7 @@ export const WHY_LINKRUNNER_SUB_TABS: OverviewSubTabKey[] = [
  */
 export const MAIN_TAB_KEYS = [
   "meeting_brief",
-  "product",
-  "why_linkrunner",
+  ...OVERVIEW_SUB_TAB_KEYS,
   "pricing",
   "case_studies",
   "comparison",
@@ -87,8 +86,7 @@ export type MainTabKey = (typeof MAIN_TAB_KEYS)[number];
  */
 export const MAIN_TAB_LABELS: Record<MainTabKey, string> = {
   meeting_brief: "Recap",
-  product: "Product",
-  why_linkrunner: "Why Linkrunner",
+  ...OVERVIEW_SUB_TAB_LABELS,
   pricing: "Pricing",
   case_studies: "Case Studies",
   comparison: "How We Compare",
@@ -100,8 +98,7 @@ export const MAIN_TAB_LABELS: Record<MainTabKey, string> = {
  */
 export const ALWAYS_VISIBLE_TABS: MainTabKey[] = [
   "meeting_brief",
-  "product",
-  "why_linkrunner",
+  ...OVERVIEW_SUB_TAB_KEYS,
   "pricing",
 ];
 
