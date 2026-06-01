@@ -188,6 +188,8 @@ export async function POST(request: Request) {
             title: cs.title,
             customer_name: cs.customer_name,
             customer_logo_url: cs.customer_logo_url,
+            banner_url: cs.banner_url,
+            url: cs.url,
             content: cs.content,
             sort_order: i,
           }))

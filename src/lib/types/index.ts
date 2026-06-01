@@ -162,6 +162,8 @@ export interface CaseStudy {
   title: string;
   customer_name: string;
   customer_logo_url: string | null;
+  banner_url: string | null;
+  url: string | null;
   content: string;
   sort_order: number;
   created_at: string;
