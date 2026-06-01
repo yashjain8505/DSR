@@ -7,6 +7,7 @@ import {
   OVERVIEW_SUB_TAB_SORT_ORDER,
   TRUST_PAGE_URL,
   DEFAULT_CUSTOMER_REFERENCES,
+  DEFAULT_CASE_STUDIES,
 } from "@/lib/constants";
 import { extractBrandAssets, domainFromEmail, domainFromSlug } from "@/lib/brand-colors";
 import type { GranolaMeetingCache, GranolaMeetingParticipant } from "@/lib/types";
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
     const briefContent = await rewriteBriefForCustomer(rawContent);
 
     // 7. Create all child rows in parallel
-    const [briefResult, subTabsResult, pricingResult, gettingStartedResult, refsResult] =
+    const [briefResult, subTabsResult, pricingResult, gettingStartedResult, refsResult, caseStudiesResult] =
       await Promise.all([
         admin.from("meeting_briefs").insert({
           room_id: roomId,
@@ -180,6 +181,17 @@ export async function POST(request: Request) {
             sort_order: i,
           }))
         ),
+
+        admin.from("case_studies").insert(
+          DEFAULT_CASE_STUDIES.map((cs, i) => ({
+            room_id: roomId,
+            title: cs.title,
+            customer_name: cs.customer_name,
+            customer_logo_url: cs.customer_logo_url,
+            content: cs.content,
+            sort_order: i,
+          }))
+        ),
       ]);
 
     // Check for child insert errors
@@ -189,6 +201,7 @@ export async function POST(request: Request) {
       pricingResult.error,
       gettingStartedResult.error,
       refsResult.error,
+      caseStudiesResult.error,
     ].filter(Boolean);
 
     if (childErrors.length > 0) {

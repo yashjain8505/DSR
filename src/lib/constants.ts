@@ -149,6 +149,60 @@ export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] =
 ];
 
 /**
+ * Default case studies seeded into every new room.
+ * Sourced from linkrunner.io/customer-stories. Admin can toggle visibility.
+ */
+export const DEFAULT_CASE_STUDIES: {
+  title: string;
+  customer_name: string;
+  customer_logo_url: string;
+  content: string;
+}[] = [
+  {
+    title: "34% Google Ads CPI Reduction in 3 Months",
+    customer_name: "Playo",
+    customer_logo_url: "https://linkrunner.io/logos/customers/square/playo-square-logo.webp",
+    content: `**Industry:** Sports & Fitness\n**Timeline:** Dec 2025 - Mar 2026\n\n### Key Results\n- CPI reduced from Rs.20.30 to Rs.13.39 (34% drop)\n- Installs grew 2.8x (4,004 to 11,112)\n- GrabOn partner channel grew 9.5x\n\n### Challenge\n13+ active Google Ads campaigns across multiple Indian metros with no campaign-level attribution. Budget allocation was done by intuition.\n\n### Solution\nReal-time CPI tracking by city, format, and channel enabled data-driven budget reallocation.\n\n> "The customization Linkrunner provided surpassed competitors. Their team understood our needs and delivered a tailored solution." - Ronald M Thomas, Digital Marketing`,
+  },
+  {
+    title: "46% Meta CPI Reduction in 3 Months",
+    customer_name: "Matiks",
+    customer_logo_url: "https://linkrunner.io/logos/customers/square/matiks-logo.webp",
+    content: `**Industry:** EdTech\n**Timeline:** Jan 2026 - Mar 2026\n\n### Key Results\n- Meta CPI dropped from Rs.22.34 to Rs.12.14 (46% reduction)\n- Installs grew 65% (65,045 to 107,625)\n- Monthly spend decreased 10%\n- 130+ campaigns managed\n\n### Challenge\nHeavy Meta Ads spend (Rs.13-15L/month) with no campaign-level attribution.\n\n### Solution\nReal-time campaign-level CPI tracking enabled weekly budget reallocation instead of monthly.\n\n> "We switched to Linkrunner from our previous MMP and immediately saw the difference. The pricing was far more reasonable, the product felt much easier to use, and the insights were clearer." - Hanika Saluja, Growth`,
+  },
+  {
+    title: "100% Offline-to-App Attribution via QR Codes",
+    customer_name: "abcoffee",
+    customer_logo_url: "https://linkrunner.io/logos/customers/square/abcoffee-square-logo.png",
+    content: `**Industry:** F&B / Retail\n\n### Key Results\n- 100% attribution coverage (zero installs in "unknown" bucket)\n- Sub-5-second scan-to-install time\n- 85% of installs from packaging and delivery bags\n- 46,000+ QR scans attributed, 14,000+ installs\n\n### Challenge\n95+ physical locations in Mumbai, Delhi NCR, Bangalore. Entirely offline customer acquisition via QR codes on packaging, delivery bags, storefronts with broken flows and no visibility.\n\n### Solution\nDeep-link infrastructure powering all QR codes with per-surface campaign tracking and deferred deep-link attribution.`,
+  },
+  {
+    title: "$1M+ Revenue Tracked Across 200 Campaigns",
+    customer_name: "Jumbo Gaming",
+    customer_logo_url: "https://linkrunner.io/logos/customers/square/jumbo-gaming-square-logo.webp",
+    content: `**Industry:** Gaming\n\n### Key Results\n- $1.5M revenue tracked across 30K+ transactions\n- 18% uplift in click-to-install conversion\n- 30-40% improvement in ROAS vs. industry averages\n- 200+ campaigns across multiple channels\n\n### Challenge\nMulti-channel acquisition (Google, Meta, affiliates) with no way to measure true revenue drivers.\n\n### Solution\nUnified user journey tracking from install through in-app purchase via SDK + S2S integration.\n\n> "Implementing Linkrunner was seamless. Their analytics have helped us make data-driven decisions that significantly improved our user acquisition strategy." - Ekansh Aggarwal, Product & Growth`,
+  },
+  {
+    title: "35% ROAS Improvement in 3 Months",
+    customer_name: "Stratzy",
+    customer_logo_url: "https://linkrunner.io/logos/customers/square/stratzy-square-logo-small.webp",
+    content: `**Industry:** Fintech\n\n### Key Results\n- 1.23M links migrated from Firebase Dynamic Links\n- 15% ROAS uplift within first 15 days\n- 35% ROAS improvement by end of month 3\n- Repeat deposits doubled on paid campaigns\n\n### Challenge\nCould not connect Meta/Google ad campaigns to financial outcomes (wallet topups, deposits).\n\n### Solution\nUnified attribution via SDK + S2S tracking with full-journey visibility plus deferred deep linking.\n\n> "Linkrunner has helped us quickly understand which campaigns deliver higher ROAS, allowing us to allocate budgets strategically." - Gaurav Sangle, Co-Founder & CTO`,
+  },
+  {
+    title: "6x Higher Web-to-Mobile Conversion",
+    customer_name: "August AI",
+    customer_logo_url: "https://linkrunner.io/logos/customers/square/augustai-square-logo.webp",
+    content: `**Industry:** Healthcare AI\n**Timeline:** Aug 2025 - May 2026\n\n### Key Results\n- 60% web-to-native app install conversion rate (industry norm: 5-15%)\n- 145,000+ patient installs tracked\n- 25% of installs deterministically recovered from organic\n- iOS installs grew 5.6x\n- 90+ campaigns live\n\n### Challenge\nZero paid advertising - entirely owned-channel growth model (content, web chat, landing pages, Instagram). Needed attribution for non-paid flows and seamless web-to-mobile handoff.\n\n### Solution\nMMP + deep-link infrastructure with per-surface owned-channel attribution and deterministic install recovery.`,
+  },
+  {
+    title: "46% Meta CPA Reduction in 6 Weeks",
+    customer_name: "CashBook",
+    customer_logo_url: "https://linkrunner.io/logos/customers/square/cashbook-square-logo.webp",
+    content: `**Industry:** SMB Fintech\n**Timeline:** Mar 2026 - Apr 2026\n\n### Key Results\n- Meta CPA dropped from Rs.43.25 to Rs.23.42 (46% reduction in 30 days)\n- Install-to-activation rate lifted 14 points (46.1% to 60.1%)\n- 29,000+ activated users in 2 months\n- Paid spend scaled 2.5x while maintaining flat CPA\n\n### Challenge\n75+ campaigns but no activation-level attribution - optimizing on CPI instead of actual business outcomes.\n\n### Solution\nCampaign-level attribution tied to in-app activation events (not just installs) with cross-channel comparison.`,
+  },
+];
+
+/**
  * Analytics event types.
  */
 export const EVENT_TYPES = {
