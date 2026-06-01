@@ -1,7 +1,6 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import type { CaseStudy } from "@/lib/types";
 
 interface TabCaseStudiesProps {
@@ -9,7 +8,7 @@ interface TabCaseStudiesProps {
 }
 
 /**
- * Case Studies tab. Renders banner cards that link to the full story on linkrunner.io.
+ * Case Studies tab. Compact cards with banner thumbnails linking to linkrunner.io.
  */
 export function TabCaseStudies({ caseStudies }: TabCaseStudiesProps) {
   if (caseStudies.length === 0) {
@@ -29,7 +28,7 @@ export function TabCaseStudies({ caseStudies }: TabCaseStudiesProps) {
         </p>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {caseStudies.map((study) => (
           <CaseStudyCard key={study.id} study={study} />
         ))}
@@ -49,54 +48,49 @@ function CaseStudyCard({ study }: { study: CaseStudy }) {
   return (
     <Wrapper
       {...linkProps}
-      className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-lg"
+      className="group flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-[var(--brand-primary)]/30"
     >
-      {/* Banner image */}
+      {/* Banner thumbnail */}
       {study.banner_url && (
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
+        <div className="aspect-[16/9] w-full overflow-hidden bg-gray-100">
           <img
             src={study.banner_url}
             alt={study.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </div>
       )}
 
       {/* Content */}
-      <div className="flex flex-1 flex-col p-5">
-        {/* Customer info */}
-        <div className="mb-3 flex items-center gap-3">
+      <div className="flex flex-1 flex-col p-3.5">
+        {/* Customer name */}
+        <div className="mb-1.5 flex items-center gap-2">
           {study.customer_logo_url ? (
             <img
               src={study.customer_logo_url}
-              alt={`${study.customer_name} logo`}
-              className="h-8 w-8 rounded-lg border border-gray-100 object-contain"
+              alt={study.customer_name}
+              className="h-5 w-5 rounded object-contain"
             />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-xs font-bold text-gray-500">
-              {study.customer_name.charAt(0).toUpperCase()}
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-gray-100 text-[10px] font-bold text-gray-500">
+              {study.customer_name.charAt(0)}
             </div>
           )}
-          <span className="text-sm font-semibold text-gray-700">
+          <span className="text-xs font-semibold text-gray-500">
             {study.customer_name}
           </span>
         </div>
 
         {/* Title */}
-        <h3 className="mb-3 text-base font-bold text-gray-900 group-hover:text-[var(--brand-primary)]">
+        <h3 className="text-sm font-bold leading-snug text-gray-900 group-hover:text-[var(--brand-primary)]">
           {study.title}
         </h3>
 
-        {/* Summary content */}
-        <div className="flex-1 text-sm leading-relaxed text-gray-600">
-          <MarkdownRenderer content={study.content} />
-        </div>
-
-        {/* Link indicator */}
+        {/* Link */}
         {study.url && (
-          <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--brand-primary)]">
-            Read full story
-            <ExternalLink className="h-3.5 w-3.5" />
+          <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[var(--brand-primary)]">
+            Read story
+            <ExternalLink className="h-3 w-3" />
           </div>
         )}
       </div>
