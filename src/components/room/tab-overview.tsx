@@ -8,7 +8,7 @@ import { IframeEmbed } from "@/components/room/iframe-embed";
 import { CustomersReferences } from "@/components/room/customers-references";
 import { SecurityCompliance } from "@/components/room/security-compliance";
 import { IntegrationsPage } from "@/components/room/integrations";
-import { FeaturesBento, DifferentiatorsBento } from "@/components/room/features-bento";
+import { FeaturesBento } from "@/components/room/features-bento";
 import { WhatIsLinkrunner } from "@/components/room/what-is-linkrunner";
 import { OVERVIEW_SUB_TAB_LABELS } from "@/lib/constants";
 import type { OverviewSubTab, Asset } from "@/lib/types";
@@ -165,9 +165,6 @@ export function SubTabContent({
 
     case "features":
       return <FeaturesBento />;
-
-    case "differentiators":
-      return <DifferentiatorsBento />;
 
     case "customers_references":
       return <CustomersReferences />;

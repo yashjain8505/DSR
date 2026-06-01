@@ -8,7 +8,6 @@ export const OVERVIEW_SUB_TAB_KEYS = [
   "features",
   "how_it_works",
   "company_deck",
-  "differentiators",
   "integrations",
   "customers_references",
   "security_compliance",
@@ -25,7 +24,6 @@ export const OVERVIEW_SUB_TAB_LABELS: Record<OverviewSubTabKey, string> = {
   features: "Features",
   how_it_works: "How It Works",
   company_deck: "Company Deck",
-  differentiators: "What Makes Us Different",
   integrations: "Integrations",
   customers_references: "Our Customers & References",
   security_compliance: "Security & Compliance",
@@ -40,10 +38,9 @@ export const OVERVIEW_SUB_TAB_SORT_ORDER: Record<OverviewSubTabKey, number> = {
   features: 2,
   how_it_works: 3,
   company_deck: 4,
-  differentiators: 5,
-  integrations: 6,
-  customers_references: 7,
-  security_compliance: 8,
+  integrations: 5,
+  customers_references: 6,
+  security_compliance: 7,
 };
 
 /**
@@ -61,7 +58,6 @@ export const PRODUCT_SUB_TABS: OverviewSubTabKey[] = [
  * Sub-tab keys belonging to the "Why Linkrunner" main tab.
  */
 export const WHY_LINKRUNNER_SUB_TABS: OverviewSubTabKey[] = [
-  "differentiators",
   "integrations",
   "customers_references",
   "security_compliance",
@@ -122,7 +118,6 @@ export const ASSET_MANAGED_SUB_TABS: readonly OverviewSubTabKey[] = [
   "features",
   "how_it_works",
   "company_deck",
-  "differentiators",
   "integrations",
   "security_compliance",
 ];

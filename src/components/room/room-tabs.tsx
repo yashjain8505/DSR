@@ -14,7 +14,7 @@ import {
   Plug,
   Presentation,
   ShieldCheck,
-  Sparkles,
+
   Users,
   Workflow,
   ChevronDown,
@@ -48,7 +48,7 @@ const TAB_ICONS: Record<MainTabKey, React.ElementType> = {
   features: Boxes,
   how_it_works: Workflow,
   company_deck: Presentation,
-  differentiators: Sparkles,
+
   integrations: Plug,
   customers_references: Users,
   security_compliance: ShieldCheck,
