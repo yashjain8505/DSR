@@ -146,6 +146,9 @@ export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] =
   { name: "Playo", logo_url: "/logos/playo.png" },
   { name: "Astro 247", logo_url: "/logos/astro247.png" },
   { name: "Matiks", logo_url: "/logos/matiks.png" },
+  { name: "CashBook", logo_url: "/logos/cashbook.webp" },
+  { name: "Jumbo Gaming", logo_url: "/logos/jumbo-gaming.webp" },
+  { name: "abcoffee", logo_url: "/logos/abcoffee.png" },
 ];
 
 /**

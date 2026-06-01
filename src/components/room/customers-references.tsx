@@ -44,13 +44,16 @@ export function CustomersReferences({ references }: CustomersReferencesProps) {
           {visible.map((ref) => (
             <div
               key={ref.id}
-              className="flex h-20 items-center justify-center rounded-xl border border-gray-100 bg-white px-4 shadow-sm"
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border border-gray-100 bg-white px-4 py-4 shadow-sm"
             >
               <img
                 src={ref.logo_url}
                 alt={ref.name}
                 className="max-h-10 max-w-[130px] object-contain"
               />
+              <span className="text-xs font-medium text-gray-500">
+                {ref.name}
+              </span>
             </div>
           ))}
         </div>
