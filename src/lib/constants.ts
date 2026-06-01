@@ -131,6 +131,24 @@ export const ROOM_CUSTOMIZABLE_SUB_TABS: readonly OverviewSubTabKey[] =
   );
 
 /**
+ * Default customer reference logos seeded into every new room.
+ * Admin can toggle each on/off per room.
+ */
+export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] = [
+  { name: "CARS24", logo_url: "/logos/cars24.png" },
+  { name: "FatakPay", logo_url: "/logos/fatakpay.png" },
+  { name: "KreditPe", logo_url: "/logos/kreditpe.png" },
+  { name: "Cash247", logo_url: "/logos/cash247.png" },
+  { name: "Bounce Daily", logo_url: "/logos/bounce-daily.png" },
+  { name: "Pronto", logo_url: "/logos/pronto.png" },
+  { name: "Zypp Electric", logo_url: "/logos/zypp-electric.png" },
+  { name: "Meatigo", logo_url: "/logos/meatigo.png" },
+  { name: "Playo", logo_url: "/logos/playo.png" },
+  { name: "Astro 247", logo_url: "/logos/astro247.png" },
+  { name: "Matiks", logo_url: "/logos/matiks.png" },
+];
+
+/**
  * Analytics event types.
  */
 export const EVENT_TYPES = {
