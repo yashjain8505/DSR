@@ -313,9 +313,10 @@ function splitBriefContent(brief: string): {
   content: string;
   nextSteps: string;
 } {
-  // Find the NEXT STEPS section
+  // Find the NEXT STEPS section — supports both ALL CAPS and markdown headings:
+  //   "NEXT STEPS", "### Next Steps", "## Next Steps", "**Next Steps**"
   const nextStepsMatch = brief.match(
-    /\n(NEXT STEPS\b[\s\S]*?)(?=\nREADINESS:|$)/i
+    /\n((?:#{1,4}\s*)?(?:\*{1,2})?NEXT STEPS(?:\*{1,2})?\s*:?\s*\n[\s\S]*?)(?=\nREADINESS:|$)/i
   );
 
   if (!nextStepsMatch) {
@@ -325,9 +326,9 @@ function splitBriefContent(brief: string): {
   }
 
   const nextStepsRaw = nextStepsMatch[1].trim();
-  // Strip the "NEXT STEPS" heading, keep the bullet items
+  // Strip the heading line, keep the bullet items
   const nextStepsBody = nextStepsRaw
-    .replace(/^NEXT STEPS\s*/i, "")
+    .replace(/^(?:#{1,4}\s*)?(?:\*{1,2})?NEXT STEPS(?:\*{1,2})?\s*:?\s*/i, "")
     .trim();
 
   // Content is everything before the NEXT STEPS section, without READINESS
