@@ -124,16 +124,27 @@ export function GranolaMeetingsPanel({
     try {
       const res = await fetch("/api/granola/sync", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) {
+        // Granola doesn't expose a public REST API — sync via Claude Code MCP
+        if (data.error?.includes("GRANOLA_API_KEY") || data.error?.includes("404") || data.error?.includes("Not Found")) {
+          setSyncMessage('Ask Claude Code to "sync granola" — Granola only works via MCP');
+        } else {
+          throw new Error(data.error);
+        }
+        return;
+      }
       setSyncMessage(`Synced ${data.synced} meetings`);
       await fetchMeetings();
     } catch (err) {
-      setSyncMessage(
-        err instanceof Error ? err.message : "Sync failed"
-      );
+      const msg = err instanceof Error ? err.message : "Sync failed";
+      if (msg.includes("404") || msg.includes("Not Found")) {
+        setSyncMessage('Ask Claude Code to "sync granola" — Granola only works via MCP');
+      } else {
+        setSyncMessage(msg);
+      }
     } finally {
       setSyncing(false);
-      setTimeout(() => setSyncMessage(""), 4000);
+      setTimeout(() => setSyncMessage(""), 8000);
     }
   }
 
