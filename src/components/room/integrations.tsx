@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, ExternalLink } from "lucide-react";
+import { Search, ExternalLink, Zap } from "lucide-react";
 
 const DASHBOARD_URL = "https://dashboard.linkrunner.io";
 const INTEGRATIONS_URL = `${DASHBOARD_URL}/dashboard/integrations`;
@@ -300,6 +300,38 @@ export function IntegrationsPage() {
           Open Dashboard
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
+      </div>
+
+      {/* Any-integration promise */}
+      <div
+        className="flex items-start gap-3 rounded-xl border p-4"
+        style={{
+          borderColor: "color-mix(in srgb, var(--brand-primary) 25%, #e5e7eb)",
+          background: "color-mix(in srgb, var(--brand-primary) 6%, #ffffff)",
+        }}
+      >
+        <span
+          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+          style={{
+            background: "color-mix(in srgb, var(--brand-primary) 14%, #ffffff)",
+          }}
+        >
+          <Zap
+            className="h-4 w-4"
+            style={{ color: "var(--brand-primary)" }}
+          />
+        </span>
+        <div>
+          <p className="text-sm font-semibold text-gray-900">
+            Don&rsquo;t see a tool you use?
+          </p>
+          <p className="mt-0.5 text-sm leading-relaxed text-gray-600">
+            Linkrunner can integrate with any ad network, analytics platform,
+            or affiliate partner. If you can make a warm connection with their
+            team, it typically takes us no more than 7 days to ship the
+            integration.
+          </p>
+        </div>
       </div>
 
       {/* Tabs + Search */}

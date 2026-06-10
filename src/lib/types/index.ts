@@ -18,8 +18,20 @@ export interface Room {
   comparison_competitors: string[];
   brand_primary_color: string | null;
   notes: string;
+  /** Optional until migration 007 has been applied. */
+  restrict_access?: boolean;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Allowlist entry for a restricted room (room_access table).
+ */
+export interface RoomAccessEntry {
+  id: string;
+  room_id: string;
+  email: string;
+  created_at: string;
 }
 
 /**
@@ -284,6 +296,16 @@ export interface VisitorActivity {
 }
 
 /**
+ * A single analytics event in a visitor's activity timeline.
+ */
+export interface VisitorEventEntry {
+  id: string;
+  event_type: string;
+  event_data: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/**
  * Cross-room analytics response (admin dashboard).
  */
 export interface CrossRoomAnalytics {
@@ -367,6 +389,7 @@ export interface UpdateRoomPayload {
   comparison_competitors?: string[];
   brand_primary_color?: string | null;
   notes?: string;
+  restrict_access?: boolean;
 }
 
 /**

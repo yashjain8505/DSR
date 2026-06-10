@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Dialog } from "@/components/ui/dialog";
-import type { Room } from "@/lib/types";
+import type { Room, RoomAccessEntry } from "@/lib/types";
 
 export default function RoomSettingsPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -37,6 +37,14 @@ export default function RoomSettingsPage() {
   const [compareBranch, setCompareBranch] = useState(true);
   const [brandColor, setBrandColor] = useState("");
 
+  // Access control
+  const [restrictAccess, setRestrictAccess] = useState(false);
+  const [accessEntries, setAccessEntries] = useState<RoomAccessEntry[]>([]);
+  const [accessUnavailable, setAccessUnavailable] = useState(false);
+  const [accessError, setAccessError] = useState("");
+  const [newAccessEmail, setNewAccessEmail] = useState("");
+  const [accessBusy, setAccessBusy] = useState(false);
+
   useEffect(() => {
     async function fetchRoom() {
       try {
@@ -61,14 +69,96 @@ export default function RoomSettingsPage() {
         setCompareAdjust(comps.includes("adjust"));
         setCompareBranch(comps.includes("branch"));
         setBrandColor(r.brand_primary_color ?? "");
+        setRestrictAccess(r.restrict_access ?? false);
       } catch {
         setError("Failed to load room");
       } finally {
         setLoading(false);
       }
     }
+    async function fetchAccessList() {
+      try {
+        const res = await fetch(`/api/rooms/${roomId}/access`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        setAccessEntries(data.entries);
+      } catch {
+        // room_access table missing until migration 007 is applied
+        setAccessUnavailable(true);
+      }
+    }
     fetchRoom();
+    fetchAccessList();
   }, [roomId]);
+
+  async function handleToggleRestrictAccess(value: boolean) {
+    setAccessError("");
+    const previous = restrictAccess;
+    setRestrictAccess(value);
+    try {
+      const res = await fetch(`/api/rooms/${roomId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restrict_access: value }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+    } catch (err) {
+      setRestrictAccess(previous);
+      setAccessError(
+        err instanceof Error && /restrict_access/.test(err.message)
+          ? "Access control needs DB migration 007 — run supabase/migrations/007_room_access.sql in the Supabase SQL editor."
+          : err instanceof Error
+            ? err.message
+            : "Failed to update access setting"
+      );
+    }
+  }
+
+  async function handleAddAccessEmail() {
+    const email = newAccessEmail.trim().toLowerCase();
+    if (!email) return;
+    setAccessError("");
+    setAccessBusy(true);
+    try {
+      const res = await fetch(`/api/rooms/${roomId}/access`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setAccessEntries((prev) =>
+        prev.some((e) => e.id === data.entry.id) ? prev : [...prev, data.entry]
+      );
+      setNewAccessEmail("");
+    } catch (err) {
+      setAccessError(
+        err instanceof Error ? err.message : "Failed to add email"
+      );
+    } finally {
+      setAccessBusy(false);
+    }
+  }
+
+  async function handleRemoveAccessEmail(entry: RoomAccessEntry) {
+    setAccessError("");
+    try {
+      const res = await fetch(
+        `/api/rooms/${roomId}/access?id=${encodeURIComponent(entry.id)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      setAccessEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    } catch (err) {
+      setAccessError(
+        err instanceof Error ? err.message : "Failed to remove email"
+      );
+    }
+  }
 
   async function handleSave() {
     setError("");
@@ -235,6 +325,89 @@ export default function RoomSettingsPage() {
               label="Getting Started"
             />
           </div>
+        </section>
+
+        {/* Access control */}
+        <section className="rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            Room Access
+          </h2>
+          {accessUnavailable ? (
+            <p className="text-sm text-amber-600">
+              Access control needs DB migration 007 — run{" "}
+              <code className="rounded bg-amber-50 px-1 py-0.5 text-xs">
+                supabase/migrations/007_room_access.sql
+              </code>{" "}
+              in the Supabase SQL editor, then reload this page.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <Toggle
+                checked={restrictAccess}
+                onChange={handleToggleRestrictAccess}
+                label="Restrict access to invited emails"
+              />
+              <p className="-mt-2 text-sm text-gray-500">
+                {restrictAccess
+                  ? "Only the emails below can enter this room. Applies immediately."
+                  : "Anyone with the link can enter after the email gate. Turn on to limit access to the emails below."}
+              </p>
+
+              {/* Invited emails */}
+              <div className="flex flex-wrap gap-2">
+                {accessEntries.length === 0 ? (
+                  <p className="text-sm italic text-gray-400">
+                    No emails invited yet.
+                  </p>
+                ) : (
+                  accessEntries.map((entry) => (
+                    <span
+                      key={entry.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#e6ecff] py-1 pl-3 pr-1.5 text-sm text-[#4d4bf7]"
+                    >
+                      {entry.email}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAccessEmail(entry)}
+                        title={`Remove ${entry.email}`}
+                        className="rounded-full p-0.5 transition-colors hover:bg-[#c9d4ff]"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Input
+                    label="Invite email"
+                    type="email"
+                    placeholder="prospect@company.com"
+                    value={newAccessEmail}
+                    onChange={(e) => setNewAccessEmail(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddAccessEmail();
+                      }
+                    }}
+                  />
+                </div>
+                <Button
+                  variant="secondary"
+                  onClick={handleAddAccessEmail}
+                  loading={accessBusy}
+                >
+                  Add
+                </Button>
+              </div>
+              {accessError && (
+                <p className="text-sm text-red-600">{accessError}</p>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Comparison competitors */}

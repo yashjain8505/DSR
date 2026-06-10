@@ -190,12 +190,17 @@ function StepRow({
                 {date}
               </span>
             )}
-            {showTeamLogos && (
-              <TeamLogos
-                teams={step.teams}
-                customerLogoUrl={customerLogoUrl}
-                customerName={customerName}
-              />
+            {showTeamLogos && step.teams.length > 0 && (
+              <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                  Owner
+                </span>
+                <TeamLogos
+                  teams={step.teams}
+                  customerLogoUrl={customerLogoUrl}
+                  customerName={customerName}
+                />
+              </div>
             )}
           </div>
         )}

@@ -54,11 +54,17 @@ export function EmailGate({
         body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
+        // 403 = restricted room and this email isn't on the allowlist
+        if (response.status === 403 && data.error) {
+          setError(data.error);
+          return;
+        }
         throw new Error("Failed to submit");
       }
 
-      const data = await response.json();
       const visitorId = data.visitor_id;
 
       // Store visitor info in localStorage for subsequent visits

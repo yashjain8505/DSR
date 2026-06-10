@@ -500,7 +500,7 @@ export default function MeetingBriefPage() {
               <Toggle
                 checked={nextStepsData.config.showTeamLogos}
                 onChange={setShowTeamLogos}
-                label="Show team logos"
+                label="Show owner logos"
               />
             </div>
             <p className="mb-5 text-sm text-gray-500">

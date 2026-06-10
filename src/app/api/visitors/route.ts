@@ -15,6 +15,38 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient();
+    const email = body.email.trim().toLowerCase();
+
+    // 0. Look up the room and enforce the access allowlist when restricted.
+    // select("*") keeps this working before migration 007 adds restrict_access.
+    const { data: room } = await admin
+      .from("rooms")
+      .select("*")
+      .eq("id", body.room_id)
+      .single();
+
+    if (!room) {
+      return NextResponse.json({ error: "Room not found" }, { status: 404 });
+    }
+
+    if (room.restrict_access === true) {
+      const { data: allowed } = await admin
+        .from("room_access")
+        .select("id")
+        .eq("room_id", body.room_id)
+        .eq("email", email)
+        .maybeSingle();
+
+      if (!allowed) {
+        return NextResponse.json(
+          {
+            error:
+              "This room is private. Ask your Linkrunner contact to invite your email.",
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     // 1. Upsert visitor by email
     const { data: visitor, error: visitorError } = await admin
@@ -72,24 +104,15 @@ export async function POST(request: Request) {
       console.error("Failed to insert analytics event:", eventError.message);
     }
 
-    // 4. Look up room info and send Slack notification
-    const { data: room } = await admin
-      .from("rooms")
-      .select("company_name, slug")
-      .eq("id", body.room_id)
-      .single();
-
-    if (room) {
-      // Fire and forget -- don't block response on Slack
-      sendSlackNotification({
-        roomSlug: room.slug,
-        companyName: room.company_name,
-        visitorEmail: body.email,
-        visitorName: body.name,
-      }).catch((err) =>
-        console.error("Slack notification failed:", err)
-      );
-    }
+    // 4. Send Slack notification (fire and forget -- don't block response)
+    sendSlackNotification({
+      roomSlug: room.slug,
+      companyName: room.company_name,
+      visitorEmail: body.email,
+      visitorName: body.name,
+    }).catch((err) =>
+      console.error("Slack notification failed:", err)
+    );
 
     return NextResponse.json({ visitor_id: visitor.id }, { status: 201 });
   } catch (err) {

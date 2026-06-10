@@ -21,15 +21,50 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
   const [hydrated, setHydrated] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Check localStorage after hydration
+  // Check localStorage after hydration. Restricted rooms re-validate the
+  // stored email against the allowlist — removed visitors fall back to the
+  // gate, where the server enforces access on submit.
   useEffect(() => {
     const storedId = localStorage.getItem("dsr_visitor_id");
-    if (storedId) {
+    const storedEmail = localStorage.getItem("dsr_visitor_email");
+
+    if (!storedId) {
+      setHydrated(true);
+      return;
+    }
+
+    if (data.room.restrict_access !== true) {
       setVisitorId(storedId);
       setGateCleared(true);
+      setHydrated(true);
+      return;
     }
-    setHydrated(true);
-  }, []);
+
+    if (!storedEmail) {
+      setHydrated(true);
+      return;
+    }
+
+    fetch("/api/rooms/access-check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room_id: data.room.id, email: storedEmail }),
+    })
+      .then((res) => res.json())
+      .then((check) => {
+        if (check.allowed) {
+          setVisitorId(storedId);
+          setGateCleared(true);
+        } else {
+          localStorage.removeItem("dsr_visitor_id");
+          localStorage.removeItem("dsr_visitor_email");
+        }
+      })
+      .catch(() => {
+        /* fail closed — the gate shows and the server enforces on submit */
+      })
+      .finally(() => setHydrated(true));
+  }, [data.room.id, data.room.restrict_access]);
 
   function handleAuthenticated(id: string) {
     setVisitorId(id);
