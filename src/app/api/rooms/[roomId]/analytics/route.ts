@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { type NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { RoomAnalyticsSummary } from "@/lib/types";
@@ -6,6 +7,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { roomId } = await params;
     const days = parseInt(

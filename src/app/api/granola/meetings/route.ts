@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
@@ -11,6 +12,9 @@ import type {
  * Optional query param: ?company=name to filter by company.
  */
 export async function GET(request: Request) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { searchParams } = new URL(request.url);
     const company = searchParams.get("company");
@@ -50,6 +54,9 @@ export async function GET(request: Request) {
  * Upserts on granola_meeting_id (updates if already cached).
  */
 export async function POST(request: Request) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const body: SyncGranolaMeetingPayload | SyncGranolaMeetingPayload[] =
       await request.json();

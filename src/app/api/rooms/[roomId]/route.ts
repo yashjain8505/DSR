@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +8,9 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { roomId } = await params;
     const supabase = await createClient();
@@ -94,6 +98,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { roomId } = await params;
     const body: UpdateRoomPayload = await request.json();
@@ -123,6 +130,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ roomId: string }> }
 ) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { roomId } = await params;
     const admin = createAdminClient();

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createSessionToken, SESSION_COOKIE, SESSION_TTL_SECONDS } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -27,14 +28,26 @@ export async function POST(request: Request) {
       );
     }
 
+    const token = createSessionToken();
+    if (!token) {
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      );
+    }
+
     const response = NextResponse.json({ success: true });
 
-    response.cookies.set("admin_auth", "true", {
+    response.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
-      path: "/admin",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+      maxAge: SESSION_TTL_SECONDS,
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
     });
+
+    // Expire the legacy unsigned cookie if present
+    response.cookies.set("admin_auth", "", { path: "/admin", maxAge: 0 });
 
     return response;
   } catch {

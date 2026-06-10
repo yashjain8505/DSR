@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CustomerReference } from "@/lib/types";
@@ -6,6 +7,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ roomId: string; refId: string }> }
 ) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { roomId, refId } = await params;
     const body: Partial<
@@ -41,6 +45,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ roomId: string; refId: string }> }
 ) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { roomId, refId } = await params;
     const admin = createAdminClient();

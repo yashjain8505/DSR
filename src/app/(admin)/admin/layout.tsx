@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { isAdminAuthenticated } from "@/lib/auth";
 import { LoginForm } from "@/components/admin/login-form";
 
 export const metadata = {
@@ -10,10 +10,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const auth = cookieStore.get("admin_auth");
-
-  if (!auth || auth.value !== "true") {
+  if (!(await isAdminAuthenticated())) {
     return <LoginForm />;
   }
 

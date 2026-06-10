@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateSlug } from "@/lib/utils";
@@ -30,6 +31,9 @@ export const maxDuration = 30;
  * - All other child tables: seeded with defaults
  */
 export async function POST(request: Request) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const body: { granola_cache_id: string } = await request.json();
 

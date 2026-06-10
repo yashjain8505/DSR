@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -101,6 +102,9 @@ async function fetchTranscript(
  * Returns the count of synced meetings.
  */
 export async function POST() {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   const apiKey = process.env.GRANOLA_API_KEY;
 
   if (!apiKey) {

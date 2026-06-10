@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { type NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
@@ -14,6 +15,9 @@ import type {
  * Returns KPI stats, per-room funnel cards, and daily activity breakdown.
  */
 export async function GET(request: NextRequest) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const days = parseInt(
       request.nextUrl.searchParams.get("days") ?? "30",
