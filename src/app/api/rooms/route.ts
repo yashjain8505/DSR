@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     // --- Extract brand assets (logo + color) when possible ---
     let logoUrl = body.logo_url ?? null;
     let brandColor: string | null = null;
+    let secondaryColor: string | null = null;
 
     // Try to get a domain: from contact_email first, then guess from slug
     const contactEmail = body.contact_email ?? null;
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
         const assets = await extractBrandAssets(domain);
         if (assets.logoUrl && !logoUrl) logoUrl = assets.logoUrl;
         if (assets.brandColor) brandColor = assets.brandColor;
+        if (assets.secondaryColor) secondaryColor = assets.secondaryColor;
       } catch {
         /* brand extraction is best-effort */
       }
@@ -89,6 +91,7 @@ export async function POST(request: Request) {
         contact_name: body.contact_name ?? null,
         contact_email: contactEmail,
         brand_primary_color: brandColor,
+        brand_secondary_color: secondaryColor,
       })
       .select()
       .single();

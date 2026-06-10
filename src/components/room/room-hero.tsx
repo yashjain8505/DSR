@@ -41,7 +41,7 @@ export function RoomHero({
     >
       {/* Subtle dot pattern overlay */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        className="pointer-events-none absolute inset-0 opacity-[0.14]"
         style={{
           backgroundImage:
             "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
@@ -55,6 +55,17 @@ export function RoomHero({
         style={{
           background:
             "radial-gradient(ellipse 80% 60% at 30% 40%, rgba(255,255,255,0.15) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Secondary brand accent glow (bottom-right). Rooms without a stored
+          secondary color fall back to Linkrunner purple, which blends into
+          the gradient's purple corner — effectively invisible. */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-30"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 55% at 80% 75%, var(--brand-secondary) 0%, transparent 65%)",
         }}
       />
 

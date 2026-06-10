@@ -21,6 +21,8 @@ export { computePalette, type BrandPalette } from "./palette";
 export interface BrandAssets {
   logoUrl: string | null;
   brandColor: string | null;
+  /** Accent color distinct in hue from brandColor (e.g. navy + neon green). */
+  secondaryColor: string | null;
 }
 
 /**
@@ -60,7 +62,50 @@ export async function extractBrandAssets(
   // Step 2: Extract brand color — logo pixels first, HTML fallbacks second
   const brandColor = await extractBrandColor(logoUrl, html, domain, url);
 
-  return { logoUrl, brandColor };
+  // Step 3: A secondary accent color — first HTML-declared color that is
+  // clearly a different hue than the primary (e.g. Bigul's navy + neon green)
+  const secondaryColor = extractSecondaryColor(brandColor, html);
+
+  return { logoUrl, brandColor, secondaryColor };
+}
+
+/**
+ * Find an accent color distinct in hue from the primary, from the site's
+ * declared colors (theme-color meta, CSS brand vars, inline SVG fills).
+ */
+function extractSecondaryColor(
+  primary: string | null,
+  html: string | null
+): string | null {
+  if (!primary || !html) return null;
+
+  const candidates = [
+    extractMetaThemeColor(html),
+    extractCssVarColor(html),
+    extractSvgColor(html),
+    extractDominantColor(html),
+  ];
+
+  for (const candidate of candidates) {
+    if (
+      candidate &&
+      candidate.toLowerCase() !== primary.toLowerCase() &&
+      isUsableBrandColor(candidate) &&
+      isDistinctHue(primary, candidate)
+    ) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/** Whether two hex colors differ in hue by at least 45° (wrap-aware). */
+function isDistinctHue(a: string, b: string): boolean {
+  const ra = hexToRgb(a);
+  const rb = hexToRgb(b);
+  if (!ra || !rb) return false;
+  const d = Math.abs(rgbToHsl(ra).h - rgbToHsl(rb).h);
+  return Math.min(d, 360 - d) >= 45;
 }
 
 /**

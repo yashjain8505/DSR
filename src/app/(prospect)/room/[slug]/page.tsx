@@ -129,7 +129,7 @@ export default async function RoomPage({ params }: PageProps) {
     "--brand-primary": palette.primary,
     "--brand-primary-light": palette.primaryLight,
     "--brand-primary-dark": palette.primaryDark,
-    "--brand-secondary": "#4d4bf7",
+    "--brand-secondary": room.brand_secondary_color || "#4d4bf7",
     "--lr-purple": "#4d4bf7",
     "--lr-purple-light": "#eeedfe",
   } as React.CSSProperties;

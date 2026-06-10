@@ -36,6 +36,7 @@ export default function RoomSettingsPage() {
   const [compareAdjust, setCompareAdjust] = useState(true);
   const [compareBranch, setCompareBranch] = useState(true);
   const [brandColor, setBrandColor] = useState("");
+  const [secondaryColor, setSecondaryColor] = useState("");
 
   // Access control
   const [restrictAccess, setRestrictAccess] = useState(false);
@@ -69,6 +70,7 @@ export default function RoomSettingsPage() {
         setCompareAdjust(comps.includes("adjust"));
         setCompareBranch(comps.includes("branch"));
         setBrandColor(r.brand_primary_color ?? "");
+        setSecondaryColor(r.brand_secondary_color ?? "");
         setRestrictAccess(r.restrict_access ?? false);
       } catch {
         setError("Failed to load room");
@@ -186,6 +188,7 @@ export default function RoomSettingsPage() {
             ...(compareBranch ? ["branch"] : []),
           ],
           brand_primary_color: brandColor.trim() || null,
+          brand_secondary_color: secondaryColor.trim() || null,
         }),
       });
 
@@ -283,6 +286,23 @@ export default function RoomSettingsPage() {
                 <div
                   className="mb-6 h-10 w-10 shrink-0 rounded-lg border border-gray-200"
                   style={{ backgroundColor: brandColor }}
+                />
+              )}
+            </div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <Input
+                  label="Secondary / Accent Color"
+                  value={secondaryColor}
+                  onChange={(e) => setSecondaryColor(e.target.value)}
+                  placeholder="#00FFC0"
+                  helperText="Optional accent shown alongside the primary in the room hero (e.g. Bigul's neon green)."
+                />
+              </div>
+              {secondaryColor && (
+                <div
+                  className="mb-6 h-10 w-10 shrink-0 rounded-lg border border-gray-200"
+                  style={{ backgroundColor: secondaryColor }}
                 />
               )}
             </div>

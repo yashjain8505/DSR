@@ -11,6 +11,7 @@ import {
   DEFAULT_CASE_STUDIES,
 } from "@/lib/constants";
 import { extractBrandAssets, domainFromEmail, domainFromSlug } from "@/lib/brand-colors";
+import { parseBrief, hasStructure, serializeBrief } from "@/lib/meeting-brief";
 import type { GranolaMeetingCache, GranolaMeetingParticipant } from "@/lib/types";
 
 // This route makes an external LLM call (customer-POV brief rewrite) on top of a
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
 
     // 3. Extract brand assets (logo + color) from prospect's website
     let brandColor: string | null = null;
+    let secondaryColor: string | null = null;
     let logoUrl: string | null = null;
     const contactEmail = meeting.contact_email ?? prospect?.email;
 
@@ -86,6 +88,7 @@ export async function POST(request: Request) {
         const assets = await extractBrandAssets(domain);
         brandColor = assets.brandColor;
         logoUrl = assets.logoUrl;
+        secondaryColor = assets.secondaryColor;
       } catch {
         /* brand extraction is best-effort */
       }
@@ -116,6 +119,7 @@ export async function POST(request: Request) {
         contact_email: meeting.contact_email ?? prospect?.email ?? null,
         logo_url: logoUrl,
         brand_primary_color: brandColor,
+        brand_secondary_color: secondaryColor,
       })
       .select()
       .single();
@@ -139,7 +143,15 @@ export async function POST(request: Request) {
     // ANTHROPIC_API_KEY is set and falls back to a deterministic scrub otherwise,
     // so the prospect never reads internal triage language in "What we discussed".
     const { content: rawContent, nextSteps } = splitBriefContent(rawBrief);
-    const briefContent = await rewriteBriefForCustomer(rawContent);
+    let briefContent = await rewriteBriefForCustomer(rawContent);
+
+    // Normalize to canonical section headers ("Your Situation", "Questions &
+    // Answers", ...) so every room renders the structured recap format,
+    // whether or not the LLM rewrite ran. Unparseable briefs stay as-is.
+    const parsedBrief = parseBrief(briefContent);
+    if (hasStructure(parsedBrief)) {
+      briefContent = serializeBrief(parsedBrief);
+    }
 
     // 7. Create all child rows in parallel
     const [briefResult, subTabsResult, pricingResult, gettingStartedResult, refsResult, caseStudiesResult] =

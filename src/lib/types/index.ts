@@ -17,6 +17,8 @@ export interface Room {
   tab_customers_references_visible: boolean;
   comparison_competitors: string[];
   brand_primary_color: string | null;
+  /** Accent color shown alongside the primary (migration 008). */
+  brand_secondary_color?: string | null;
   notes: string;
   /** Optional until migration 007 has been applied. */
   restrict_access?: boolean;
@@ -388,6 +390,7 @@ export interface UpdateRoomPayload {
   tab_customers_references_visible?: boolean;
   comparison_competitors?: string[];
   brand_primary_color?: string | null;
+  brand_secondary_color?: string | null;
   notes?: string;
   restrict_access?: boolean;
 }
