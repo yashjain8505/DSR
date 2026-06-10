@@ -90,10 +90,8 @@ export async function POST(request: Request) {
         /* brand extraction is best-effort */
       }
     }
-    // Fallback logo via Google Favicon API
-    if (!logoUrl && domain) {
-      logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-    }
+    // No extra fallback — extractBrandAssets ends with a validated
+    // Google-favicon attempt; null renders as a monogram instead of a 404.
 
     // 4. Generate a unique slug
     let slug = generateSlug(companyName);

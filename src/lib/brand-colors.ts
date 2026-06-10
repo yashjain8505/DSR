@@ -167,6 +167,16 @@ async function extractLogo(
     // Strategy 2: PNG/SVG favicon ≥ 64px (large enough to look good)
     const pngIcon = extractLargestIcon(html, baseUrl, 64);
     if (pngIcon) return pngIcon;
+
+    // Strategy 2.5: any <link rel="icon"> regardless of declared type/sizes —
+    // download it and measure the actual pixels. Catches sites that serve a
+    // high-res PNG behind type="image/x-icon" or no sizes attribute at all.
+    const anyIcon = extractLinkHref(
+      html,
+      /rel=["'](?:shortcut\s+)?icon["']/i,
+      baseUrl
+    );
+    if (anyIcon && (await imageMeetsMinSize(anyIcon, 64))) return anyIcon;
   }
 
   // Strategy 3: Try well-known path /apple-touch-icon.png
@@ -176,8 +186,35 @@ async function extractLogo(
   );
   if (wellKnown) return wellKnown;
 
-  // Strategy 4: Google Favicon API — always works, solid background
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  // Strategy 4: Google Favicon API — validated; it 404s for domains Google
+  // hasn't indexed, and storing that URL renders a broken image in the room.
+  return await tryFetchUrl(
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+    "image/"
+  );
+}
+
+/**
+ * Download an image and check its real dimensions with sharp.
+ * SVGs pass unconditionally (vectors scale to any size).
+ */
+async function imageMeetsMinSize(
+  url: string,
+  minSize: number
+): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(6000),
+      redirect: "follow",
+    });
+    if (!res.ok) return false;
+    const buf = Buffer.from(await res.arrayBuffer());
+    const meta = await sharp(buf).metadata();
+    if (meta.format === "svg") return true;
+    return (meta.width ?? 0) >= minSize && (meta.height ?? 0) >= minSize;
+  } catch {
+    return false;
+  }
 }
 
 /**

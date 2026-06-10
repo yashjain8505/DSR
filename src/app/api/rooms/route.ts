@@ -75,10 +75,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // Fallback: Google Favicon API for logo if we still don't have one
-    if (!logoUrl && domain) {
-      logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-    }
+    // No extra fallback here — extractBrandAssets already ends with a
+    // validated Google-favicon attempt; a null logo renders as a monogram,
+    // which beats storing a URL that 404s.
 
     // Create the room
     const { data: room, error: roomError } = await admin
