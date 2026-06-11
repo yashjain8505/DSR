@@ -152,6 +152,7 @@ export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] =
   { name: "Urban Money", logo_url: "/logos/urban-money.png" },
   { name: "Sid's Farm", logo_url: "/logos/sids-farm.png" },
   { name: "Zavo", logo_url: "/logos/zavo.png" },
+  { name: "1% Club", logo_url: "/logos/one-percent-club.png" },
 ];
 
 /**

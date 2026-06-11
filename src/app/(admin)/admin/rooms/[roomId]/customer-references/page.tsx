@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
@@ -103,6 +103,35 @@ export default function CustomerReferencesPage() {
     }
   }
 
+  async function handleMove(index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= refs.length) return;
+
+    // Swap in the array, then persist each ref's new position as its
+    // sort_order so duplicate/gappy orders self-heal as rows are moved.
+    const next = [...refs];
+    [next[index], next[target]] = [next[target], next[index]];
+    next[index] = { ...next[index], sort_order: index };
+    next[target] = { ...next[target], sort_order: target };
+    setRefs(next);
+
+    try {
+      const results = await Promise.all(
+        [next[index], next[target]].map((r) =>
+          fetch(`/api/rooms/${roomId}/customer-references/${r.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sort_order: r.sort_order }),
+          })
+        )
+      );
+      if (results.some((res) => !res.ok)) throw new Error();
+    } catch {
+      setError("Failed to reorder");
+      fetchRefs();
+    }
+  }
+
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -145,7 +174,8 @@ export default function CustomerReferencesPage() {
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             Add customer logos to show on the &ldquo;Our Customers &amp;
-            References&rdquo; tab. Toggle each logo on or off per room.
+            References&rdquo; tab. Toggle each logo on or off and use the
+            arrows to reorder them per room.
           </p>
         </div>
         <Button onClick={() => setShowForm(true)}>
@@ -217,7 +247,7 @@ export default function CustomerReferencesPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {refs.map((ref) => (
+          {refs.map((ref, index) => (
             <div
               key={ref.id}
               className={`flex items-center gap-4 rounded-xl border bg-white p-4 transition-colors ${
@@ -226,6 +256,28 @@ export default function CustomerReferencesPage() {
                   : "border-gray-100 opacity-50"
               }`}
             >
+              {/* Reorder */}
+              <div className="flex shrink-0 flex-col">
+                <button
+                  type="button"
+                  onClick={() => handleMove(index, -1)}
+                  disabled={index === 0}
+                  className="rounded p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-30"
+                  aria-label={`Move ${ref.name} up`}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMove(index, 1)}
+                  disabled={index === refs.length - 1}
+                  className="rounded p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-30"
+                  aria-label={`Move ${ref.name} down`}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+
               {/* Logo preview */}
               <div className="flex h-12 w-24 shrink-0 items-center justify-center rounded-lg border border-gray-100 bg-gray-50 p-1">
                 <img
