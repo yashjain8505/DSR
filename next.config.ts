@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Ideation engine reads config/ via fs at runtime — make sure those files
+  // are traced into the serverless bundle on Vercel.
+  outputFileTracingIncludes: {
+    "/api/ideation/**": ["./config/**"],
+  },
+
   // Allow images from external sources (company logos, etc.)
   images: {
     remotePatterns: [

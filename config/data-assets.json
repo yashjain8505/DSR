@@ -1,0 +1,47 @@
+{
+  "pricing": {
+    "currency": "INR",
+    "default_tiers_per_attributed_install": [
+      { "range": "0-100K installs/mo", "price": "Rs 0.90" },
+      { "range": "100K-500K installs/mo", "price": "Rs 0.80" },
+      { "range": "500K-1M installs/mo", "price": "Rs 0.70" }
+    ],
+    "free_threshold_installs": 25000,
+    "free_custom_events_per_month": 50000000,
+    "billing": "postpaid monthly, no lock-in, organic installs free",
+    "discount_room": "30-50% discount available to strengthen a champion's internal pitch (per GoDigit call)"
+  },
+  "competitor_reference_pricing_per_install": {
+    "AppsFlyer": "Rs 5.00 per conversion (annual contract)",
+    "Adjust": "Rs 4.50 per attribution (annual commitment)",
+    "Branch": "Rs 4.00 per MAU (enterprise plan for full features)"
+  },
+  "scale_proof": {
+    "api_requests_handled": "1.7B+",
+    "installs_measured_per_month": "15M+",
+    "customers": "250+ across 10 countries",
+    "integrations": "35+ ad networks, analytics and affiliate partners"
+  },
+  "product_numbers": {
+    "sdk_size": "under 200KB",
+    "sdk_setup_time": "under 10 minutes, 3 lines of code",
+    "fraud_blocked": "99.5% of affiliate fraud",
+    "support_turnaround": "2 hours max, WhatsApp + Slack group",
+    "migration_time": "a couple of days, existing links preserved"
+  },
+  "case_study_numbers": {
+    "playo_google_cpi_drop": "34% in 3 months (Rs 20.30 to Rs 13.39)",
+    "matiks_meta_cpi_drop": "46% in 3 months",
+    "jumbo_revenue_tracked": "$1M from 200 campaigns"
+  },
+  "benchmarks": {
+    "organic_ratio_by_category": "fill in",
+    "cpi_by_category": "fill in",
+    "d7_retention_by_category": "fill in"
+  },
+  "gifting_tiers": {
+    "tier_1_under": "fill in",
+    "tier_2": "fill in",
+    "tier_3_top_deals": "Growth Gazette custom newspaper piece"
+  }
+}

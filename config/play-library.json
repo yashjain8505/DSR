@@ -1,0 +1,114 @@
+[
+  {
+    "name": "MMP comparison table",
+    "description": "Side-by-side table: Linkrunner vs their current MMP. Features, pricing per attributed install, support model, AI Signals. Personalized to the specific MMP they use.",
+    "triggers": "Objection is 'why should we switch' or 'we're fine with our current MMP'. Prospect is actively comparing vendors. Decision window is open (within 60 days of contract end, or no lock-in).",
+    "asset_hint": "table embedded in a short email, or a page section",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "Custom ROI / pricing breakdown",
+    "description": "Their actual install volume x current MMP pricing vs Linkrunner at ~Rs 0.80/attributed install. Annual savings number front and center.",
+    "triggers": "Objection is price or budget. Prospect mentioned cost of current MMP. A finance person or founder entered the conversation. Renewal/budgeting season.",
+    "asset_hint": "short email with the math inline, plus optional one-pager",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "Migration plan one-pager",
+    "description": "Concrete 2-week migration timeline using the CLI migration tool: what moves when, zero data-loss window, parallel-run period. Kills the switching-cost fear with specifics.",
+    "triggers": "Objection is migration effort, engineering bandwidth, or 'switching is painful'. CTO or engineer raised implementation questions. SDK/SKAN setup effort was discussed.",
+    "asset_hint": "one-pager PDF or page section",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "Security & compliance packet",
+    "description": "SOC 2 (in progress via Scrut), ISO 27001 status, DPA, VDP, data residency answers. Pre-empts the infosec review.",
+    "triggers": "A CTO, security, or legal person entered the deal. Prospect is in fintech or regulated vertical. Procurement or vendor-review process mentioned.",
+    "asset_hint": "email with packet attached / linked",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "Champion enablement deck",
+    "description": "Short internal-pitch deck the champion can forward: the case for switching, savings math, migration plan, FAQ for their boss/committee.",
+    "triggers": "Contact is positive but needs internal sign-off. They said 'I need to discuss with my team/founder'. Buying committee has people we haven't met.",
+    "asset_hint": "5-6 slide deck or one-pager",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "Personalized Loom",
+    "description": "2-3 minute Loom revisiting THEIR demo questions, showing the one feature they reacted to most, ending with a single clear ask.",
+    "triggers": "Deal went quiet after demo. No reply to last 1-2 emails. They reacted strongly to a specific feature in the demo.",
+    "asset_hint": "Loom script (hook, 3 beats, ask) ready to record",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "Case study match",
+    "description": "The closest existing customer by vertical and scale (Cashbook, Playo, abcoffee, Astro 247...), with the 15% ROAS improvement framing.",
+    "triggers": "Prospect asked 'who else uses you'. Trust/credibility objection. Early-stage evaluation where social proof moves the needle.",
+    "asset_hint": "short email leading with the customer name and number",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "Custom follow-up page",
+    "description": "Personalized page from the digital room: their name, comparison vs their MMP, pricing at their volume, matched case study, booking CTA. Page views tracked as buying signals.",
+    "triggers": "Post-demo follow-up for a serious deal. Multiple stakeholders need to see the same material. Champion needs something forwardable.",
+    "asset_hint": "page spec: which blocks to include and the copy for each",
+    "cost_tier": 0,
+    "min_deal_size": 100000
+  },
+  {
+    "name": "Attribution health audit",
+    "description": "Free audit of their current attribution setup: SKAN config gaps, organic ratio vs benchmark, dedup issues. Built on data only Linkrunner has. High-effort, high-trust play.",
+    "triggers": "Prospect doubts data quality of current MMP. Mentioned discrepancies, fraud, or organic ratio confusion. Technical persona who responds to substance over pitch.",
+    "asset_hint": "email offering the audit + what they'd get; audit doc if data available",
+    "cost_tier": 1,
+    "min_deal_size": 100000
+  },
+  {
+    "name": "Personalized benchmark stat",
+    "description": "One number from Linkrunner's cross-customer data relevant to their category: 'apps your size see X% organic ratio, want to see where you sit?' Nobody else can send this touch.",
+    "triggers": "Nurture-mode warm touch. Prospect is data-driven. Long gap since last contact and we need a no-ask reason to show up.",
+    "asset_hint": "2-3 line email around one number",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "New customer announcement",
+    "description": "When a customer in their vertical or at their scale goes live with Linkrunner, send a personal note about it. Not a newsletter blast, a 'thought of you' note.",
+    "triggers": "Nurture-mode touch. A relevant customer recently signed. Prospect's vertical matches a recent win.",
+    "asset_hint": "3-line personal email",
+    "cost_tier": 0,
+    "min_deal_size": 0
+  },
+  {
+    "name": "Gift box / offline touch",
+    "description": "Physical gift from the three-tier gifting structure. Tier selected by deal size. Timed to land just before the internal renewal conversation starts, not after.",
+    "triggers": "Nurture mode, T-4 to T-3 months before contract end. Deal size justifies spend. Relationship is warm enough that a gift reads as thoughtful, not desperate.",
+    "asset_hint": "gift tier + card copy + ship-by date",
+    "cost_tier": 2,
+    "min_deal_size": 200000
+  },
+  {
+    "name": "Growth Gazette custom piece",
+    "description": "Personalized newspaper-style piece about THEIR growth story (the Matiks play). Memorable, shareable inside their office.",
+    "triggers": "Nurture mode for a high-value deal. Their company hit a public milestone (funding, launch, install milestone) worth 'reporting' on.",
+    "asset_hint": "Gazette headline + 3 article stubs + production note",
+    "cost_tier": 2,
+    "min_deal_size": 300000
+  },
+  {
+    "name": "Time-bound migration incentive",
+    "description": "Concrete offer with a deadline: free migration support + first month credit if they start before their renewal date. Creates urgency only when the window is actually open.",
+    "triggers": "T-60 days or less to contract end. Deal is warm but stalling. Champion needs a reason to push internally NOW.",
+    "asset_hint": "short email, offer in one bold line, deadline explicit",
+    "cost_tier": 1,
+    "min_deal_size": 0
+  }
+]
