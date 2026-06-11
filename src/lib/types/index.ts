@@ -101,6 +101,16 @@ export interface VolumeTier {
 }
 
 /**
+ * A volume range — "from min to max installs/mo, the per-install price is Y".
+ * Drives the interactive pricing slider on the room pricing tab.
+ */
+export interface RangeTier {
+  min_volume: number;
+  max_volume: number;
+  per_install_price: number;
+}
+
+/**
  * A competitor's pricing for side-by-side comparison.
  */
 export interface CompetitorPricing {
@@ -115,7 +125,9 @@ export interface CompetitorPricing {
  */
 export interface PricingData {
   quote?: PricingQuote;
-  /** Volume-based pricing brackets shown as cards. */
+  /** Volume ranges driving the interactive pricing slider. */
+  range_tiers?: RangeTier[];
+  /** Legacy point-based volume brackets (converted to ranges at render). */
   volume_tiers?: VolumeTier[];
   /** Competitor pricing for comparison section. */
   competitor_pricing?: CompetitorPricing[];

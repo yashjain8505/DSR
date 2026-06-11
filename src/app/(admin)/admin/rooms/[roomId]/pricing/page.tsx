@@ -11,7 +11,7 @@ import type {
   Pricing,
   PricingQuote,
   PricingData,
-  VolumeTier,
+  RangeTier,
   CompetitorPricing,
 } from "@/lib/types";
 import { normalizePricingData } from "@/lib/types";
@@ -35,7 +35,7 @@ export default function PricingEditorPage() {
   const [content, setContent] = useState("");
   const [quote, setQuote] = useState<PricingQuote>({ ...defaultQuote });
   const [showQuote, setShowQuote] = useState(false);
-  const [volumeTiers, setVolumeTiers] = useState<VolumeTier[]>([]);
+  const [rangeTiers, setRangeTiers] = useState<RangeTier[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorPricing[]>([]);
   const [mode, setMode] = useState<"markdown" | "structured">("markdown");
   const [loading, setLoading] = useState(true);
@@ -59,15 +59,28 @@ export default function PricingEditorPage() {
           setQuote(normalized.quote);
           setShowQuote(true);
         }
-        if (normalized.volume_tiers) {
-          setVolumeTiers(normalized.volume_tiers);
+        if (normalized.range_tiers?.length) {
+          setRangeTiers(normalized.range_tiers);
+        } else if (normalized.volume_tiers?.length) {
+          // Legacy point tiers -> ranges, so old rooms edit seamlessly
+          const points = [...normalized.volume_tiers].sort(
+            (a, b) => a.volume - b.volume,
+          );
+          setRangeTiers(
+            points.map((pt, i) => ({
+              min_volume: i === 0 ? 0 : points[i - 1].volume,
+              max_volume: pt.volume,
+              per_install_price: pt.per_install_price,
+            })),
+          );
         }
         if (normalized.competitor_pricing) {
           setCompetitors(normalized.competitor_pricing);
         }
 
         setMode(
-          normalized.volume_tiers?.length ||
+          normalized.range_tiers?.length ||
+            normalized.volume_tiers?.length ||
             normalized.quote ||
             normalized.competitor_pricing?.length
             ? "structured"
@@ -91,25 +104,37 @@ export default function PricingEditorPage() {
     setQuote((prev) => ({ ...prev, [field]: value }));
   }
 
-  /* ---- volume tier helpers ---- */
+  /* ---- range tier helpers ---- */
 
-  function addVolumeTier() {
-    setVolumeTiers((prev) => [
-      ...prev,
-      { volume: 0, per_install_price: quote.per_install_price },
-    ]);
+  function addRangeTier() {
+    setRangeTiers((prev) => {
+      const last = prev[prev.length - 1];
+      return [
+        ...prev,
+        last
+          ? {
+              min_volume: last.max_volume,
+              max_volume: last.max_volume * 5,
+              per_install_price: Math.max(
+                0.1,
+                Math.round((last.per_install_price - 0.1) * 100) / 100,
+              ),
+            }
+          : { min_volume: 0, max_volume: 100000, per_install_price: 0.9 },
+      ];
+    });
   }
 
-  function removeVolumeTier(index: number) {
-    setVolumeTiers((prev) => prev.filter((_, i) => i !== index));
+  function removeRangeTier(index: number) {
+    setRangeTiers((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function updateVolumeTier(
+  function updateRangeTier(
     index: number,
-    field: keyof VolumeTier,
+    field: keyof RangeTier,
     value: number,
   ) {
-    setVolumeTiers((prev) =>
+    setRangeTiers((prev) =>
       prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)),
     );
   }
@@ -150,8 +175,13 @@ export default function PricingEditorPage() {
       if (showQuote && quote.estimated_volume > 0) {
         pricingData.quote = quote;
       }
-      if (volumeTiers.length > 0) {
-        pricingData.volume_tiers = volumeTiers.filter((t) => t.volume > 0);
+      const validRanges = rangeTiers.filter(
+        (t) => t.max_volume > t.min_volume && t.per_install_price > 0,
+      );
+      if (validRanges.length > 0) {
+        pricingData.range_tiers = [...validRanges].sort(
+          (a, b) => a.min_volume - b.min_volume,
+        );
       }
       if (competitors.length > 0) {
         pricingData.competitor_pricing = competitors.filter(
@@ -161,7 +191,7 @@ export default function PricingEditorPage() {
 
       const hasData =
         pricingData.quote ||
-        (pricingData.volume_tiers?.length ?? 0) > 0 ||
+        (pricingData.range_tiers?.length ?? 0) > 0 ||
         (pricingData.competitor_pricing?.length ?? 0) > 0;
 
       const payload: { content: string; pricing_data: PricingData | never[] } =
@@ -256,7 +286,9 @@ export default function PricingEditorPage() {
                   Customer Quote
                 </h2>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  Personalized pricing breakdown for this prospect
+                  Estimated Volume sets where the room&apos;s pricing slider
+                  starts; currency, free threshold &amp; value props show on
+                  the pricing tab
                 </p>
               </div>
               <Toggle
@@ -360,23 +392,28 @@ export default function PricingEditorPage() {
             )}
           </div>
 
-          {/* ═══════════════ VOLUME TIERS ═══════════════ */}
+          {/* ═══════════════ PRICING RANGES (SLIDER) ═══════════════ */}
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <div className="mb-1">
               <h2 className="text-base font-semibold text-gray-900">
-                Volume Pricing
+                Pricing Ranges
               </h2>
               <p className="mt-0.5 text-xs text-gray-500">
-                Show what the per-install price looks like at different volumes
+                Volume brackets for the interactive slider on the room pricing
+                tab — e.g. 0&ndash;100K at ₹0.90, 100K&ndash;500K at ₹0.80.
+                The prospect drags the slider and the price updates live.
               </p>
             </div>
 
-            {volumeTiers.length > 0 && (
+            {rangeTiers.length > 0 && (
               <div className="mt-4 space-y-3">
                 {/* Header row */}
-                <div className="grid grid-cols-[1fr_1fr_auto] gap-4 px-1">
+                <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 px-1">
                   <p className="text-xs font-medium text-gray-400">
-                    Monthly Volume
+                    From (installs/mo)
+                  </p>
+                  <p className="text-xs font-medium text-gray-400">
+                    To (installs/mo)
                   </p>
                   <p className="text-xs font-medium text-gray-400">
                     Per-Install Price ({quote.currency})
@@ -384,53 +421,71 @@ export default function PricingEditorPage() {
                   <div className="w-8" />
                 </div>
 
-                {volumeTiers.map((vt, index) => {
+                {rangeTiers.map((rt, index) => {
+                  const invalid =
+                    rt.max_volume > 0 && rt.max_volume <= rt.min_volume;
                   return (
                     <div
                       key={index}
-                      className="grid grid-cols-[1fr_1fr_auto] items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 p-3"
+                      className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 p-3"
                     >
                       <Input
                         type="number"
-                        value={vt.volume || ""}
+                        value={rt.min_volume || ""}
                         onChange={(e) =>
-                          updateVolumeTier(
+                          updateRangeTier(
                             index,
-                            "volume",
+                            "min_volume",
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
+                        placeholder="0"
+                      />
+                      <Input
+                        type="number"
+                        value={rt.max_volume || ""}
+                        onChange={(e) =>
+                          updateRangeTier(
+                            index,
+                            "max_volume",
                             parseInt(e.target.value) || 0,
                           )
                         }
                         placeholder="100000"
+                        error={invalid ? "Must be greater than From" : undefined}
                       />
                       <div className="flex items-center gap-3">
                         <Input
                           type="number"
                           step="0.01"
-                          value={vt.per_install_price || ""}
+                          value={rt.per_install_price || ""}
                           onChange={(e) =>
-                            updateVolumeTier(
+                            updateRangeTier(
                               index,
                               "per_install_price",
                               parseFloat(e.target.value) || 0,
                             )
                           }
-                          placeholder="0.70"
+                          placeholder="0.90"
                         />
-                        {vt.volume > 0 && (
-                          <p className="shrink-0 text-xs text-gray-400">
-                            = {quote.currency}
-                            {(vt.volume * vt.per_install_price).toLocaleString(
-                              "en-IN",
-                              { maximumFractionDigits: 0 },
-                            )}
-                            /mo
-                          </p>
-                        )}
+                        {rt.max_volume > rt.min_volume &&
+                          rt.per_install_price > 0 && (
+                            <p className="shrink-0 text-xs text-gray-400">
+                              at {rt.max_volume.toLocaleString("en-IN")}:{" "}
+                              {quote.currency}
+                              {(
+                                rt.max_volume * rt.per_install_price
+                              ).toLocaleString("en-IN", {
+                                maximumFractionDigits: 0,
+                              })}
+                              /mo
+                            </p>
+                          )}
                       </div>
                       <button
                         type="button"
                         className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-500"
-                        onClick={() => removeVolumeTier(index)}
+                        onClick={() => removeRangeTier(index)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -441,9 +496,9 @@ export default function PricingEditorPage() {
             )}
 
             <div className="mt-4">
-              <Button variant="secondary" size="sm" onClick={addVolumeTier}>
+              <Button variant="secondary" size="sm" onClick={addRangeTier}>
                 <Plus className="h-4 w-4" />
-                Add Volume Tier
+                Add Range
               </Button>
             </div>
           </div>
