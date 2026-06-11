@@ -158,7 +158,7 @@ export function WhatIsLinkrunner({
           {FLOW_STEPS.map((step, index) => (
             <div
               key={step.label}
-              className="relative rounded-lg bg-gray-50 p-4"
+              className="relative rounded-lg bg-gray-100 p-4"
             >
               {index < FLOW_STEPS.length - 1 && (
                 <ArrowRight className="absolute right-3 top-5 hidden h-4 w-4 text-gray-300 lg:block" />
@@ -254,7 +254,7 @@ export function WhatIsLinkrunner({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-gray-50 p-4">
+    <div className="rounded-lg bg-gray-100 p-4">
       <p className="text-2xl font-bold text-gray-900">{value}</p>
       <p className="mt-1 text-xs font-medium text-gray-500">{label}</p>
     </div>
@@ -296,7 +296,7 @@ function ProductConsole({ companyName }: { companyName: string }) {
           <ChannelRow label="QR-to-app opens" value="1.6K" width="26%" />
         </div>
 
-        <div className="mt-5 rounded-lg bg-gray-50 p-3">
+        <div className="mt-5 rounded-lg bg-gray-100 p-3">
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
             <ShieldCheck className="h-4 w-4 text-gray-500" />
             AI data quality checks
@@ -315,7 +315,7 @@ function ProductConsole({ companyName }: { companyName: string }) {
 
 function ConsoleMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-gray-50 p-3">
+    <div className="rounded-lg bg-gray-100 p-3">
       <p className="text-xs font-medium text-gray-500">{label}</p>
       <p className="mt-1 text-xl font-bold text-gray-900">{value}</p>
     </div>

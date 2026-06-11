@@ -151,7 +151,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400",
                   isActive
                     ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    : "text-gray-600 hover:bg-gray-200/70 hover:text-gray-900",
                 )}
               >
                 <Icon
@@ -185,7 +185,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400",
                           isSubActive
                             ? "bg-white font-medium text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:bg-gray-100 hover:text-gray-800",
+                            : "text-gray-500 hover:bg-gray-200/70 hover:text-gray-800",
                         )}
                       >
                         {item.label}

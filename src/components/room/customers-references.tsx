@@ -35,12 +35,12 @@ export function CustomersReferences({ references }: CustomersReferencesProps) {
         </p>
       </div>
 
-      <div className="rounded-2xl bg-gray-100 p-4 sm:p-8">
+      <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-8">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
           {visible.map((ref) => (
             <div
               key={ref.id}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl bg-white px-4 py-4 shadow-sm"
+              className="flex flex-col items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-4"
             >
               <img
                 src={ref.logo_url}

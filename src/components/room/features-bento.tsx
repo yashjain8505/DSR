@@ -348,7 +348,7 @@ function getAccentStyles(accent?: string): AccentStyleSet {
     case "brand":
     case "gradient":
       return {
-        container: "bg-gray-100",
+        container: "bg-gray-100 shadow-sm",
         iconBg: "bg-white",
         iconColor: "text-gray-700",
         title: "text-gray-900",
@@ -358,7 +358,7 @@ function getAccentStyles(accent?: string): AccentStyleSet {
       };
     case "dark":
       return {
-        container: "bg-gray-900 text-white",
+        container: "bg-gray-900 text-white shadow-sm",
         iconBg: "bg-white/10",
         iconColor: "text-white",
         title: "text-white",
@@ -369,7 +369,7 @@ function getAccentStyles(accent?: string): AccentStyleSet {
     default:
       // "subtle"
       return {
-        container: "bg-white",
+        container: "bg-white shadow-sm",
         iconBg: "bg-gray-100",
         iconColor: "text-gray-700",
         title: "text-gray-900",

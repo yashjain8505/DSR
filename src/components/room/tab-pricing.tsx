@@ -480,7 +480,7 @@ function CompetitorCard({
   savingsPct: number;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gray-50 shadow-sm">
+    <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm">
       {/* Header */}
       <div className="bg-gray-100 px-5 py-2">
         <span className="text-xs font-bold uppercase tracking-wider text-gray-500">

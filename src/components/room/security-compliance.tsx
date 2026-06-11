@@ -104,7 +104,7 @@ export function SecurityCompliance() {
       </div>
 
       {/* Compliance badges */}
-      <section className="rounded-xl bg-white p-5 sm:p-6">
+      <section className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
         <h3 className="mb-4 text-sm font-semibold text-gray-700">
           Compliance
         </h3>
@@ -115,7 +115,7 @@ export function SecurityCompliance() {
               href={TRUST_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative flex items-center gap-4 rounded-xl bg-gray-50 p-4 transition-all hover:shadow-md"
+              className="group relative flex items-center gap-4 rounded-xl bg-gray-100 p-4 transition-all hover:shadow-md"
             >
               {/* Badge icon */}
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
@@ -148,7 +148,7 @@ export function SecurityCompliance() {
       </section>
 
       {/* Documents */}
-      <section className="rounded-xl bg-white p-5 sm:p-6">
+      <section className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700">
             Documents
@@ -170,7 +170,7 @@ export function SecurityCompliance() {
               href={TRUST_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-3 rounded-lg bg-gray-50 p-4 transition-all hover:shadow-sm"
+              className="group flex items-center gap-3 rounded-lg bg-gray-100 p-4 transition-all hover:shadow-sm"
             >
               <FileText className="h-5 w-5 shrink-0 text-gray-500" />
               <div className="min-w-0 flex-1">
@@ -189,7 +189,7 @@ export function SecurityCompliance() {
       </section>
 
       {/* Sub-Processors */}
-      <section className="rounded-xl bg-white p-5 sm:p-6">
+      <section className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700">
             Sub-Processors
@@ -208,7 +208,7 @@ export function SecurityCompliance() {
           {SUB_PROCESSORS.map((sp) => (
             <div
               key={sp.name}
-              className="flex items-center gap-3 rounded-lg bg-gray-50 p-4"
+              className="flex items-center gap-3 rounded-lg bg-gray-100 p-4"
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-bold text-gray-600">
                 {sp.name
@@ -230,7 +230,7 @@ export function SecurityCompliance() {
       </section>
 
       {/* FAQs */}
-      <section className="rounded-xl bg-white p-5 sm:p-6">
+      <section className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700">
             FAQs
@@ -263,7 +263,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-lg bg-gray-50 transition-colors hover:bg-gray-100">
+    <div className="rounded-lg bg-gray-100 transition-colors hover:bg-gray-200/70">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between px-4 py-3.5 text-left"

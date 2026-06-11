@@ -322,7 +322,7 @@ export function IntegrationsPage() {
 
       {/* Tabs + Search */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+        <div className="flex gap-1 rounded-lg bg-gray-200/70 p-1">
           {[
             { key: "all", label: "All" },
             { key: "Ad Networks", label: "Ad Networks" },
@@ -388,9 +388,9 @@ function IntegrationCard({ item }: { item: Integration }) {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-white p-4 transition-shadow hover:shadow-md">
+    <div className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
       {/* Logo */}
-      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-gray-50">
+      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
         {imgError ? (
           <span className="text-sm font-bold text-gray-400">
             {item.name

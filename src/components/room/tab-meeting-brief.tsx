@@ -79,7 +79,7 @@ function SnapshotStrip({
   snapshot: { date: string; attendees: string };
 }) {
   return (
-    <div className="flex flex-col gap-2 bg-gray-50 px-6 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:px-10">
+    <div className="flex flex-col gap-2 bg-gray-100 px-6 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:px-10">
       {snapshot.date && (
         <span className="flex items-center gap-2 text-sm text-gray-600">
           <Calendar className="h-4 w-4 shrink-0 text-gray-500" />

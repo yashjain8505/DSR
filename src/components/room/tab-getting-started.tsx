@@ -51,11 +51,11 @@ export function TabGettingStarted({ gettingStarted }: TabGettingStartedProps) {
           return (
             <div
               key={section.key}
-              className="rounded-xl bg-white overflow-hidden"
+              className="rounded-xl bg-white shadow-sm overflow-hidden"
             >
               {/* Section header */}
-              <div className="flex items-center gap-4 bg-gray-50 px-6 py-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-gray-700">
+              <div className="flex items-center gap-4 bg-gray-100 px-6 py-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-gray-700 shadow-sm">
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>
