@@ -2,11 +2,9 @@
 
 import {
   ArrowRight,
-  BarChart3,
   Gift,
   Link2,
   Megaphone,
-  Rocket,
   Smartphone,
 } from "lucide-react";
 
@@ -20,36 +18,11 @@ const HERO_STATS: { value: string; label: string }[] = [
   { value: "25K", label: "free installs to start" },
 ];
 
-const STATS: { value: string; label: string }[] = [
-  { value: "35+", label: "ad & analytics integrations" },
-  { value: "50M", label: "free events every month" },
-  { value: "<10 min", label: "SDK setup" },
-  { value: "99.5%", label: "affiliate fraud blocked" },
-];
-
-const ATTRIBUTION_METRICS: { label: string; value: string; delta: string }[] =
-  [
-    { label: "Installs", value: "73K", delta: "+14%" },
-    { label: "ROAS", value: "92%", delta: "+11%" },
-    { label: "D7 Retention", value: "41%", delta: "+6%" },
-  ];
-
-const GO_LIVE_STEPS: { title: string; sub: string }[] = [
-  { title: "Add the SDK", sub: "3 lines of code" },
-  { title: "Connect partners", sub: "Meta, Google & 35+ more" },
-  { title: "Launch campaigns", sub: "links + QR + web-to-app" },
-  { title: "Watch it attribute", sub: "installs & revenue, live" },
-];
-
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function WhatIsLinkrunner({
-  companyName = "your team",
-}: {
-  companyName?: string;
-}) {
+export function WhatIsLinkrunner() {
   return (
     <div className="space-y-5">
       {/* ── Hero ── */}
@@ -88,17 +61,18 @@ export function WhatIsLinkrunner({
         </div>
       </section>
 
-      {/* ── The five pillars ── */}
+      {/* ── The pillars ── */}
       <section className="grid gap-3 lg:grid-cols-3">
-        {/* Deep links — wide, with routing visual */}
-        <div className="rounded-3xl bg-violet-50 p-7 lg:col-span-2">
+        {/* Deep links — full width, with routing visual */}
+        <div className="rounded-3xl bg-violet-50 p-7 lg:col-span-3">
           <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
             <Link2 className="h-5 w-5" />
           </div>
           <h3 className="text-lg font-bold text-gray-900">Deep links</h3>
-          <p className="mt-1.5 max-w-md text-sm leading-6 text-gray-600">
-            Every user lands on the right screen. The link checks the device
-            and routes in real time, even when the app is not installed yet.
+          <p className="mt-1.5 max-w-xl text-sm leading-6 text-gray-600">
+            Unlimited deep links, a complete OneLink alternative, fully
+            deferred deep link compatible. Every user lands on the right
+            screen.
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-medium">
             <span className="rounded-full bg-white px-3 py-1.5 text-gray-700 shadow-sm">
@@ -112,31 +86,6 @@ export function WhatIsLinkrunner({
             <span className="rounded-full bg-white px-3 py-1.5 text-gray-700 shadow-sm">
               No: store, then deferred deep link
             </span>
-          </div>
-        </div>
-
-        {/* User attribution — with metric mock */}
-        <div className="rounded-3xl bg-sky-50 p-7">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm">
-            <BarChart3 className="h-5 w-5" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">User attribution</h3>
-          <p className="mt-1.5 text-sm leading-6 text-gray-600">
-            Every install, event and rupee tied to the campaign that earned it.
-          </p>
-          <div className="mt-4 grid grid-cols-3 gap-1.5">
-            {ATTRIBUTION_METRICS.map((m) => (
-              <div
-                key={m.label}
-                className="rounded-xl bg-white px-2 py-2 text-center shadow-sm"
-              >
-                <p className="text-sm font-bold text-gray-900">{m.value}</p>
-                <p className="text-[10px] font-semibold text-gray-700">
-                  {m.delta}
-                </p>
-                <p className="text-[10px] text-gray-400">{m.label}</p>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -175,47 +124,6 @@ export function WhatIsLinkrunner({
             build needed.
           </p>
         </div>
-      </section>
-
-      {/* ── Stats strip ── */}
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {STATS.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-2xl bg-white px-5 py-5 text-center shadow-sm"
-          >
-            <p className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
-              {stat.value}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">{stat.label}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* ── Go-live strip ── */}
-      <section className="rounded-3xl bg-white p-7 shadow-sm sm:p-8">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <h3 className="text-lg font-bold text-gray-900">
-            How {companyName} goes live
-          </h3>
-          <span className="flex items-center gap-1.5 text-sm font-medium text-gray-400">
-            <Rocket className="h-4 w-4" />
-            under a week
-          </span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-4">
-          {GO_LIVE_STEPS.map((step, i) => (
-            <div key={step.title} className="rounded-2xl bg-gray-100 p-4">
-              <p className="text-xs font-bold text-gray-400">{i + 1}</p>
-              <p className="mt-1 font-semibold text-gray-900">{step.title}</p>
-              <p className="mt-0.5 text-xs text-gray-500">{step.sub}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-5 text-sm text-gray-500">
-          Migration from AppsFlyer, Adjust or Branch is handled by our team.
-          Existing links keep working.
-        </p>
       </section>
     </div>
   );

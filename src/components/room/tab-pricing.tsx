@@ -9,6 +9,7 @@ import {
   Sparkles,
   Unlock,
   Wallet,
+  Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type {
@@ -72,6 +73,11 @@ const DEFAULT_PERKS: { icon: ReactNode; title: string; sub: string }[] = [
     icon: <MessageCircle className="h-4 w-4" />,
     title: "Real support",
     sub: "Slack & WhatsApp",
+  },
+  {
+    icon: <Zap className="h-4 w-4" />,
+    title: "50M custom events",
+    sub: "Free every month",
   },
 ];
 
@@ -359,7 +365,7 @@ function PricingEstimator({
         </div>
 
         {/* Perks */}
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {customProps.length > 0
             ? customProps.map((prop) => (
                 <div

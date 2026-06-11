@@ -92,11 +92,9 @@ export function SubTabDropdownSection({
 export function SubTabContent({
   subTab,
   assets = [],
-  companyName,
 }: {
   subTab: OverviewSubTab;
   assets?: Asset[];
-  companyName?: string;
 }) {
   const asset = assets.find((a) => a.category === subTab.sub_tab_key);
   const content = subTab.content || asset?.content || "";
@@ -160,7 +158,7 @@ export function SubTabContent({
     }
 
     case "what_is_linkrunner":
-      return <WhatIsLinkrunner companyName={companyName} />;
+      return <WhatIsLinkrunner />;
 
     case "features":
       return <FeaturesBento />;
