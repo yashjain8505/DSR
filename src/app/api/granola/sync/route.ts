@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Granola API base URL and key.
+ * Granola public API base URL and key.
  * The key is stored in GRANOLA_API_KEY env var.
+ * (api.granola.ai does not exist — only public-api.granola.ai does.)
  */
-const GRANOLA_API = "https://api.granola.ai/v1";
+const GRANOLA_API = "https://public-api.granola.ai/v1";
 
 interface GranolaParticipant {
   name?: string;
@@ -18,9 +19,9 @@ interface GranolaParticipant {
 interface GranolaMeeting {
   id: string;
   title: string;
-  start_time: string;
-  end_time?: string;
-  participants?: GranolaParticipant[];
+  created_at: string;
+  people?: GranolaParticipant[];
+  transcript?: string;
   summary?: string;
   notes?: string;
 }
@@ -79,19 +80,60 @@ async function fetchTranscript(
   apiKey: string
 ): Promise<string | null> {
   try {
-    const res = await fetch(`${GRANOLA_API}/meetings/${meetingId}/transcript`, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      signal: AbortSignal.timeout(15000),
-    });
+    const res = await fetch(
+      `${GRANOLA_API}/notes/${meetingId}?include=transcript`,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        signal: AbortSignal.timeout(15000),
+      }
+    );
     if (!res.ok) return null;
     const data = await res.json();
     return data.transcript ?? null;
   } catch {
     return null;
   }
+}
+
+/**
+ * List all notes created after the given date, following cursor pagination.
+ */
+async function listNotes(
+  sinceIso: string,
+  apiKey: string
+): Promise<{ meetings: GranolaMeeting[] } | { error: string; status: number }> {
+  const meetings: GranolaMeeting[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const params = new URLSearchParams({
+      limit: "50",
+      created_after: sinceIso,
+    });
+    if (cursor) params.set("cursor", cursor);
+
+    const res = await fetch(`${GRANOLA_API}/notes?${params}`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      return { error: `Granola API error: ${res.status} ${text}`, status: 502 };
+    }
+
+    const data = await res.json();
+    const notes: GranolaMeeting[] = data.notes ?? data.data ?? [];
+    meetings.push(...notes);
+    cursor = data.next_cursor ?? data.cursor ?? null;
+  } while (cursor);
+
+  return { meetings };
 }
 
 /**
@@ -119,28 +161,18 @@ export async function POST() {
     const since = new Date();
     since.setDate(since.getDate() - 90);
 
-    const res = await fetch(
-      `${GRANOLA_API}/meetings?since=${since.toISOString()}&limit=100`,
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const listed = await listNotes(since.toISOString(), apiKey);
 
-    if (!res.ok) {
-      const text = await res.text();
+    if ("error" in listed) {
       return NextResponse.json(
-        { error: `Granola API error: ${res.status} ${text}` },
-        { status: 502 }
+        { error: listed.error },
+        { status: listed.status }
       );
     }
 
-    const data = await res.json();
-    const meetings: GranolaMeeting[] = data.meetings ?? data ?? [];
+    const meetings = listed.meetings;
 
-    if (!Array.isArray(meetings) || meetings.length === 0) {
+    if (meetings.length === 0) {
       return NextResponse.json({ synced: 0, message: "No meetings found" });
     }
 
@@ -149,7 +181,11 @@ export async function POST() {
     for (let i = 0; i < meetings.length; i += 5) {
       const batch = meetings.slice(i, i + 5);
       const results = await Promise.allSettled(
-        batch.map((m) => fetchTranscript(m.id, apiKey))
+        batch.map((m) =>
+          m.transcript
+            ? Promise.resolve(m.transcript)
+            : fetchTranscript(m.id, apiKey)
+        )
       );
       results.forEach((result, idx) => {
         if (result.status === "fulfilled" && result.value) {
@@ -160,7 +196,7 @@ export async function POST() {
 
     // Transform to our cache format — use transcript as primary content
     const rows = meetings.map((m) => {
-      const participants = (m.participants ?? []).map((p) => ({
+      const participants = (m.people ?? []).map((p) => ({
         name: p.name ?? "Unknown",
         email: p.email ?? "",
         company: p.company,
@@ -174,7 +210,7 @@ export async function POST() {
       return {
         granola_meeting_id: m.id,
         title: m.title,
-        meeting_date: m.start_time,
+        meeting_date: m.created_at,
         participants,
         summary,
         company_name: extractCompanyName(m.title, participants),
