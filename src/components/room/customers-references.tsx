@@ -31,8 +31,23 @@ export function CustomersReferences({ references }: CustomersReferencesProps) {
           Working with leading apps
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-gray-500 sm:text-base">
-          Trusted by 250+ customers across 3 countries.
+          Trusted by 250+ customers across 10 countries.
         </p>
+        <div
+          className="mt-3 flex items-center justify-center gap-2.5 text-2xl"
+          aria-label="Customer countries"
+        >
+          <span title="India">🇮🇳</span>
+          <span title="USA">🇺🇸</span>
+          <span title="Brazil">🇧🇷</span>
+          <span title="Indonesia">🇮🇩</span>
+          <span title="South Korea">🇰🇷</span>
+          <span title="Nepal">🇳🇵</span>
+          <span title="Greece">🇬🇷</span>
+          <span className="self-center text-xs font-medium text-gray-400">
+            + more
+          </span>
+        </div>
       </div>
 
       <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-8">

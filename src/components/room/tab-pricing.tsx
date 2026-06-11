@@ -250,23 +250,23 @@ function PricingEstimator({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-8 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+      <div className="mb-5 text-center">
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900">
           Pricing for {companyName}
         </h2>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500">
           Pay per attributed install. Organic installs are free.
         </p>
       </div>
 
       {/* ── Interactive estimator ── */}
-      <div className="rounded-2xl bg-white px-6 py-8 shadow-sm sm:px-10">
+      <div className="rounded-2xl bg-white px-6 py-6 shadow-sm sm:px-10">
         <p className="text-center text-sm font-medium text-gray-500">
           How many installs per month?
         </p>
 
         {/* Step labels */}
-        <div className="mt-5 flex justify-between">
+        <div className="mt-4 flex justify-between">
           {steps.map((s, i) => (
             <button
               key={s}
@@ -301,13 +301,13 @@ function PricingEstimator({
         />
 
         {/* Live readout */}
-        <div className="mt-8 text-center">
-          <p className="text-5xl font-extrabold tracking-tight text-gray-900">
+        <div className="mt-6 text-center">
+          <p className="text-4xl font-extrabold tracking-tight text-gray-900">
             {currency}
             {fmtNum(monthly)}
             <span className="text-lg font-medium text-gray-400">/mo</span>
           </p>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-1.5 text-sm text-gray-500">
             {fmtNum(volume)} installs &times;{" "}
             <span className="font-semibold text-[var(--brand-primary)]">
               {fmtPrice(tier.per_install_price, currency)}
@@ -320,14 +320,14 @@ function PricingEstimator({
         </div>
 
         {/* Tier ranges */}
-        <div className="mt-8 grid gap-2 sm:grid-cols-3">
+        <div className="mt-6 grid gap-2 sm:grid-cols-3">
           {ranges.map((r) => {
             const active = r === tier;
             return (
               <div
                 key={r.min_volume}
                 className={cn(
-                  "rounded-xl px-4 py-3 text-center transition-colors",
+                  "rounded-xl px-4 py-2.5 text-center transition-colors",
                   active
                     ? "bg-[var(--brand-primary)] text-white"
                     : "bg-gray-100 text-gray-500",
@@ -359,12 +359,12 @@ function PricingEstimator({
         </div>
 
         {/* Perks */}
-        <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {customProps.length > 0
             ? customProps.map((prop) => (
                 <div
                   key={prop}
-                  className="flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-3"
+                  className="flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-2.5"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 shadow-sm">
                     <Check className="h-4 w-4" />
@@ -375,7 +375,7 @@ function PricingEstimator({
             : DEFAULT_PERKS.map((perk) => (
                 <div
                   key={perk.title}
-                  className="flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-3"
+                  className="flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-2.5"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 shadow-sm">
                     {perk.icon}
@@ -429,9 +429,9 @@ function CompetitorSection({
   const linkrunnerMonthly = volume * perInstall;
 
   return (
-    <div className="mt-12">
-      <div className="mb-6 text-center">
-        <h3 className="text-xl font-bold text-gray-900">
+    <div className="mt-8">
+      <div className="mb-4 text-center">
+        <h3 className="text-lg font-bold text-gray-900">
           Same volume, elsewhere
         </h3>
       </div>
@@ -452,8 +452,8 @@ function CompetitorSection({
           <div className="bg-[var(--brand-primary)] px-5 py-2">
             <span className="text-xs font-bold text-white">Linkrunner</span>
           </div>
-          <div className="px-5 py-5">
-            <p className="text-3xl font-extrabold tracking-tight text-gray-900">
+          <div className="px-5 py-4">
+            <p className="text-2xl font-extrabold tracking-tight text-gray-900">
               {currency}
               {fmtNum(linkrunnerMonthly)}
               <span className="text-sm font-medium text-gray-400">/mo</span>
@@ -482,8 +482,8 @@ function CompetitorSection({
                   {comp.name}
                 </span>
               </div>
-              <div className="px-5 py-5">
-                <p className="text-3xl font-extrabold tracking-tight text-gray-300">
+              <div className="px-5 py-4">
+                <p className="text-2xl font-extrabold tracking-tight text-gray-300">
                   {currency}
                   {fmtNum(compMonthly)}
                   <span className="text-sm font-medium text-gray-300">
@@ -495,7 +495,7 @@ function CompetitorSection({
                   {comp.pricing_model.toLowerCase()}
                 </p>
                 {savingsPct > 0 && (
-                  <p className="mt-3 text-sm font-semibold text-gray-900">
+                  <p className="mt-2 text-sm font-semibold text-gray-900">
                     {savingsPct}% cheaper with us
                   </p>
                 )}

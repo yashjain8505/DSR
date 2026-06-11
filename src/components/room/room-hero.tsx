@@ -116,9 +116,9 @@ export function RoomHero({
 
           {/* Subtext */}
           <p className="max-w-lg text-base leading-relaxed text-white/70 sm:text-lg lg:max-w-xl">
-            We&apos;ve created this space to make your evaluation easier
-            &mdash; everything we discuss, share, and agree on, kept here
-            for your team.
+            We&apos;ve created this space to make your evaluation easier.
+            Everything we discuss, share, and agree on, kept here for your
+            team.
           </p>
 
           {/* CTA */}

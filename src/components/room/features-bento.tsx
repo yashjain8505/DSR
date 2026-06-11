@@ -1,183 +1,108 @@
 "use client";
 
 import {
-  BarChart3,
-  Bot,
-  Code2,
+  AudioWaveform,
+  Bell,
   Database,
-  Globe,
-  Headphones,
-  IndianRupee,
+  Download,
+  Fingerprint,
+  Gauge,
   Link2,
   Lock,
+  Megaphone,
   Network,
+  Route,
   ShieldCheck,
   Smartphone,
-  TrendingUp,
-  Zap,
+  Users,
+  Webhook,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
 /* ------------------------------------------------------------------ */
-/*  Feature data                                                       */
+/*  Content — mirrors "one platform for the signals growth teams use"  */
+/*  on linkrunner.io                                                   */
 /* ------------------------------------------------------------------ */
 
-interface BentoCard {
-  icon: ReactNode;
-  title: string;
-  description: string;
-  /** Optional large metric callout (e.g. "35+", "<200KB") */
-  metric?: string;
-  metricLabel?: string;
-  /** Grid span: "wide" = 2 cols, "tall" = 2 rows, "hero" = 2x2, default = 1x1 */
-  span?: "wide" | "tall" | "hero";
-  /** Visual accent style */
-  accent?: "brand" | "dark" | "gradient" | "subtle";
-}
+const GLANCE_METRICS: { label: string; value: string; delta: string }[] = [
+  { label: "Clicks", value: "2.1M", delta: "+42%" },
+  { label: "Sessions", value: "821K", delta: "+27%" },
+  { label: "Revenue", value: "$18.6K", delta: "+31%" },
+  { label: "CTR", value: "5.7%", delta: "+12%" },
+];
 
-const FEATURES: BentoCard[] = [
+const CAPABILITIES: { icon: ReactNode; title: string; sub: string }[] = [
   {
-    icon: <Bot className="h-6 w-6" />,
-    title: "AI Attribution Analyst",
-    description:
-      "Ask why CAC moved, which channel is creating higher-quality users, or where a postback stopped firing. Linkrunner reads the campaign and event graph for you.",
-    metric: "AI",
-    metricLabel: "built into the MMP",
-    span: "wide",
-    accent: "brand",
+    icon: <Gauge className="h-4 w-4" />,
+    title: "Attribution",
+    sub: "Installs and events, by campaign",
   },
   {
-    icon: <Link2 className="h-6 w-6" />,
-    title: "Deep Links + Deferred Routing",
-    description:
-      "One link handles iOS, Android, web, QR, influencer, referral, and paid campaigns. Users land on the right screen even after installing.",
-    accent: "subtle",
+    icon: <Link2 className="h-4 w-4" />,
+    title: "Deep links",
+    sub: "Right screen, every time",
   },
   {
-    icon: <Network className="h-6 w-6" />,
-    title: "Partner Postbacks",
-    description:
-      "Send conversion events back to Meta, Google, TikTok, Snap, affiliates, analytics, and BI from one normalized event stream.",
-    metric: "35+",
-    metricLabel: "partners and tools",
-    accent: "dark",
+    icon: <Route className="h-4 w-4" />,
+    title: "Deferred deep links",
+    sub: "Survive the app store detour",
   },
   {
-    icon: <Database className="h-6 w-6" />,
-    title: "Event Pipeline",
-    description:
-      "Track installs, opens, signups, purchases, subscriptions, referrals, and custom milestones without flattening your growth model.",
-    metric: "50M",
-    metricLabel: "events/mo included",
-    span: "wide",
-    accent: "gradient",
+    icon: <Smartphone className="h-4 w-4" />,
+    title: "SKAN",
+    sub: "iOS postbacks, decoded",
   },
   {
-    icon: <BarChart3 className="h-6 w-6" />,
-    title: "ROAS + Cohort Reporting",
-    description:
-      "Read installs, revenue, retention, and payback by source, campaign, creative, deep link, and audience cohort as events arrive.",
-    accent: "subtle",
+    icon: <Users className="h-4 w-4" />,
+    title: "Audiences",
+    sub: "Cohorts built from behaviour",
   },
   {
-    icon: <ShieldCheck className="h-6 w-6" />,
-    title: "Fraud + Data Quality",
-    description:
-      "Flag click flooding, suspicious conversion patterns, broken partner mappings, missing events, and spend spikes before budgets drift.",
-    accent: "subtle",
+    icon: <Network className="h-4 w-4" />,
+    title: "Postbacks",
+    sub: "Clean events to ad partners",
   },
   {
-    icon: <Smartphone className="h-6 w-6" />,
-    title: "SKAN + Privacy Attribution",
-    description:
-      "Map SKAN conversion values, support iOS privacy constraints, and keep measurement useful without relying on shady shortcuts.",
-    accent: "subtle",
+    icon: <Webhook className="h-4 w-4" />,
+    title: "Webhooks",
+    sub: "Push events anywhere",
   },
   {
-    icon: <Code2 className="h-6 w-6" />,
-    title: "SDK + Server Events",
-    description:
-      "Start with a lightweight app SDK, then enrich attribution with server-confirmed purchases, subscriptions, and lifecycle events.",
-    metric: "<10",
-    metricLabel: "min setup target",
-    accent: "subtle",
+    icon: <AudioWaveform className="h-4 w-4" />,
+    title: "Cohorts",
+    sub: "Retention and payback curves",
   },
   {
-    icon: <TrendingUp className="h-6 w-6" />,
-    title: "Campaign Intelligence",
-    description:
-      "Summaries, anomalies, and recommendations sit next to the metrics so teams can move budgets with context.",
-    accent: "subtle",
+    icon: <Megaphone className="h-4 w-4" />,
+    title: "Remarketing",
+    sub: "Bring users back",
   },
   {
-    icon: <Zap className="h-6 w-6" />,
-    title: "Realtime Operations",
-    description:
-      "Monitor live campaign health, link routing, partner delivery, and revenue events while acquisition is still running.",
-    accent: "subtle",
+    icon: <Download className="h-4 w-4" />,
+    title: "Data export",
+    sub: "Your data, your warehouse",
+  },
+  {
+    icon: <Fingerprint className="h-4 w-4" />,
+    title: "PII hashing",
+    sub: "Privacy by default",
+  },
+  {
+    icon: <ShieldCheck className="h-4 w-4" />,
+    title: "Fraud protection",
+    sub: "Included at every tier",
   },
 ];
 
-const DIFFERENTIATORS: BentoCard[] = [
-  {
-    icon: <Bot className="h-6 w-6" />,
-    title: "AI-native, not dashboard-native",
-    description:
-      "Legacy MMPs show reports. Linkrunner watches the measurement graph, explains changes, and points the team toward the next fix or budget move.",
-    span: "wide",
-    accent: "brand",
-  },
-  {
-    icon: <IndianRupee className="h-6 w-6" />,
-    title: "Measure more without being punished",
-    description:
-      "Teams should not hide useful events because every signal becomes a bill shock. Linkrunner is built for rich event tracking from day one.",
-    accent: "dark",
-  },
-  {
-    icon: <Lock className="h-6 w-6" />,
-    title: "Privacy-aware by design",
-    description:
-      "SKAN, consent boundaries, fraud controls, and partner data rules are part of the workflow instead of a late compliance project.",
-    accent: "subtle",
-  },
-  {
-    icon: <Globe className="h-6 w-6" />,
-    title: "Built for Indian growth stacks",
-    description:
-      "Affiliate networks, QR-to-app journeys, UPI-heavy funnels, regional campaigns, and global paid channels can live in one measurement layer.",
-    accent: "subtle",
-  },
-  {
-    icon: <Headphones className="h-6 w-6" />,
-    title: "Migration that ships",
-    description:
-      "The team helps map events, validate partner postbacks, compare old MMP data, and catch the boring issues that usually delay rollout.",
-    accent: "subtle",
-  },
-];
-
-const COMPARISON_ROWS = [
-  {
-    question: "Campaign question",
-    legacy: "Open five reports and reconcile manually",
-    linkrunner: "Ask the AI workspace and inspect the evidence",
-  },
-  {
-    question: "Event depth",
-    legacy: "Track fewer signals to control cost",
-    linkrunner: "Send richer events so attribution gets smarter",
-  },
-  {
-    question: "Partner debugging",
-    legacy: "Opaque postback failures and slow tickets",
-    linkrunner: "Health checks, alerts, and migration support",
-  },
-  {
-    question: "Privacy operations",
-    legacy: "SKAN and consent rules handled as side projects",
-    linkrunner: "Privacy mapping lives inside the MMP workflow",
-  },
+const SDKS = [
+  "React Native",
+  "Expo",
+  "Android",
+  "iOS",
+  "Flutter",
+  "Web",
+  "Capacitor",
+  "Cordova",
 ];
 
 /* ------------------------------------------------------------------ */
@@ -186,196 +111,129 @@ const COMPARISON_ROWS = [
 
 export function FeaturesBento() {
   return (
-    <div className="space-y-10">
-      {/* Features section */}
-      <div>
-        <SectionHeader
-          title="Core Features"
-          subtitle="The MMP layer: attribution, deep links, events, postbacks, privacy, fraud, and an AI analyst on top."
-        />
-        <BentoGrid cards={FEATURES} />
-      </div>
-    </div>
-  );
-}
-
-export function DifferentiatorsBento() {
-  return (
-    <div className="space-y-6">
-      <SectionHeader
-        title="What Makes Us Different"
-        subtitle="Linkrunner is built for teams that want MMP-grade measurement without legacy MMP drag."
-      />
-      <BentoGrid cards={DIFFERENTIATORS} />
-      <ComparisonStrip />
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                     */
-/* ------------------------------------------------------------------ */
-
-function SectionHeader({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="mb-6">
-      <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">{title}</h2>
-      <p className="mt-1.5 text-sm text-gray-500 sm:text-base">{subtitle}</p>
-    </div>
-  );
-}
-
-function BentoGrid({ cards }: { cards: BentoCard[] }) {
-  return (
-    <div className="grid auto-rows-[minmax(180px,auto)] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {cards.map((card) => (
-        <BentoCardComponent key={card.title} card={card} />
-      ))}
-    </div>
-  );
-}
-
-function BentoCardComponent({ card }: { card: BentoCard }) {
-  const spanClass =
-    card.span === "wide"
-      ? "sm:col-span-2"
-      : card.span === "tall"
-        ? "sm:row-span-2"
-        : card.span === "hero"
-          ? "sm:col-span-2 sm:row-span-2"
-          : "";
-
-  const accentStyles = getAccentStyles(card.accent);
-
-  return (
-    <div
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-lg p-6 transition-shadow duration-300 hover:shadow-lg ${spanClass} ${accentStyles.container}`}
-    >
-      {/* Content */}
-      <div>
-        {/* Icon */}
-        <div
-          className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${accentStyles.iconBg}`}
-        >
-          <span className={accentStyles.iconColor}>{card.icon}</span>
-        </div>
-
-        {/* Title */}
-        <h3 className={`text-base font-semibold ${accentStyles.title}`}>
-          {card.title}
-        </h3>
-
-        {/* Description */}
-        <p className={`mt-2 text-sm leading-relaxed ${accentStyles.text}`}>
-          {card.description}
+    <div className="space-y-5">
+      {/* ── Campaign answers in one glance ── */}
+      <section className="rounded-3xl bg-white p-7 shadow-sm sm:p-8">
+        <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
+          Campaign answers in one glance
+        </h2>
+        <p className="mt-1.5 text-sm text-gray-500">
+          Clicks to revenue in one dashboard, updating live.
         </p>
-      </div>
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {GLANCE_METRICS.map((m) => (
+            <div key={m.label} className="rounded-2xl bg-gray-100 px-4 py-4">
+              <p className="text-xs text-gray-500">{m.label}</p>
+              <p className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
+                {m.value}
+              </p>
+              <p className="text-xs font-semibold text-gray-600">
+                {m.delta} this month
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      {/* Metric callout */}
-      {card.metric && (
-        <div className="mt-4 flex items-baseline gap-2">
-          <span
-            className={`text-3xl font-extrabold tracking-tight ${accentStyles.metric}`}
-          >
-            {card.metric}
-          </span>
-          {card.metricLabel && (
-            <span className={`text-sm ${accentStyles.metricLabel}`}>
-              {card.metricLabel}
-            </span>
-          )}
+      {/* ── Capability grid ── */}
+      <section>
+        <div className="mb-4">
+          <h3 className="text-lg font-bold text-gray-900">
+            One platform for every growth signal
+          </h3>
         </div>
-      )}
-    </div>
-  );
-}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {CAPABILITIES.map((cap) => (
+            <div
+              key={cap.title}
+              className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700">
+                {cap.icon}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900">
+                  {cap.title}
+                </p>
+                <p className="mt-0.5 text-xs leading-4 text-gray-500">
+                  {cap.sub}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-function ComparisonStrip() {
-  return (
-    <div className="overflow-hidden rounded-lg bg-white shadow-sm">
-      <div className="grid md:grid-cols-[0.8fr_1fr_1fr]">
-        <div className="bg-gray-100 p-4 text-xs font-semibold text-gray-500">
-          Decision point
-        </div>
-        <div className="bg-gray-100 p-4 text-xs font-semibold text-gray-500">
-          Legacy MMP
-        </div>
-        <div className="bg-gray-100 p-4 text-xs font-semibold text-gray-900">
-          Linkrunner
-        </div>
-        {COMPARISON_ROWS.map((row) => (
-          <div key={row.question} className="contents">
-            <div className="bg-white p-4 text-sm font-semibold text-gray-900">
-              {row.question}
-            </div>
-            <div className="bg-white p-4 text-sm leading-6 text-gray-600">
-              {row.legacy}
-            </div>
-            <div className="bg-white p-4 text-sm font-medium leading-6 text-gray-900">
-              {row.linkrunner}
-            </div>
+      {/* ── AI alerts + human support ── */}
+      <section className="grid gap-3 lg:grid-cols-2">
+        <div className="rounded-3xl bg-gray-950 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white">
+            <Bell className="h-5 w-5" />
           </div>
-        ))}
-      </div>
+          <h3 className="text-lg font-bold text-white">
+            Know what changed before the weekly review
+          </h3>
+          <div className="mt-4 rounded-2xl bg-white/[0.08] p-4 backdrop-blur-md">
+            <p className="text-xs font-semibold text-white/60">
+              Anomaly alert
+            </p>
+            <p className="mt-1.5 text-sm leading-6 text-white">
+              Sudden 10% drop in ROAS yesterday. Possibly because you are
+              still on an outdated SDK version.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-3xl bg-sky-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm">
+            <Users className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">
+            Support from the people building the product
+          </h3>
+          <div className="mt-4 space-y-2">
+            <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-white px-3.5 py-2 text-xs text-gray-700 shadow-sm">
+              Hi, which events should we add?
+            </p>
+            <p className="w-fit max-w-[85%] rounded-2xl rounded-bl-sm bg-gray-900 px-3.5 py-2 text-xs text-white">
+              For your app: signUp, purchaseMade and addToCart. Want me to set
+              them up?
+            </p>
+            <p className="text-[11px] text-gray-400">Darshil, 2m ago</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SDK strip ── */}
+      <section className="rounded-3xl bg-white p-7 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">
+              Integrate and go live today
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Native SDKs, under 200KB, under 10 minutes.
+            </p>
+          </div>
+          <Lock className="hidden h-5 w-5 shrink-0 text-gray-300 sm:block" />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {SDKS.map((sdk) => (
+            <span
+              key={sdk}
+              className="rounded-full bg-gray-100 px-3.5 py-1.5 text-xs font-medium text-gray-700"
+            >
+              {sdk}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <p className="flex items-center gap-2 text-sm text-gray-500">
+        <Database className="h-4 w-4 shrink-0 text-gray-400" />
+        SOC 2 Type 2, ISO 27001 and GDPR compliant. Details in the Security
+        &amp; Compliance tab.
+      </p>
     </div>
   );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Accent style resolver                                              */
-/* ------------------------------------------------------------------ */
-
-interface AccentStyleSet {
-  container: string;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  text: string;
-  metric: string;
-  metricLabel: string;
-}
-
-function getAccentStyles(accent?: string): AccentStyleSet {
-  switch (accent) {
-    // Tinted gray stands in for the old brand/gradient accents —
-    // section differentiation comes from background variation only.
-    case "brand":
-    case "gradient":
-      return {
-        container: "bg-gray-100 shadow-sm",
-        iconBg: "bg-white",
-        iconColor: "text-gray-700",
-        title: "text-gray-900",
-        text: "text-gray-600",
-        metric: "text-gray-900",
-        metricLabel: "text-gray-500",
-      };
-    case "dark":
-      return {
-        container: "bg-gray-900 text-white shadow-sm",
-        iconBg: "bg-white/10",
-        iconColor: "text-white",
-        title: "text-white",
-        text: "text-gray-300",
-        metric: "text-white",
-        metricLabel: "text-gray-400",
-      };
-    default:
-      // "subtle"
-      return {
-        container: "bg-white shadow-sm",
-        iconBg: "bg-gray-100",
-        iconColor: "text-gray-700",
-        title: "text-gray-900",
-        text: "text-gray-500",
-        metric: "text-gray-900",
-        metricLabel: "text-gray-500",
-      };
-  }
 }

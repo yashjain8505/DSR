@@ -1,37 +1,23 @@
 "use client";
 
 import {
+  ArrowRight,
   BarChart3,
-  Bot,
-  Code2,
+  Gift,
   Link2,
   Megaphone,
   Rocket,
-  ShieldCheck,
-  Zap,
+  Smartphone,
 } from "lucide-react";
-import type { ReactNode } from "react";
 
 /* ------------------------------------------------------------------ */
-/*  Content                                                            */
+/*  Content — mirrors the five pillars on linkrunner.io                */
 /* ------------------------------------------------------------------ */
 
-const HERO_CARDS: { icon: ReactNode; title: string; copy: string }[] = [
-  {
-    icon: <BarChart3 className="h-4 w-4" />,
-    title: "Attribution",
-    copy: "Every install, event and rupee tied back to the campaign that earned it.",
-  },
-  {
-    icon: <Link2 className="h-4 w-4" />,
-    title: "Deep links",
-    copy: "One link routes every user to the right screen — even after install.",
-  },
-  {
-    icon: <Bot className="h-4 w-4" />,
-    title: "AI analyst",
-    copy: "Ask why ROAS moved and get the answer, not another dashboard.",
-  },
+const HERO_STATS: { value: string; label: string }[] = [
+  { value: "1.7B+", label: "API requests handled" },
+  { value: "100s", label: "of growth teams onboard" },
+  { value: "25K", label: "free installs to start" },
 ];
 
 const STATS: { value: string; label: string }[] = [
@@ -40,6 +26,13 @@ const STATS: { value: string; label: string }[] = [
   { value: "<10 min", label: "SDK setup" },
   { value: "99.5%", label: "affiliate fraud blocked" },
 ];
+
+const ATTRIBUTION_METRICS: { label: string; value: string; delta: string }[] =
+  [
+    { label: "Installs", value: "73K", delta: "+14%" },
+    { label: "ROAS", value: "92%", delta: "+11%" },
+    { label: "D7 Retention", value: "41%", delta: "+6%" },
+  ];
 
 const GO_LIVE_STEPS: { title: string; sub: string }[] = [
   { title: "Add the SDK", sub: "3 lines of code" },
@@ -59,9 +52,8 @@ export function WhatIsLinkrunner({
 }) {
   return (
     <div className="space-y-5">
-      {/* ── Editorial hero ── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gray-950 px-6 py-12 sm:px-12 sm:py-14">
-        {/* Brand glow */}
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden rounded-3xl bg-gray-950 px-6 py-12 sm:px-12">
         <div
           className="pointer-events-none absolute inset-0 opacity-40"
           style={{
@@ -71,30 +63,117 @@ export function WhatIsLinkrunner({
         />
         <div className="relative">
           <h2 className="mx-auto max-w-3xl text-center font-serif text-4xl leading-tight text-white sm:text-5xl">
-            Know what <em className="italic">grows</em> your app.
+            Turn installs into <em className="italic">insights</em>.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-base leading-7 text-white/65">
-            Linkrunner is the AI-native mobile measurement partner &mdash;
-            attribution, deep links and answers in one place.
+          <p className="mx-auto mt-4 max-w-2xl text-center text-base leading-7 text-white/65">
+            Linkrunner is the AI driven mobile measurement partner. Attribution,
+            deep links, SKAN, referrals and remarketing in one dashboard built
+            for daily campaign decisions.
           </p>
-
-          {/* Glass cards */}
-          <div className="mt-10 grid gap-3 sm:grid-cols-3">
-            {HERO_CARDS.map((card) => (
+          <div className="mx-auto mt-8 grid max-w-2xl grid-cols-3 gap-3">
+            {HERO_STATS.map((stat) => (
               <div
-                key={card.title}
-                className="rounded-2xl bg-white/[0.08] p-5 backdrop-blur-md"
+                key={stat.label}
+                className="rounded-2xl bg-white/[0.08] px-4 py-4 text-center backdrop-blur-md"
               >
-                <div className="flex items-center gap-2 text-white">
-                  {card.icon}
-                  <p className="font-semibold">{card.title}</p>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-white/65">
-                  {card.copy}
+                <p className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+                  {stat.value}
+                </p>
+                <p className="mt-0.5 text-[11px] leading-4 text-white/55 sm:text-xs">
+                  {stat.label}
                 </p>
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── The five pillars ── */}
+      <section className="grid gap-3 lg:grid-cols-3">
+        {/* Deep links — wide, with routing visual */}
+        <div className="rounded-3xl bg-violet-50 p-7 lg:col-span-2">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+            <Link2 className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">Deep links</h3>
+          <p className="mt-1.5 max-w-md text-sm leading-6 text-gray-600">
+            Every user lands on the right screen. The link checks the device
+            and routes in real time, even when the app is not installed yet.
+          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-medium">
+            <span className="rounded-full bg-white px-3 py-1.5 text-gray-700 shadow-sm">
+              App installed?
+            </span>
+            <ArrowRight className="h-3.5 w-3.5 text-violet-300" />
+            <span className="rounded-full bg-gray-900 px-3 py-1.5 text-white">
+              Yes: deeplinked page
+            </span>
+            <ArrowRight className="h-3.5 w-3.5 text-violet-300" />
+            <span className="rounded-full bg-white px-3 py-1.5 text-gray-700 shadow-sm">
+              No: store, then deferred deep link
+            </span>
+          </div>
+        </div>
+
+        {/* User attribution — with metric mock */}
+        <div className="rounded-3xl bg-sky-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">User attribution</h3>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            Every install, event and rupee tied to the campaign that earned it.
+          </p>
+          <div className="mt-4 grid grid-cols-3 gap-1.5">
+            {ATTRIBUTION_METRICS.map((m) => (
+              <div
+                key={m.label}
+                className="rounded-xl bg-white px-2 py-2 text-center shadow-sm"
+              >
+                <p className="text-sm font-bold text-gray-900">{m.value}</p>
+                <p className="text-[10px] font-semibold text-gray-700">
+                  {m.delta}
+                </p>
+                <p className="text-[10px] text-gray-400">{m.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Remarketing */}
+        <div className="rounded-3xl bg-amber-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
+            <Megaphone className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">Remarketing</h3>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            Build audiences from real in-app behaviour and bring users back
+            with retargeting campaigns.
+          </p>
+        </div>
+
+        {/* iOS & SKAN */}
+        <div className="rounded-3xl bg-emerald-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
+            <Smartphone className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">iOS &amp; SKAN</h3>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            SKAN postbacks decoded into reports you can actually read. iOS
+            measurement without the guesswork.
+          </p>
+        </div>
+
+        {/* Referral tracking */}
+        <div className="rounded-3xl bg-rose-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-rose-600 shadow-sm">
+            <Gift className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">Referral tracking</h3>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            See who referred whom and reward them automatically. No in-house
+            build needed.
+          </p>
         </div>
       </section>
 
@@ -111,85 +190,6 @@ export function WhatIsLinkrunner({
             <p className="mt-1 text-xs text-gray-500">{stat.label}</p>
           </div>
         ))}
-      </section>
-
-      {/* ── Feature cards ── */}
-      <section className="grid gap-3 sm:grid-cols-2">
-        {/* One link, every channel */}
-        <div className="rounded-3xl bg-violet-50 p-7">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
-            <Megaphone className="h-5 w-5" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">
-            One link, every channel
-          </h3>
-          <p className="mt-1.5 text-sm leading-6 text-gray-600">
-            Meta, Google, TikTok, affiliates, QR, influencers &mdash; all
-            routed and measured the same way.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-1.5">
-            {["Meta", "Google", "TikTok", "QR", "Influencer", "Web"].map(
-              (ch) => (
-                <span
-                  key={ch}
-                  className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 shadow-sm"
-                >
-                  {ch}
-                </span>
-              ),
-            )}
-          </div>
-        </div>
-
-        {/* Ask, don't dig */}
-        <div className="rounded-3xl bg-sky-50 p-7">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm">
-            <Bot className="h-5 w-5" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">
-            Ask, don&rsquo;t dig
-          </h3>
-          <p className="mt-1.5 text-sm leading-6 text-gray-600">
-            The AI analyst reads your campaign data so you don&rsquo;t have to.
-          </p>
-          <div className="mt-4 space-y-2">
-            <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-white px-3.5 py-2 text-xs text-gray-700 shadow-sm">
-              Why did CAC rise last week?
-            </p>
-            <p className="w-fit max-w-[85%] rounded-2xl rounded-bl-sm bg-gray-900 px-3.5 py-2 text-xs text-white">
-              Meta CPMs +18%; your best ad set fatigued. Shift ₹40K to Google
-              UAC.
-            </p>
-          </div>
-        </div>
-
-        {/* Track everything, free */}
-        <div className="rounded-3xl bg-amber-50 p-7">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
-            <Zap className="h-5 w-5" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">
-            Track everything, free
-          </h3>
-          <p className="mt-1.5 text-sm leading-6 text-gray-600">
-            50M events a month included. Signups, purchases, referrals &mdash;
-            never trim events to control a bill.
-          </p>
-        </div>
-
-        {/* Fraud blocked */}
-        <div className="rounded-3xl bg-emerald-50 p-7">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">
-            Fraud blocked at the door
-          </h3>
-          <p className="mt-1.5 text-sm leading-6 text-gray-600">
-            Click spam, bots and device farms filtered before you pay for
-            them &mdash; included at every tier.
-          </p>
-        </div>
       </section>
 
       {/* ── Go-live strip ── */}
@@ -212,10 +212,9 @@ export function WhatIsLinkrunner({
             </div>
           ))}
         </div>
-        <p className="mt-5 flex items-center gap-2 text-sm text-gray-500">
-          <Code2 className="h-4 w-4 shrink-0 text-gray-400" />
-          Migration from AppsFlyer, Adjust or Branch is handled by our team
-          &mdash; existing links keep working.
+        <p className="mt-5 text-sm text-gray-500">
+          Migration from AppsFlyer, Adjust or Branch is handled by our team.
+          Existing links keep working.
         </p>
       </section>
     </div>

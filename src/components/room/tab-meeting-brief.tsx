@@ -45,7 +45,7 @@ export function TabMeetingBrief({ meetingBrief }: TabMeetingBriefProps) {
           What we discussed so far
         </h2>
         <p className="mt-2 text-base text-gray-500">
-          A recap of our conversation &mdash; prepared for your team
+          A recap of our conversation, prepared for your team
         </p>
       </div>
 
