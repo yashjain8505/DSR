@@ -36,7 +36,7 @@ export function IframeEmbed({
         title={title}
         onLoad={() => setLoading(false)}
         className={cn(
-          "w-full rounded-lg border border-gray-200",
+          "w-full rounded-lg bg-gray-50",
           loading && "invisible",
         )}
         style={{ height: heightValue, border: 0 }}

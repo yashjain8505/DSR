@@ -303,23 +303,9 @@ export function IntegrationsPage() {
       </div>
 
       {/* Any-integration promise */}
-      <div
-        className="flex items-start gap-3 rounded-xl border p-4"
-        style={{
-          borderColor: "color-mix(in srgb, var(--brand-primary) 25%, #e5e7eb)",
-          background: "color-mix(in srgb, var(--brand-primary) 6%, #ffffff)",
-        }}
-      >
-        <span
-          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-          style={{
-            background: "color-mix(in srgb, var(--brand-primary) 14%, #ffffff)",
-          }}
-        >
-          <Zap
-            className="h-4 w-4"
-            style={{ color: "var(--brand-primary)" }}
-          />
+      <div className="flex items-start gap-3 rounded-xl bg-gray-100 p-4">
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+          <Zap className="h-4 w-4 text-gray-600" />
         </span>
         <div>
           <p className="text-sm font-semibold text-gray-900">
@@ -363,7 +349,7 @@ export function IntegrationsPage() {
             placeholder="Search integrations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
+            className="w-full rounded-lg bg-white py-2 pl-9 pr-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400"
           />
         </div>
       </div>
@@ -376,7 +362,7 @@ export function IntegrationsPage() {
       ) : (
         filteredCategories.map((category) => (
           <section key={category.title}>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+            <h3 className="mb-4 text-sm font-semibold text-gray-700">
               {category.title}
               <span className="ml-2 text-xs font-normal text-gray-400">
                 ({category.items.length})
@@ -402,9 +388,9 @@ function IntegrationCard({ item }: { item: Integration }) {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md">
+    <div className="flex flex-col gap-3 rounded-xl bg-white p-4 transition-shadow hover:shadow-md">
       {/* Logo */}
-      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-gray-100">
+      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-gray-50">
         {imgError ? (
           <span className="text-sm font-bold text-gray-400">
             {item.name

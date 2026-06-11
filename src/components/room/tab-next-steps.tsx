@@ -48,39 +48,18 @@ export function TabNextSteps({
 
   return (
     <div className="mx-auto max-w-3xl">
-      {/* Header with brand accent bar */}
-      <div className="mb-8 flex items-start gap-4">
-        <div
-          className="mt-1 h-12 w-1.5 shrink-0 rounded-full"
-          style={{ background: "var(--brand-primary)" }}
-        />
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-            Next Steps
-          </h2>
-          <p className="mt-2 text-base text-gray-500">
-            What&rsquo;s coming up next in our partnership
-          </p>
-        </div>
+      {/* Header */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+          Next Steps
+        </h2>
+        <p className="mt-2 text-base text-gray-500">
+          What&rsquo;s coming up next in our partnership
+        </p>
       </div>
 
       {/* Content card */}
-      <div
-        className="relative overflow-hidden rounded-2xl border bg-white shadow-sm"
-        style={{
-          borderColor:
-            "color-mix(in srgb, var(--brand-primary) 20%, #e5e7eb)",
-        }}
-      >
-        {/* Top brand gradient strip */}
-        <div
-          className="h-1.5"
-          style={{
-            background:
-              "linear-gradient(90deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 40%, #4d4bf7))",
-          }}
-        />
-
+      <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm">
         {/* Body */}
         <div className="px-6 py-8 sm:px-10 sm:py-10">
           {steps.length > 0 ? (
@@ -129,34 +108,18 @@ function StepRow({
       {!isLast && (
         <span
           aria-hidden="true"
-          className="absolute left-[15px] top-8 bottom-0 w-px"
-          style={{
-            background: "color-mix(in srgb, var(--brand-primary) 22%, #e5e7eb)",
-          }}
+          className="absolute left-[15px] top-8 bottom-0 w-px bg-gray-200"
         />
       )}
 
       {/* Status node */}
       {completed ? (
-        <span
-          className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm"
-          style={{ background: "var(--brand-primary)" }}
-        >
+        <span className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-900 shadow-sm">
           <Check className="h-[18px] w-[18px] text-white" strokeWidth={3} />
         </span>
       ) : (
-        <span
-          className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 bg-white"
-          style={{
-            borderColor: "color-mix(in srgb, var(--brand-primary) 45%, #ffffff)",
-          }}
-        >
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{
-              background: "color-mix(in srgb, var(--brand-primary) 45%, #ffffff)",
-            }}
-          />
+        <span className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100">
+          <span className="h-2 w-2 rounded-full bg-gray-400" />
         </span>
       )}
 
@@ -192,9 +155,6 @@ function StepRow({
             )}
             {showTeamLogos && step.teams.length > 0 && (
               <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                  Owner
-                </span>
                 <TeamLogos
                   teams={step.teams}
                   customerLogoUrl={customerLogoUrl}
@@ -264,11 +224,7 @@ function LogoAvatar({
   return (
     <span
       title={alt}
-      className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-xs font-semibold shadow-sm"
-      style={{
-        background: "var(--brand-primary-light)",
-        color: "var(--brand-primary)",
-      }}
+      className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-xs font-semibold text-gray-600 shadow-sm"
     >
       {letter}
     </span>

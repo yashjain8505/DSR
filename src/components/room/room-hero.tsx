@@ -137,7 +137,7 @@ export function RoomHero({
 
         {/* Right column: seller info card */}
         <div className="w-full max-w-xs shrink-0">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-6 shadow-lg backdrop-blur-md">
+          <div className="rounded-2xl bg-white/[0.08] p-6 shadow-lg backdrop-blur-md">
             {/* Seller avatar placeholder */}
             <div className="mb-4 flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-lg font-bold text-white">
@@ -150,9 +150,6 @@ export function RoomHero({
                 <p className="text-sm text-white/60">GTM</p>
               </div>
             </div>
-
-            {/* Divider */}
-            <div className="mb-4 border-t border-white/10" />
 
             {/* Contact detail */}
             <a

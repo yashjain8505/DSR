@@ -189,16 +189,17 @@ export function MarkdownRenderer({
         "[&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-6",
         "[&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6",
         "[&_li]:mb-1 [&_li]:text-gray-700",
-        "[&_hr]:my-6 [&_hr]:border-gray-200",
+        "[&_hr]:my-6 [&_hr]:border-gray-100",
         // Inline code
         "[&_code]:rounded [&_code]:bg-gray-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gray-800",
         // Fenced code blocks (higher specificity overrides inline code styles)
         "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-gray-900 [&_pre]:p-4",
         "[&_pre_code]:block [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:font-mono [&_pre_code]:text-[13px] [&_pre_code]:leading-relaxed [&_pre_code]:text-gray-100",
-        // Tables
-        "[&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm",
-        "[&_th]:border [&_th]:border-gray-200 [&_th]:bg-gray-50 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-gray-900",
-        "[&_td]:border [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:text-gray-700",
+        // Tables — borderless, zebra rows for structure
+        "[&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-lg [&_table]:text-sm",
+        "[&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-gray-900",
+        "[&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:text-gray-700",
+        "[&_tbody_tr:nth-child(even)]:bg-gray-50",
         className,
       )}
       dangerouslySetInnerHTML={{ __html: html }}

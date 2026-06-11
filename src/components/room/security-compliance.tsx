@@ -81,10 +81,7 @@ export function SecurityCompliance() {
       {/* Header with link to full portal */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-lg"
-            style={{ backgroundColor: "var(--brand-primary)" }}
-          >
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900">
             <ShieldCheck className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -107,8 +104,8 @@ export function SecurityCompliance() {
       </div>
 
       {/* Compliance badges */}
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+      <section className="rounded-xl bg-white p-5 sm:p-6">
+        <h3 className="mb-4 text-sm font-semibold text-gray-700">
           Compliance
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -118,19 +115,16 @@ export function SecurityCompliance() {
               href={TRUST_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative flex items-center gap-4 rounded-xl border border-gray-200 p-4 transition-all hover:border-[var(--brand-primary)] hover:shadow-md"
+              className="group relative flex items-center gap-4 rounded-xl bg-gray-50 p-4 transition-all hover:shadow-md"
             >
               {/* Badge icon */}
-              <div
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ backgroundColor: item.color }}
-              >
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white">
                 {item.badge}
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900">{item.name}</p>
                 {item.verified && (
-                  <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-green-600">
+                  <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-gray-500">
                     <svg
                       className="h-3.5 w-3.5"
                       fill="currentColor"
@@ -154,9 +148,9 @@ export function SecurityCompliance() {
       </section>
 
       {/* Documents */}
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+      <section className="rounded-xl bg-white p-5 sm:p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+          <h3 className="text-sm font-semibold text-gray-700">
             Documents
           </h3>
           <a
@@ -176,9 +170,9 @@ export function SecurityCompliance() {
               href={TRUST_PORTAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-3 rounded-lg border border-gray-200 p-4 transition-all hover:border-[var(--brand-primary)] hover:shadow-sm"
+              className="group flex items-center gap-3 rounded-lg bg-gray-50 p-4 transition-all hover:shadow-sm"
             >
-              <FileText className="h-5 w-5 shrink-0 text-[var(--brand-primary)]" />
+              <FileText className="h-5 w-5 shrink-0 text-gray-500" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-gray-500">{doc.category}</p>
                 <p className="font-medium text-gray-900">{doc.name}</p>
@@ -195,9 +189,9 @@ export function SecurityCompliance() {
       </section>
 
       {/* Sub-Processors */}
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+      <section className="rounded-xl bg-white p-5 sm:p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+          <h3 className="text-sm font-semibold text-gray-700">
             Sub-Processors
           </h3>
           <a
@@ -214,9 +208,9 @@ export function SecurityCompliance() {
           {SUB_PROCESSORS.map((sp) => (
             <div
               key={sp.name}
-              className="flex items-center gap-3 rounded-lg border border-gray-200 p-4"
+              className="flex items-center gap-3 rounded-lg bg-gray-50 p-4"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs font-bold text-gray-600">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-bold text-gray-600">
                 {sp.name
                   .split(" ")
                   .map((w) => w[0])
@@ -236,9 +230,9 @@ export function SecurityCompliance() {
       </section>
 
       {/* FAQs */}
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+      <section className="rounded-xl bg-white p-5 sm:p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+          <h3 className="text-sm font-semibold text-gray-700">
             FAQs
           </h3>
           <a
@@ -269,7 +263,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-lg border border-gray-200 transition-colors hover:border-gray-300">
+    <div className="rounded-lg bg-gray-50 transition-colors hover:bg-gray-100">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between px-4 py-3.5 text-left"
@@ -285,7 +279,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         )}
       </button>
       {open && (
-        <div className="border-t border-gray-100 px-4 py-3.5 text-sm leading-relaxed text-gray-600">
+        <div className="px-4 pb-3.5 text-sm leading-relaxed text-gray-600">
           {answer.split("\n").map((line, i) => {
             if (line.startsWith("- ")) {
               return (

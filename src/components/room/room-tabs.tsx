@@ -132,11 +132,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     <div className="flex flex-col lg:flex-row lg:gap-8">
       {/* ---- Desktop sidebar ---- */}
       <nav
-        className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:border-r lg:pr-6 lg:pt-2"
-        style={{
-          borderColor:
-            "color-mix(in srgb, var(--brand-primary) 20%, #e5e7eb)",
-        }}
+        className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:pr-6 lg:pt-2"
         aria-label="Room tabs"
       >
         {visibleTabs.map((tab) => {
@@ -152,24 +148,23 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
                 onClick={() => handleTabChange(tab)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400",
                   isActive
-                    ? "bg-[var(--brand-primary-light)] text-[var(--brand-primary)]"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
                 )}
               >
                 <Icon
                   className={cn(
                     "h-4 w-4 shrink-0",
-                    isActive ? "text-[var(--brand-primary)]" : "text-gray-400",
+                    isActive ? "text-gray-700" : "text-gray-400",
                   )}
                 />
                 <span className="flex-1">{MAIN_TAB_LABELS[tab]}</span>
                 {isRecap && (
                   <ChevronDown
                     className={cn(
-                      "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
-                      isActive ? "text-[var(--brand-primary)]" : "text-gray-400",
+                      "h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200",
                       isExpanded && "rotate-180",
                     )}
                   />
@@ -177,7 +172,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
               </button>
 
               {isRecap && isExpanded && (
-                <div className="ml-7 mt-0.5 flex flex-col gap-0.5 border-l-2 border-[var(--brand-primary-light)] pb-1 pl-3">
+                <div className="ml-7 mt-0.5 flex flex-col gap-0.5 pb-1 pl-3">
                   {RECAP_SUB_ITEMS.map((item) => {
                     const isSubActive = activeRecapSub === item.key;
                     return (
@@ -187,10 +182,10 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
                         onClick={() => handleRecapSubClick(item.key)}
                         className={cn(
                           "rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400",
                           isSubActive
-                            ? "bg-[var(--brand-primary-light)] font-medium text-[var(--brand-primary)]"
-                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-800",
+                            ? "bg-white font-medium text-gray-900 shadow-sm"
+                            : "text-gray-500 hover:bg-gray-100 hover:text-gray-800",
                         )}
                       >
                         {item.label}
@@ -207,11 +202,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
       {/* ---- Mobile horizontal tabs ---- */}
       <div className="relative lg:hidden">
         <nav
-          className="flex gap-1 overflow-x-auto border-b scrollbar-hide"
-          style={{
-            borderColor:
-              "color-mix(in srgb, var(--brand-primary) 20%, #e5e7eb)",
-          }}
+          className="flex gap-1 overflow-x-auto scrollbar-hide"
           aria-label="Room tabs"
         >
           {visibleTabs.map((tab) => {
@@ -225,9 +216,9 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
                 onClick={() => handleMobileTabClick(tab)}
                 className={cn(
                   "relative flex shrink-0 items-center gap-1 whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-inset",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-inset",
                   isActive
-                    ? "text-[var(--brand-primary)]"
+                    ? "text-gray-900"
                     : "text-gray-500 hover:text-gray-700",
                 )}
               >
@@ -241,7 +232,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
                   />
                 )}
                 {isActive && (
-                  <span className="absolute inset-x-0 -bottom-px h-0.5 bg-[var(--brand-primary)]" />
+                  <span className="absolute inset-x-0 -bottom-px h-0.5 bg-gray-900" />
                 )}
               </button>
             );
@@ -249,7 +240,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
         </nav>
 
         {mobileRecapOpen && (
-          <div className="absolute left-0 right-0 z-20 border-b border-gray-200 bg-white shadow-md">
+          <div className="absolute left-0 right-0 z-20 bg-white shadow-md">
             <div className="flex flex-col px-2 py-1">
               {RECAP_SUB_ITEMS.map((item) => {
                 const isSubActive =
@@ -262,7 +253,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
                     className={cn(
                       "rounded-md px-4 py-2.5 text-left text-sm transition-colors",
                       isSubActive
-                        ? "bg-[var(--brand-primary-light)] font-medium text-[var(--brand-primary)]"
+                        ? "bg-gray-100 font-medium text-gray-900"
                         : "text-gray-600 hover:bg-gray-50",
                     )}
                   >

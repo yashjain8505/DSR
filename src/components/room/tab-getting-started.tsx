@@ -12,21 +12,18 @@ const SECTIONS = [
     title: "Integration Timeline",
     description: "How long it takes to get up and running",
     icon: Clock,
-    color: "bg-[var(--brand-primary-light)] text-[var(--brand-primary)]",
   },
   {
     key: "migration_steps" as const,
     title: "Migration Steps",
     description: "Moving from your current solution",
     icon: ArrowRightLeft,
-    color: "bg-purple-50 text-purple-600",
   },
   {
     key: "onboarding_plan" as const,
     title: "Onboarding Plan",
     description: "Your personalised onboarding journey",
     icon: Rocket,
-    color: "bg-green-50 text-green-600",
   },
 ] as const;
 
@@ -54,13 +51,11 @@ export function TabGettingStarted({ gettingStarted }: TabGettingStartedProps) {
           return (
             <div
               key={section.key}
-              className="rounded-xl border border-gray-200 bg-white overflow-hidden"
+              className="rounded-xl bg-white overflow-hidden"
             >
               {/* Section header */}
-              <div className="flex items-center gap-4 border-b border-gray-100 px-6 py-4">
-                <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${section.color}`}
-                >
+              <div className="flex items-center gap-4 bg-gray-50 px-6 py-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-gray-700">
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>

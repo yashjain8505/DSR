@@ -15,7 +15,7 @@ export function YouTubeEmbed({
 
   if (!videoId) {
     return (
-      <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-8 text-sm text-gray-500">
+      <div className="flex items-center justify-center rounded-lg bg-gray-50 p-8 text-sm text-gray-500">
         Invalid YouTube URL
       </div>
     );

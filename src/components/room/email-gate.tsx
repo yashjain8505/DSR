@@ -84,8 +84,12 @@ export function EmailGate({
       <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
         {/* Logo / branding */}
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--brand-primary)] text-2xl font-bold text-white">
-            LR
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
+            <img
+              src="/logos/linkrunner-icon.png"
+              alt="Linkrunner"
+              className="h-12 w-12 object-contain"
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
             Welcome to your room
@@ -124,10 +128,6 @@ export function EmailGate({
             Continue
           </Button>
         </form>
-
-        <p className="mt-4 text-center text-xs text-gray-400">
-          Your email helps us personalize your experience.
-        </p>
       </div>
     </div>
   );

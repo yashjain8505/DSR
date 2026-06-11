@@ -255,7 +255,7 @@ function BentoCardComponent({ card }: { card: BentoCard }) {
 
   return (
     <div
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-lg border p-6 transition-shadow duration-300 hover:shadow-lg ${spanClass} ${accentStyles.container}`}
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-lg p-6 transition-shadow duration-300 hover:shadow-lg ${spanClass} ${accentStyles.container}`}
     >
       {/* Content */}
       <div>
@@ -298,15 +298,15 @@ function BentoCardComponent({ card }: { card: BentoCard }) {
 
 function ComparisonStrip() {
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <div className="grid gap-px bg-gray-200 md:grid-cols-[0.8fr_1fr_1fr]">
-        <div className="bg-gray-50 p-4 text-xs font-semibold uppercase text-gray-500">
+    <div className="overflow-hidden rounded-lg bg-white shadow-sm">
+      <div className="grid md:grid-cols-[0.8fr_1fr_1fr]">
+        <div className="bg-gray-100 p-4 text-xs font-semibold text-gray-500">
           Decision point
         </div>
-        <div className="bg-gray-50 p-4 text-xs font-semibold uppercase text-gray-500">
+        <div className="bg-gray-100 p-4 text-xs font-semibold text-gray-500">
           Legacy MMP
         </div>
-        <div className="bg-[color:var(--brand-primary)]/10 p-4 text-xs font-semibold uppercase text-[var(--brand-primary)]">
+        <div className="bg-gray-100 p-4 text-xs font-semibold text-gray-900">
           Linkrunner
         </div>
         {COMPARISON_ROWS.map((row) => (
@@ -343,20 +343,22 @@ interface AccentStyleSet {
 
 function getAccentStyles(accent?: string): AccentStyleSet {
   switch (accent) {
+    // Tinted gray stands in for the old brand/gradient accents —
+    // section differentiation comes from background variation only.
     case "brand":
+    case "gradient":
       return {
-        container:
-          "border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-primary)]/[0.03]",
-        iconBg: "bg-[color:var(--brand-primary)]/10",
-        iconColor: "text-[var(--brand-primary)]",
+        container: "bg-gray-100",
+        iconBg: "bg-white",
+        iconColor: "text-gray-700",
         title: "text-gray-900",
         text: "text-gray-600",
-        metric: "text-[var(--brand-primary)]",
+        metric: "text-gray-900",
         metricLabel: "text-gray-500",
       };
     case "dark":
       return {
-        container: "border-gray-900 bg-gray-900 text-white",
+        container: "bg-gray-900 text-white",
         iconBg: "bg-white/10",
         iconColor: "text-white",
         title: "text-white",
@@ -364,21 +366,10 @@ function getAccentStyles(accent?: string): AccentStyleSet {
         metric: "text-white",
         metricLabel: "text-gray-400",
       };
-    case "gradient":
-      return {
-        container:
-          "border-transparent bg-gradient-to-br from-[color:var(--brand-primary)]/5 via-white to-indigo-50",
-        iconBg: "bg-[color:var(--brand-primary)]/10",
-        iconColor: "text-[var(--brand-primary)]",
-        title: "text-gray-900",
-        text: "text-gray-600",
-        metric: "text-[var(--brand-primary)]",
-        metricLabel: "text-gray-500",
-      };
     default:
       // "subtle"
       return {
-        container: "border-gray-200 bg-white",
+        container: "bg-white",
         iconBg: "bg-gray-100",
         iconColor: "text-gray-700",
         title: "text-gray-900",

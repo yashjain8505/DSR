@@ -48,7 +48,7 @@ function CaseStudyCard({ study }: { study: CaseStudy }) {
   return (
     <Wrapper
       {...linkProps}
-      className="group flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-[var(--brand-primary)]/30"
+      className="group flex flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all hover:shadow-md"
     >
       {/* Banner thumbnail */}
       {study.banner_url && (
@@ -82,13 +82,13 @@ function CaseStudyCard({ study }: { study: CaseStudy }) {
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-bold leading-snug text-gray-900 group-hover:text-[var(--brand-primary)]">
+        <h3 className="text-sm font-bold leading-snug text-gray-900">
           {study.title}
         </h3>
 
         {/* Link */}
         {study.url && (
-          <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[var(--brand-primary)]">
+          <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-gray-600 group-hover:text-gray-900">
             Read story
             <ExternalLink className="h-3 w-3" />
           </div>

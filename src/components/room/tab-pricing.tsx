@@ -91,7 +91,7 @@ export function TabPricing({ pricing, companyName }: TabPricingProps) {
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Pricing</h2>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+        <div className="rounded-xl bg-white p-6 sm:p-8">
           <MarkdownRenderer content={pricing.content} />
         </div>
       </div>
@@ -120,8 +120,8 @@ export function TabPricing({ pricing, companyName }: TabPricingProps) {
           <QuoteCard quote={quote} />
           <div className="flex flex-col gap-3 lg:w-72">
             <div className="mb-1 flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-[var(--brand-primary)]" />
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              <TrendingDown className="h-4 w-4 text-gray-500" />
+              <h3 className="text-sm font-semibold text-gray-700">
                 Volume pricing
               </h3>
             </div>
@@ -147,8 +147,8 @@ export function TabPricing({ pricing, companyName }: TabPricingProps) {
           {hasTiers && !hasQuote && (
             <div>
               <div className="mb-5 flex items-center gap-2">
-                <TrendingDown className="h-4 w-4 text-[var(--brand-primary)]" />
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                <TrendingDown className="h-4 w-4 text-gray-500" />
+                <h3 className="text-sm font-semibold text-gray-700">
                   Volume pricing
                 </h3>
               </div>
@@ -192,7 +192,7 @@ export function TabPricing({ pricing, companyName }: TabPricingProps) {
 
       {/* Optional markdown notes */}
       {pricing.content && (
-        <div className="mx-auto mt-12 max-w-3xl rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+        <div className="mx-auto mt-12 max-w-3xl rounded-xl bg-white p-6 sm:p-8">
           <MarkdownRenderer content={pricing.content} />
         </div>
       )}
@@ -218,9 +218,9 @@ function QuoteCard({ quote }: { quote: PricingQuote }) {
   const monthlyCost = estimated_volume * per_install_price;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--brand-primary)]/30 bg-white shadow-lg">
+    <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
       {/* Header bar */}
-      <div className="flex items-center gap-2 bg-[var(--brand-primary)] px-6 py-3">
+      <div className="flex items-center gap-2 bg-gray-900 px-6 py-3">
         <Sparkles className="h-4 w-4 text-white/80" />
         <span className="text-sm font-semibold tracking-wide text-white">
           Your Quote
@@ -248,7 +248,7 @@ function QuoteCard({ quote }: { quote: PricingQuote }) {
         </dl>
 
         {/* Divider + total */}
-        <div className="my-5 border-t border-gray-200" />
+        <div className="my-5 h-px bg-gray-100" />
 
         <div className="flex items-baseline justify-between">
           <dt className="text-sm font-medium text-gray-500">
@@ -269,7 +269,7 @@ function QuoteCard({ quote }: { quote: PricingQuote }) {
           <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
             {value_props.map((prop, i) => (
               <div key={i} className="flex items-start gap-2">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-primary)]" />
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
                 <span className="text-sm text-gray-600">{prop}</span>
               </div>
             ))}
@@ -323,17 +323,9 @@ function VolumeTierCard({
     <div
       className={cn(
         "relative rounded-2xl bg-white px-5 py-5 transition-shadow",
-        isLowest
-          ? "border-2 border-[var(--brand-primary)] shadow-md"
-          : "border border-gray-200 shadow-sm",
+        isLowest ? "shadow-md" : "shadow-sm",
       )}
     >
-      {isLowest && (
-        <span className="absolute -top-3 left-4 rounded-full bg-[var(--brand-primary)] px-3 py-0.5 text-xs font-semibold text-white">
-          Best value
-        </span>
-      )}
-
       <div className="flex items-baseline justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-gray-500">
@@ -437,15 +429,15 @@ function LinkrunnerCompareCard({
   volume: number;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--brand-primary)] bg-white shadow-md">
+    <div className="relative overflow-hidden rounded-2xl bg-white shadow-md">
       {/* Accent bar */}
-      <div className="bg-[var(--brand-primary)] px-5 py-2">
+      <div className="bg-gray-900 px-5 py-2">
         <span className="text-xs font-bold uppercase tracking-wider text-white">
           Linkrunner
         </span>
       </div>
       <div className="px-5 py-5">
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+        <p className="text-xs font-medium text-gray-400">
           Monthly cost
         </p>
         <p className="mt-1 text-3xl font-extrabold tracking-tight text-gray-900">
@@ -488,15 +480,15 @@ function CompetitorCard({
   savingsPct: number;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm">
+    <div className="relative overflow-hidden rounded-2xl bg-gray-50 shadow-sm">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-gray-100 px-5 py-2">
+      <div className="bg-gray-100 px-5 py-2">
         <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
           {competitor.name}
         </span>
       </div>
       <div className="px-5 py-5">
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+        <p className="text-xs font-medium text-gray-400">
           Monthly cost
         </p>
         <p className="mt-1 text-3xl font-extrabold tracking-tight text-gray-400">
@@ -519,9 +511,9 @@ function CompetitorCard({
 
         {/* Savings callout */}
         {savings > 0 && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
-            <ArrowRight className="h-3.5 w-3.5 text-green-600" />
-            <span className="text-xs font-semibold text-green-700">
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
+            <ArrowRight className="h-3.5 w-3.5 text-gray-600" />
+            <span className="text-xs font-semibold text-gray-900">
               Save {currency}
               {fmtNum(savings)}/mo ({savingsPct}%) with Linkrunner
             </span>

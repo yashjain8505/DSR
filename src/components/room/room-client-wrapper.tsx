@@ -100,11 +100,10 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
         />
       </div>
 
-      {/* Tab content area — snap stop, branded background */}
+      {/* Tab content area — snap stop, neutral background */}
       <div
         ref={contentRef}
-        className="min-h-screen snap-start snap-always"
-        style={{ background: "var(--brand-primary-light)" }}
+        className="min-h-screen snap-start snap-always bg-gray-50"
       >
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <RoomTabs data={data} visitorId={visitorId} />

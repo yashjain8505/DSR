@@ -17,17 +17,14 @@ interface TabMeetingBriefProps {
   meetingBrief: MeetingBrief;
 }
 
-/** Per-section icon + accent. "amber" flags problems; everything else is brand. */
-const SECTION_STYLE: Record<
-  string,
-  { Icon: React.ElementType; accent: "brand" | "amber" }
-> = {
-  situation: { Icon: Building2, accent: "brand" },
-  pain_points: { Icon: TriangleAlert, accent: "amber" },
-  what_we_showed: { Icon: Sparkles, accent: "brand" },
-  questions: { Icon: HelpCircle, accent: "brand" },
-  security: { Icon: ShieldCheck, accent: "brand" },
-  why_it_matters: { Icon: Target, accent: "brand" },
+/** Per-section icon. */
+const SECTION_ICONS: Record<string, React.ElementType> = {
+  situation: Building2,
+  pain_points: TriangleAlert,
+  what_we_showed: Sparkles,
+  questions: HelpCircle,
+  security: ShieldCheck,
+  why_it_matters: Target,
 };
 
 /**
@@ -42,38 +39,18 @@ export function TabMeetingBrief({ meetingBrief }: TabMeetingBriefProps) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      {/* Header with brand accent bar */}
-      <div className="mb-8 flex items-start gap-4">
-        <div
-          className="mt-1 h-12 w-1.5 shrink-0 rounded-full"
-          style={{ background: "var(--brand-primary)" }}
-        />
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-            What we discussed so far
-          </h2>
-          <p className="mt-2 text-base text-gray-500">
-            A recap of our conversation &mdash; prepared for your team
-          </p>
-        </div>
+      {/* Header */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+          What we discussed so far
+        </h2>
+        <p className="mt-2 text-base text-gray-500">
+          A recap of our conversation &mdash; prepared for your team
+        </p>
       </div>
 
       {/* Content card */}
-      <div
-        className="relative overflow-hidden rounded-2xl border bg-white shadow-sm"
-        style={{
-          borderColor: "color-mix(in srgb, var(--brand-primary) 20%, #e5e7eb)",
-        }}
-      >
-        {/* Top brand gradient strip */}
-        <div
-          className="h-1.5"
-          style={{
-            background:
-              "linear-gradient(90deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 40%, #4d4bf7))",
-          }}
-        />
-
+      <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm">
         {/* Snapshot strip (date + attendees) always renders when present */}
         {brief.snapshot && <SnapshotStrip snapshot={brief.snapshot} />}
 
@@ -87,7 +64,7 @@ export function TabMeetingBrief({ meetingBrief }: TabMeetingBriefProps) {
           <div className="px-6 py-8 sm:px-10 sm:py-10">
             <MarkdownRenderer
               content={content}
-              className="[&_h1]:text-[var(--brand-primary-dark)] [&_h2]:text-[var(--brand-primary-dark)] [&_h3]:text-[var(--brand-primary-dark)] [&_li]:leading-7 [&_ul]:space-y-1 [&_ol]:space-y-1"
+              className="[&_li]:leading-7 [&_ul]:space-y-1 [&_ol]:space-y-1"
             />
           </div>
         )}
@@ -102,28 +79,16 @@ function SnapshotStrip({
   snapshot: { date: string; attendees: string };
 }) {
   return (
-    <div
-      className="flex flex-col gap-2 border-b px-6 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:px-10"
-      style={{
-        borderColor: "color-mix(in srgb, var(--brand-primary) 12%, #e5e7eb)",
-        background: "color-mix(in srgb, var(--brand-primary) 5%, #ffffff)",
-      }}
-    >
+    <div className="flex flex-col gap-2 bg-gray-50 px-6 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:px-10">
       {snapshot.date && (
         <span className="flex items-center gap-2 text-sm text-gray-600">
-          <Calendar
-            className="h-4 w-4 shrink-0"
-            style={{ color: "var(--brand-primary)" }}
-          />
+          <Calendar className="h-4 w-4 shrink-0 text-gray-500" />
           <span className="font-medium text-gray-900">{snapshot.date}</span>
         </span>
       )}
       {snapshot.attendees && (
         <span className="flex items-start gap-2 text-sm text-gray-600">
-          <Users
-            className="mt-0.5 h-4 w-4 shrink-0"
-            style={{ color: "var(--brand-primary)" }}
-          />
+          <Users className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
           <span>{snapshot.attendees}</span>
         </span>
       )}
@@ -132,24 +97,12 @@ function SnapshotStrip({
 }
 
 function Section({ section }: { section: BriefSection }) {
-  const style = SECTION_STYLE[section.key] ?? { Icon: FileText, accent: "brand" };
-  const { Icon, accent } = style;
-  const isAmber = accent === "amber";
-
-  const chipStyle = isAmber
-    ? { background: "#fffbeb", color: "#d97706" }
-    : {
-        background: "var(--brand-primary-light)",
-        color: "var(--brand-primary)",
-      };
+  const Icon = SECTION_ICONS[section.key] ?? FileText;
 
   return (
     <section>
       <div className="mb-3 flex items-center gap-3">
-        <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-          style={chipStyle}
-        >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-700">
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <h3 className="text-base font-semibold text-gray-900">
@@ -159,7 +112,7 @@ function Section({ section }: { section: BriefSection }) {
       <ul className="space-y-2.5 pl-11">
         {section.items.map((item, i) => (
           <li key={i} className="flex gap-3 text-[15px] leading-7 text-gray-700">
-            <Marker index={i} ordered={section.ordered} amber={isAmber} />
+            <Marker index={i} ordered={section.ordered} />
             <span>{item}</span>
           </li>
         ))}
@@ -168,36 +121,15 @@ function Section({ section }: { section: BriefSection }) {
   );
 }
 
-function Marker({
-  index,
-  ordered,
-  amber,
-}: {
-  index: number;
-  ordered: boolean;
-  amber: boolean;
-}) {
+function Marker({ index, ordered }: { index: number; ordered: boolean }) {
   if (ordered) {
     return (
-      <span
-        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
-        style={
-          amber
-            ? { background: "#fffbeb", color: "#d97706" }
-            : {
-                background: "var(--brand-primary-light)",
-                color: "var(--brand-primary)",
-              }
-        }
-      >
+      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-semibold text-gray-700">
         {index + 1}
       </span>
     );
   }
   return (
-    <span
-      className="mt-[10px] h-1.5 w-1.5 shrink-0 rounded-full"
-      style={{ background: amber ? "#d97706" : "var(--brand-primary)" }}
-    />
+    <span className="mt-[10px] h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
   );
 }

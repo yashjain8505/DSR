@@ -36,11 +36,10 @@ export function RoomHeader({
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         visible
-          ? "translate-y-0 border-b bg-white/95 shadow-sm backdrop-blur-md"
+          ? "translate-y-0 bg-white/95 shadow-sm backdrop-blur-md"
           : "-translate-y-full",
         className
       )}
-      style={visible ? { borderColor: "color-mix(in srgb, var(--brand-primary) 25%, #e5e7eb)" } : undefined}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Both logos first, then names with 🤝 */}
@@ -61,9 +60,6 @@ export function RoomHeader({
             )}
           </div>
 
-          {/* Divider */}
-          <div className="mx-1 h-6 w-px bg-gray-200" />
-
           {/* Names with handshake */}
           <span className="text-base font-semibold text-gray-900">
             Linkrunner
@@ -72,12 +68,6 @@ export function RoomHeader({
           <span className="text-base font-semibold text-gray-900">
             {companyName}
           </span>
-        </div>
-
-        {/* Live Room badge */}
-        <div className="hidden items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 sm:flex">
-          <div className="h-2 w-2 rounded-full bg-green-500" />
-          <span className="text-xs font-medium text-green-700">Live Room</span>
         </div>
       </div>
     </header>

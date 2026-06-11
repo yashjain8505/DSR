@@ -1,7 +1,5 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
-
 /* ------------------------------------------------------------------ */
 /*  Comparison data                                                    */
 /* ------------------------------------------------------------------ */
@@ -130,8 +128,6 @@ export function TabComparisons({ competitors }: TabComparisonsProps) {
     );
   }
 
-  const colCount = enabled.length + 2; // dimension + competitors + linkrunner
-
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
@@ -142,24 +138,21 @@ export function TabComparisons({ competitors }: TabComparisonsProps) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
         <table className="w-full min-w-[600px] text-sm">
           {/* Header */}
           <thead>
             <tr>
-              <th className="w-[160px] bg-white p-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-400" />
+              <th className="w-[160px] bg-white p-4 text-left text-xs font-semibold text-gray-400" />
               {enabled.map((key) => (
                 <th
                   key={key}
-                  className="bg-gray-50 p-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-500"
+                  className="bg-gray-50 p-4 text-center text-xs font-semibold text-gray-500"
                 >
                   {COMPETITOR_LABELS[key]}
                 </th>
               ))}
-              <th
-                className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-white"
-                style={{ backgroundColor: "var(--brand-primary)" }}
-              >
+              <th className="bg-gray-900 p-4 text-center text-xs font-semibold text-white">
                 Linkrunner
               </th>
             </tr>
@@ -170,10 +163,10 @@ export function TabComparisons({ competitors }: TabComparisonsProps) {
             {ROWS.map((row, i) => (
               <tr
                 key={row.dimension}
-                className={i % 2 === 0 ? "bg-white" : "bg-gray-50/40"}
+                className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
               >
                 {/* Dimension */}
-                <td className="border-t border-gray-100 p-4 align-top font-bold text-gray-900">
+                <td className="p-4 align-top font-bold text-gray-900">
                   {row.dimension}
                 </td>
 
@@ -181,7 +174,7 @@ export function TabComparisons({ competitors }: TabComparisonsProps) {
                 {enabled.map((key) => (
                   <td
                     key={key}
-                    className="border-t border-gray-100 p-4 align-top text-gray-500"
+                    className="p-4 align-top text-gray-500"
                   >
                     {row[key]}
                   </td>
@@ -189,14 +182,9 @@ export function TabComparisons({ competitors }: TabComparisonsProps) {
 
                 {/* Linkrunner cell */}
                 <td
-                  className="border-t p-4 align-top font-medium text-gray-900"
-                  style={{
-                    borderColor: "color-mix(in srgb, var(--brand-primary) 15%, #e5e7eb)",
-                    backgroundColor:
-                      i % 2 === 0
-                        ? "color-mix(in srgb, var(--brand-primary) 4%, white)"
-                        : "color-mix(in srgb, var(--brand-primary) 7%, white)",
-                  }}
+                  className={`p-4 align-top font-medium text-gray-900 ${
+                    i % 2 === 0 ? "bg-gray-100/60" : "bg-gray-100"
+                  }`}
                 >
                   {row.linkrunner}
                 </td>
@@ -204,22 +192,6 @@ export function TabComparisons({ competitors }: TabComparisonsProps) {
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-5 flex items-center gap-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          Compared to
-        </span>
-        {enabled.map((key) => (
-          <span
-            key={key}
-            className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm"
-          >
-            <CheckCircle2 className="h-3 w-3 text-gray-400" />
-            {COMPETITOR_LABELS[key]}
-          </span>
-        ))}
       </div>
     </div>
   );

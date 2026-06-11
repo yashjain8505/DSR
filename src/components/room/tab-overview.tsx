@@ -65,7 +65,7 @@ export function SubTabDropdownSection({
         <select
           value={activeSubTab}
           onChange={(e) => handleSubTabChange(e.target.value)}
-          className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:border-[var(--brand-primary)] focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+          className="w-full appearance-none rounded-lg bg-white px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 shadow-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-gray-400"
         >
           {subTabs.map((tab) => {
             const label =
@@ -105,7 +105,7 @@ export function SubTabContent({
   switch (subTab.sub_tab_key) {
     case "product_demo":
       return youtubeUrl ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+        <div className="rounded-xl bg-white p-4 sm:p-6">
           <YouTubeEmbed url={youtubeUrl} title="Product Demo" />
           {content && (
             <div className="mt-6">
@@ -129,7 +129,7 @@ export function SubTabContent({
         pdfUrl.toLowerCase().endsWith(".pdf") ||
         pdfUrl.includes("/assets/"); // Supabase storage PDFs
       return pdfUrl ? (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+        <div className="rounded-xl bg-white p-4 sm:p-6">
           {isPdf && (
             <div className="mb-3 flex justify-end">
               <a
@@ -167,7 +167,7 @@ export function SubTabContent({
 
     case "how_it_works":
       return (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+        <div className="rounded-xl bg-white p-6 sm:p-8">
           {content ? (
             <MarkdownRenderer content={content} />
           ) : (
@@ -211,7 +211,7 @@ function FallbackContent({ content }: { content: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
+    <div className="rounded-xl bg-white p-6 sm:p-8">
       <MarkdownRenderer content={content} />
     </div>
   );
@@ -228,15 +228,14 @@ function DocsCallout() {
       href="https://docs.linkrunner.io"
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-8 flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-5 transition-colors hover:border-[var(--brand-primary)] sm:flex-row sm:items-center sm:justify-between"
+      className="mt-8 flex flex-col gap-3 rounded-xl bg-gray-50 p-5 transition-colors hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
         <p className="font-semibold text-gray-900">
           Full integration guide &amp; API reference
         </p>
         <p className="mt-0.5 text-sm text-gray-600">
-          Complete SDK setup, code samples, and the latest docs at
-          docs.linkrunner.io
+          SDK setup, code samples, and the latest reference
         </p>
       </div>
       <span
