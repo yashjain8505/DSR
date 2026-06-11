@@ -1,114 +1,51 @@
 "use client";
 
 import {
-  ArrowRight,
   BarChart3,
-  CircleDollarSign,
+  Bot,
   Code2,
-  Gauge,
   Link2,
   Megaphone,
-  MousePointerClick,
-  Radio,
-  Route,
+  Rocket,
   ShieldCheck,
-  Smartphone,
-  Store,
-  TrendingUp,
+  Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-interface FlowStep {
-  icon: ReactNode;
-  label: string;
-  detail: string;
-}
+/* ------------------------------------------------------------------ */
+/*  Content                                                            */
+/* ------------------------------------------------------------------ */
 
-const FLOW_STEPS: FlowStep[] = [
+const HERO_CARDS: { icon: ReactNode; title: string; copy: string }[] = [
   {
-    icon: <Megaphone className="h-4 w-4" />,
-    label: "Paid, organic, or owned touch",
-    detail: "Meta, Google, TikTok, affiliate, QR, referral, influencer, or web",
+    icon: <BarChart3 className="h-4 w-4" />,
+    title: "Attribution",
+    copy: "Every install, event and rupee tied back to the campaign that earned it.",
   },
   {
     icon: <Link2 className="h-4 w-4" />,
-    label: "Deep link + attribution context",
-    detail: "The URL preserves campaign metadata, destination, and routing rules",
+    title: "Deep links",
+    copy: "One link routes every user to the right screen — even after install.",
   },
   {
-    icon: <Store className="h-4 w-4" />,
-    label: "Install, open, or return",
-    detail: "Users land in the right app screen while the MMP records the journey",
-  },
-  {
-    icon: <BarChart3 className="h-4 w-4" />,
-    label: "AI attribution + postbacks",
-    detail: "Events are scored, explained, and sent back to partners in real time",
+    icon: <Bot className="h-4 w-4" />,
+    title: "AI analyst",
+    copy: "Ask why ROAS moved and get the answer, not another dashboard.",
   },
 ];
 
-interface OutcomeCard {
-  icon: ReactNode;
-  title: string;
-  copy: string;
-  metric: string;
-}
-
-const OUTCOMES: OutcomeCard[] = [
-  {
-    icon: <Gauge className="h-5 w-5" />,
-    title: "Ask why a campaign moved",
-    copy: "Linkrunner turns click, install, event, revenue, and partner data into plain answers for growth teams.",
-    metric: "AI analysis",
-  },
-  {
-    icon: <CircleDollarSign className="h-5 w-5" />,
-    title: "Track the events that actually prove value",
-    copy: "Measure signups, purchases, subscriptions, trials, referrals, cohorts, and custom milestones without starving the model.",
-    metric: "50M events/mo included",
-  },
-  {
-    icon: <Route className="h-5 w-5" />,
-    title: "Keep routing and measurement together",
-    copy: "One system handles deep links, deferred destinations, attribution windows, SKAN mapping, and partner callbacks.",
-    metric: "MMP workflow",
-  },
+const STATS: { value: string; label: string }[] = [
+  { value: "35+", label: "ad & analytics integrations" },
+  { value: "50M", label: "free events every month" },
+  { value: "<10 min", label: "SDK setup" },
+  { value: "99.5%", label: "affiliate fraud blocked" },
 ];
 
-interface Capability {
-  icon: ReactNode;
-  title: string;
-  detail: string;
-}
-
-const CAPABILITIES: Capability[] = [
-  {
-    icon: <MousePointerClick className="h-4 w-4" />,
-    title: "Attribution engine",
-    detail: "Installs, sessions, revenue, and custom events tied back to source, campaign, creative, and link.",
-  },
-  {
-    icon: <Radio className="h-4 w-4" />,
-    title: "Postback router",
-    detail: "Clean partner-ready event sharing for ad networks, affiliates, analytics, and internal tools.",
-  },
-  {
-    icon: <Smartphone className="h-4 w-4" />,
-    title: "Deep link layer",
-    detail: "Universal links, deferred destinations, QR flows, web-to-app handoffs, and campaign landing paths.",
-  },
-  {
-    icon: <ShieldCheck className="h-4 w-4" />,
-    title: "AI trust controls",
-    detail: "Fraud signals, SKAN coverage, postback health, and data-quality gaps surfaced before spend drifts.",
-  },
-];
-
-const SETUP_STEPS = [
-  "Map acquisition sources and events",
-  "Add SDK and server-side events",
-  "Connect ad, affiliate, and analytics partners",
-  "Let the AI monitor attribution health",
+const GO_LIVE_STEPS: { title: string; sub: string }[] = [
+  { title: "Add the SDK", sub: "3 lines of code" },
+  { title: "Connect partners", sub: "Meta, Google & 35+ more" },
+  { title: "Launch campaigns", sub: "links + QR + web-to-app" },
+  { title: "Watch it attribute", sub: "installs & revenue, live" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -116,243 +53,171 @@ const SETUP_STEPS = [
 /* ------------------------------------------------------------------ */
 
 export function WhatIsLinkrunner({
-  companyName = "Your app",
+  companyName = "your team",
 }: {
   companyName?: string;
 }) {
   return (
-    <div className="space-y-8">
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.95fr] lg:items-stretch">
-        <div className="flex flex-col justify-center rounded-lg bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="max-w-2xl text-3xl font-bold leading-[1.08] text-gray-950 sm:text-4xl">
-            Linkrunner is the world&apos;s first AI-native MMP for teams that need answers, not more dashboards.
+    <div className="space-y-5">
+      {/* ── Editorial hero ── */}
+      <section className="relative overflow-hidden rounded-3xl bg-gray-950 px-6 py-12 sm:px-12 sm:py-14">
+        {/* Brand glow */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            background:
+              "radial-gradient(ellipse 75% 90% at 50% -20%, var(--brand-primary) 0%, transparent 60%)",
+          }}
+        />
+        <div className="relative">
+          <h2 className="mx-auto max-w-3xl text-center font-serif text-4xl leading-tight text-white sm:text-5xl">
+            Know what <em className="italic">grows</em> your app.
           </h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-gray-600">
-            A mobile measurement partner attributes installs and post-install
-            events back to the marketing that created them. Linkrunner does that,
-            then adds an AI layer that explains channel performance, flags broken
-            postbacks, watches fraud signals, and tells you where growth is leaking.
+          <p className="mx-auto mt-4 max-w-xl text-center text-base leading-7 text-white/65">
+            Linkrunner is the AI-native mobile measurement partner &mdash;
+            attribution, deep links and answers in one place.
           </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <Metric label="Partner integrations" value="35+" />
-            <Metric label="Monthly events included" value="50M" />
-            <Metric label="Setup target" value="<10 min" />
+
+          {/* Glass cards */}
+          <div className="mt-10 grid gap-3 sm:grid-cols-3">
+            {HERO_CARDS.map((card) => (
+              <div
+                key={card.title}
+                className="rounded-2xl bg-white/[0.08] p-5 backdrop-blur-md"
+              >
+                <div className="flex items-center gap-2 text-white">
+                  {card.icon}
+                  <p className="font-semibold">{card.title}</p>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-white/65">
+                  {card.copy}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
-
-        <ProductConsole companyName={companyName} />
       </section>
 
-      <section className="rounded-lg bg-white p-5 shadow-sm sm:p-6">
-        <div className="mb-5">
-          <h3 className="text-xl font-bold text-gray-950">
-            What an MMP has to get right
-          </h3>
-          <p className="mt-1 text-sm leading-6 text-gray-600">
-            Linkrunner sits between your app, your links, your ad partners,
-            and your analytics stack so every acquisition signal has context.
-          </p>
-        </div>
-
-        <div className="grid gap-3 lg:grid-cols-4">
-          {FLOW_STEPS.map((step, index) => (
-            <div
-              key={step.label}
-              className="relative rounded-lg bg-gray-100 p-4"
-            >
-              {index < FLOW_STEPS.length - 1 && (
-                <ArrowRight className="absolute right-3 top-5 hidden h-4 w-4 text-gray-300 lg:block" />
-              )}
-              <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-white text-gray-700 shadow-sm">
-                {step.icon}
-              </div>
-              <p className="font-semibold text-gray-950">{step.label}</p>
-              <p className="mt-1 text-sm leading-6 text-gray-600">
-                {step.detail}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-3">
-        {OUTCOMES.map((card) => (
+      {/* ── Stats strip ── */}
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {STATS.map((stat) => (
           <div
-            key={card.title}
-            className="rounded-lg bg-white p-5 shadow-sm"
+            key={stat.label}
+            className="rounded-2xl bg-white px-5 py-5 text-center shadow-sm"
           >
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-700">
-              {card.icon}
-            </div>
-            <h3 className="text-base font-bold text-gray-950">{card.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-gray-600">{card.copy}</p>
+            <p className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
+              {stat.value}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">{stat.label}</p>
           </div>
         ))}
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-lg bg-gray-950 p-6 text-white shadow-sm">
-          <p className="text-sm font-semibold text-white/60">
-            What sits inside the AI-native MMP
-          </p>
-          <h3 className="mt-2 text-2xl font-bold leading-tight">
-            The measurement layer your growth team normally stitches together manually.
+      {/* ── Feature cards ── */}
+      <section className="grid gap-3 sm:grid-cols-2">
+        {/* One link, every channel */}
+        <div className="rounded-3xl bg-violet-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-violet-600 shadow-sm">
+            <Megaphone className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">
+            One link, every channel
           </h3>
-          <div className="mt-6 space-y-3">
-            {CAPABILITIES.map((item) => (
-              <div key={item.title} className="flex gap-3">
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
-                  {item.icon}
-                </div>
-                <div>
-                  <p className="font-semibold">{item.title}</p>
-                  <p className="mt-0.5 text-sm leading-6 text-white/65">
-                    {item.detail}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            Meta, Google, TikTok, affiliates, QR, influencers &mdash; all
+            routed and measured the same way.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {["Meta", "Google", "TikTok", "QR", "Influencer", "Web"].map(
+              (ch) => (
+                <span
+                  key={ch}
+                  className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 shadow-sm"
+                >
+                  {ch}
+                </span>
+              ),
+            )}
           </div>
         </div>
 
-        <div className="rounded-lg bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <h3 className="text-xl font-bold text-gray-950">
-              Designed to produce trustworthy attribution quickly
-            </h3>
-            <Code2 className="h-6 w-6 shrink-0 text-gray-400" />
+        {/* Ask, don't dig */}
+        <div className="rounded-3xl bg-sky-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sky-600 shadow-sm">
+            <Bot className="h-5 w-5" />
           </div>
-          <div className="space-y-4">
-            {SETUP_STEPS.map((step, index) => (
-              <div key={step} className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-sm font-bold text-white">
-                    {index + 1}
-                  </div>
-                  {index < SETUP_STEPS.length - 1 && (
-                    <div className="h-8 w-px bg-gray-200" />
-                  )}
-                </div>
-                <div className="pt-1">
-                  <p className="font-semibold text-gray-950">{step}</p>
-                  <p className="mt-1 text-sm leading-6 text-gray-600">
-                    {getSetupDetail(index)}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <h3 className="text-lg font-bold text-gray-900">
+            Ask, don&rsquo;t dig
+          </h3>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            The AI analyst reads your campaign data so you don&rsquo;t have to.
+          </p>
+          <div className="mt-4 space-y-2">
+            <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-white px-3.5 py-2 text-xs text-gray-700 shadow-sm">
+              Why did CAC rise last week?
+            </p>
+            <p className="w-fit max-w-[85%] rounded-2xl rounded-bl-sm bg-gray-900 px-3.5 py-2 text-xs text-white">
+              Meta CPMs +18%; your best ad set fatigued. Shift ₹40K to Google
+              UAC.
+            </p>
           </div>
         </div>
+
+        {/* Track everything, free */}
+        <div className="rounded-3xl bg-amber-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
+            <Zap className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">
+            Track everything, free
+          </h3>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            50M events a month included. Signups, purchases, referrals &mdash;
+            never trim events to control a bill.
+          </p>
+        </div>
+
+        {/* Fraud blocked */}
+        <div className="rounded-3xl bg-emerald-50 p-7">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">
+            Fraud blocked at the door
+          </h3>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            Click spam, bots and device farms filtered before you pay for
+            them &mdash; included at every tier.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Go-live strip ── */}
+      <section className="rounded-3xl bg-white p-7 shadow-sm sm:p-8">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <h3 className="text-lg font-bold text-gray-900">
+            How {companyName} goes live
+          </h3>
+          <span className="flex items-center gap-1.5 text-sm font-medium text-gray-400">
+            <Rocket className="h-4 w-4" />
+            under a week
+          </span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-4">
+          {GO_LIVE_STEPS.map((step, i) => (
+            <div key={step.title} className="rounded-2xl bg-gray-100 p-4">
+              <p className="text-xs font-bold text-gray-400">{i + 1}</p>
+              <p className="mt-1 font-semibold text-gray-900">{step.title}</p>
+              <p className="mt-0.5 text-xs text-gray-500">{step.sub}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-5 flex items-center gap-2 text-sm text-gray-500">
+          <Code2 className="h-4 w-4 shrink-0 text-gray-400" />
+          Migration from AppsFlyer, Adjust or Branch is handled by our team
+          &mdash; existing links keep working.
+        </p>
       </section>
     </div>
   );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                     */
-/* ------------------------------------------------------------------ */
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-gray-100 p-4">
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      <p className="mt-1 text-xs font-medium text-gray-500">{label}</p>
-    </div>
-  );
-}
-
-function ProductConsole({ companyName }: { companyName: string }) {
-  return (
-    <div className="rounded-lg bg-gray-950 p-4 shadow-sm">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
-        <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-        <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-      </div>
-
-      <div className="rounded-lg bg-white p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase text-gray-400">
-              {companyName} acquisition
-            </p>
-            <p className="mt-1 text-lg font-bold text-gray-950">
-              MMP command center
-            </p>
-          </div>
-          <TrendingUp className="h-5 w-5 text-gray-400" />
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <ConsoleMetric label="Attributed installs" value="12.7K" />
-          <ConsoleMetric label="Events scored" value="1.9M" />
-          <ConsoleMetric label="D7 ROAS" value="2.8x" />
-        </div>
-
-        <div className="mt-5 space-y-3">
-          <ChannelRow label="Meta D7 ROAS" value="3.4x" width="82%" />
-          <ChannelRow label="Google installs" value="4.1K" width="64%" />
-          <ChannelRow label="Affiliate quality" value="72%" width="42%" />
-          <ChannelRow label="QR-to-app opens" value="1.6K" width="26%" />
-        </div>
-
-        <div className="mt-5 rounded-lg bg-gray-100 p-3">
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
-            <ShieldCheck className="h-4 w-4 text-gray-500" />
-            AI data quality checks
-          </div>
-          <div className="grid gap-2 text-xs text-gray-600 sm:grid-cols-2">
-            <span>Postbacks healthy</span>
-            <span>SKAN values mapped</span>
-            <span>Fraud spike flagged</span>
-            <span>Budget shift suggested</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConsoleMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-gray-100 p-3">
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className="mt-1 text-xl font-bold text-gray-900">{value}</p>
-    </div>
-  );
-}
-
-function ChannelRow({
-  label,
-  value,
-  width,
-}: {
-  label: string;
-  value: string;
-  width: string;
-}) {
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-xs font-semibold text-gray-600">
-        <span>{label}</span>
-        <span>{value}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-        <div className="h-full rounded-full bg-gray-700" style={{ width }} />
-      </div>
-    </div>
-  );
-}
-
-function getSetupDetail(index: number): string {
-  switch (index) {
-    case 0:
-      return "Define the sources, campaigns, attribution windows, and conversion events your team trusts.";
-    case 1:
-      return "Capture installs, opens, purchases, subscriptions, referrals, and server-confirmed events.";
-    case 2:
-      return "Send clean postbacks to Meta, Google, TikTok, affiliates, analytics, and internal BI.";
-    default:
-      return "Catch broken links, missing events, SKAN gaps, fraud spikes, and ROAS movement before the team asks.";
-  }
 }

@@ -3,7 +3,14 @@
 import { useMemo, useState } from "react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import {
+  Check,
+  MessageCircle,
+  Sparkles,
+  Unlock,
+  Wallet,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import type {
   Pricing,
   PricingData,
@@ -44,12 +51,37 @@ const DEFAULT_COMPETITORS: CompetitorPricing[] = [
   },
 ];
 
-const DEFAULT_VALUE_PROPS = [
-  "All features included",
-  "Postpaid monthly",
+/** Designed perk tiles shown when the admin hasn't customized value props. */
+const DEFAULT_PERKS: { icon: ReactNode; title: string; sub: string }[] = [
+  {
+    icon: <Sparkles className="h-4 w-4" />,
+    title: "Everything included",
+    sub: "No paid add-ons",
+  },
+  {
+    icon: <Wallet className="h-4 w-4" />,
+    title: "Postpaid",
+    sub: "Billed after usage",
+  },
+  {
+    icon: <Unlock className="h-4 w-4" />,
+    title: "No lock-in",
+    sub: "Leave anytime",
+  },
+  {
+    icon: <MessageCircle className="h-4 w-4" />,
+    title: "Real support",
+    sub: "Slack & WhatsApp",
+  },
+];
+
+/** Old stored defaults — rooms with these are treated as not customized. */
+const LEGACY_DEFAULT_PROPS = new Set([
+  "All core features included",
+  "Postpaid monthly billing",
   "No annual lock-in",
   "Dedicated support",
-];
+]);
 
 /** Candidate slider stops; filtered to the configured tier bounds. */
 const NICE_STEPS = [
@@ -173,32 +205,48 @@ function PricingEstimator({
 
   const currency = data.quote?.currency ?? "₹";
   const freeThreshold = data.quote?.free_threshold ?? 25_000;
-  const valueProps =
-    data.quote?.value_props && data.quote.value_props.length > 0
-      ? data.quote.value_props
-      : DEFAULT_VALUE_PROPS;
+  // Custom admin value props (anything beyond the legacy defaults) render
+  // as simple tiles; otherwise show the designed perk tiles.
+  const customProps = (data.quote?.value_props ?? []).filter(
+    (p) => !LEGACY_DEFAULT_PROPS.has(p),
+  );
   const competitors =
     data.competitor_pricing && data.competitor_pricing.length > 0
       ? data.competitor_pricing
       : DEFAULT_COMPETITORS;
 
-  // Start at the admin's estimated volume (snapped), else ~100K.
-  const initialIndex = useMemo(() => {
-    const target = data.quote?.estimated_volume || 100_000;
-    let best = 0;
-    steps.forEach((s, i) => {
-      if (Math.abs(s - target) < Math.abs(steps[best] - target)) best = i;
-    });
-    return best;
-  }, [steps, data.quote?.estimated_volume]);
+  // The track is piecewise-linear between the labelled stops: each segment
+  // gets SUB sub-steps, so dragging is smooth anywhere while the labels
+  // stay evenly spaced. rawToVolume interpolates inside the segment.
+  const SUB = 24;
+  const maxRaw = (steps.length - 1) * SUB;
 
-  const [stepIndex, setStepIndex] = useState(initialIndex);
-  const volume = steps[Math.min(stepIndex, steps.length - 1)];
+  const rawToVolume = (raw: number) => {
+    const seg = Math.min(Math.floor(raw / SUB), steps.length - 2);
+    const frac = raw / SUB - seg;
+    const v = steps[seg] + (steps[seg + 1] - steps[seg]) * frac;
+    return Math.round(v / 1_000) * 1_000;
+  };
+
+  const volumeToRaw = (v: number) => {
+    const clamped = Math.min(Math.max(v, steps[0]), steps[steps.length - 1]);
+    let seg = 0;
+    while (seg < steps.length - 2 && clamped > steps[seg + 1]) seg++;
+    const frac = (clamped - steps[seg]) / (steps[seg + 1] - steps[seg]);
+    return Math.round((seg + frac) * SUB);
+  };
+
+  // Start at the admin's estimated volume, else ~100K.
+  const [raw, setRaw] = useState(() =>
+    volumeToRaw(data.quote?.estimated_volume || 100_000),
+  );
+  const volume = rawToVolume(raw);
   const tier = tierFor(ranges, volume);
   const monthly = volume * tier.per_install_price;
 
   // Thin the labels if there are too many stops to fit.
   const labelEvery = steps.length > 10 ? 2 : 1;
+  const nearestStep = Math.round(raw / SUB);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -223,14 +271,14 @@ function PricingEstimator({
             <button
               key={s}
               type="button"
-              onClick={() => setStepIndex(i)}
+              onClick={() => setRaw(i * SUB)}
               className={cn(
                 "min-w-0 flex-1 text-center text-[11px] font-medium tabular-nums transition-colors sm:text-xs",
-                i === stepIndex
+                i === nearestStep
                   ? "font-bold text-[var(--brand-primary)]"
                   : "text-gray-400 hover:text-gray-600",
                 i % labelEvery !== 0 &&
-                  i !== stepIndex &&
+                  i !== nearestStep &&
                   "invisible sm:visible",
               )}
             >
@@ -243,10 +291,10 @@ function PricingEstimator({
         <input
           type="range"
           min={0}
-          max={steps.length - 1}
+          max={maxRaw}
           step={1}
-          value={stepIndex}
-          onChange={(e) => setStepIndex(parseInt(e.target.value))}
+          value={raw}
+          onChange={(e) => setRaw(parseInt(e.target.value))}
           aria-label="Monthly installs"
           className="mt-2 h-2 w-full cursor-pointer"
           style={{ accentColor: "var(--brand-primary)" }}
@@ -310,17 +358,36 @@ function PricingEstimator({
           })}
         </div>
 
-        {/* Value props */}
-        <div className="mt-7 flex flex-wrap justify-center gap-x-6 gap-y-2">
-          {valueProps.map((prop) => (
-            <span
-              key={prop}
-              className="flex items-center gap-1.5 text-sm text-gray-600"
-            >
-              <Check className="h-4 w-4 text-[var(--brand-primary)]" />
-              {prop}
-            </span>
-          ))}
+        {/* Perks */}
+        <div className="mt-7 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {customProps.length > 0
+            ? customProps.map((prop) => (
+                <div
+                  key={prop}
+                  className="flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-3"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 shadow-sm">
+                    <Check className="h-4 w-4" />
+                  </span>
+                  <p className="text-sm font-semibold text-gray-900">{prop}</p>
+                </div>
+              ))
+            : DEFAULT_PERKS.map((perk) => (
+                <div
+                  key={perk.title}
+                  className="flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-3"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 shadow-sm">
+                    {perk.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight text-gray-900">
+                      {perk.title}
+                    </p>
+                    <p className="text-xs text-gray-400">{perk.sub}</p>
+                  </div>
+                </div>
+              ))}
         </div>
       </div>
 

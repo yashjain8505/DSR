@@ -517,20 +517,6 @@ export default function PricingEditorPage() {
 
             {competitors.length > 0 && (
               <div className="mt-4 space-y-3">
-                {/* Header row */}
-                <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-4 px-1">
-                  <p className="text-xs font-medium text-gray-400">
-                    Competitor
-                  </p>
-                  <p className="text-xs font-medium text-gray-400">
-                    Per-Install Price ({quote.currency})
-                  </p>
-                  <p className="text-xs font-medium text-gray-400">
-                    Pricing Model
-                  </p>
-                  <div className="w-8" />
-                </div>
-
                 {competitors.map((comp, index) => {
                   const compMonthly =
                     quote.estimated_volume * comp.per_install_price;
@@ -539,8 +525,9 @@ export default function PricingEditorPage() {
                       key={index}
                       className="space-y-2 rounded-lg border border-amber-100 bg-white p-3"
                     >
-                      <div className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-4">
+                      <div className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-4">
                         <Input
+                          label="Competitor Name"
                           value={comp.name}
                           onChange={(e) =>
                             updateCompetitor(index, "name", e.target.value)
@@ -548,6 +535,7 @@ export default function PricingEditorPage() {
                           placeholder="AppsFlyer"
                         />
                         <Input
+                          label={`Per-Install Price (${quote.currency})`}
                           type="number"
                           step="0.01"
                           value={comp.per_install_price || ""}
@@ -561,6 +549,7 @@ export default function PricingEditorPage() {
                           placeholder="5.00"
                         />
                         <Input
+                          label="Pricing Model"
                           value={comp.pricing_model}
                           onChange={(e) =>
                             updateCompetitor(
@@ -609,11 +598,12 @@ export default function PricingEditorPage() {
 
                       {/* Notes */}
                       <Input
+                        label="Note (optional)"
                         value={comp.notes ?? ""}
                         onChange={(e) =>
                           updateCompetitor(index, "notes", e.target.value)
                         }
-                        placeholder="Optional note (e.g. Requires annual contract)"
+                        placeholder="e.g. Requires annual contract"
                       />
                     </div>
                   );

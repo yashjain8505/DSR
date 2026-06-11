@@ -326,7 +326,7 @@ function OverviewTabRenderer({
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       <SubTabContent
         subTab={subTab}
         assets={assets}
