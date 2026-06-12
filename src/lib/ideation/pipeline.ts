@@ -276,9 +276,9 @@ export async function runIdeation(
 // ---------------------------------------------------------------------------
 // "Due this week" — the Monday morning view.
 // ---------------------------------------------------------------------------
-export async function dueThisWeek() {
+export async function dueThisWeek(days = 7) {
   const admin = createAdminClient();
-  const weekOut = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  const weekOut = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 10);
   const { data, error } = await admin

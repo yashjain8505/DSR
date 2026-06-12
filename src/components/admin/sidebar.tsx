@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   Package,
   Calendar,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const mainLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/meetings", label: "Meetings", icon: Calendar },
+  { href: "/admin/ideation", label: "Ideation", icon: Lightbulb },
   { href: "/admin/rooms/new", label: "Create Room", icon: Plus },
   { href: "/admin/assets", label: "Assets", icon: Package },
 ];
