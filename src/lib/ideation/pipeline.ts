@@ -127,7 +127,11 @@ async function llmJson(system: string, user: string): Promise<any> {
     model: MODEL,
     max_tokens: 16000,
     thinking: { type: "adaptive" },
-    system,
+    // The system prompt embeds the company context + knowledge base — a large
+    // stable prefix. Cache it so repeated runs (and the matcher/critic pair
+    // within a run window) pay ~0.1x for it. Volatile content (date, signals)
+    // stays in the user message, after the breakpoint.
+    system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: user }],
   });
   const text = msg.content

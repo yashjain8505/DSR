@@ -19,6 +19,29 @@ export function loadDataAssets(): string {
   }
 }
 
+/**
+ * Evidence-graded follow-up knowledge base (10 workstreams + synthesis).
+ * Full text goes to the matcher; the synthesis section alone goes to the
+ * creative pass and critic as hard constraints / kill criteria.
+ */
+export function loadKnowledgeBase(): string {
+  try {
+    return readFileSync(
+      join(CONFIG_DIR, "sales-followup-knowledge-base.md"),
+      "utf8",
+    );
+  } catch {
+    return "";
+  }
+}
+
+/** The "Synthesis: cross-cutting rules" + "Conflicts" tail of the KB. */
+export function loadKnowledgeBaseSynthesis(): string {
+  const kb = loadKnowledgeBase();
+  const idx = kb.indexOf("## Synthesis");
+  return idx === -1 ? "" : kb.slice(idx);
+}
+
 // ---------------------------------------------------------------------------
 // STAGE 1 — EXTRACTION
 // Input: raw dump (transcripts + notes + emails). Output: structured signals JSON.
@@ -81,6 +104,15 @@ CURRENT DATA ASSETS (hand-maintained, treat as ground truth; if a value says
 "fill in", do NOT use that number — write the draft so the rep inserts it):
 ${loadDataAssets()}
 
+FOLLOW-UP KNOWLEDGE BASE (evidence-graded; 10 workstreams). Treat this as your
+operating manual: follow its tactical playbooks for cadence, spacing, channel
+choice, CTA style, recap structure, nurture/renewal clocks, re-engagement arcs,
+multithreading and de-risking. Obey its anti-patterns absolutely. When citing a
+statistic inside a draft, use ONLY figures the KB labels "measured" with a
+named dataset; never cite anything it flags as unverified, vendor folklore, or
+fabricated:
+${loadKnowledgeBase()}
+
 You are a sales strategist choosing from a PROVEN PLAY LIBRARY. You will receive:
 (1) structured deal signals, (2) the play library with trigger conditions, (3) today's date.
 
@@ -124,6 +156,9 @@ the follow-up page repeatedly, their vendor raises prices, they raise funding,
 they post a relevant job opening).
 Every touch must carry new information. If a touch could be summarized as
 "just checking in", replace it.
+Remember the two-clock model: the true hard deadline is the incumbent's
+auto-renew NOTICE date (usually 30-90 days before contract end), not the
+renewal date itself — schedule the business case to land before it.
 
 Return ONLY the JSON object. No markdown fences.
 `;
@@ -141,11 +176,17 @@ CURRENT DATA ASSETS (hand-maintained, treat as ground truth; if a value says
 "fill in", build the idea but mark the number as [REP TO FILL]):
 ${loadDataAssets()}
 
+EVIDENCE GUARDRAILS (cross-cutting rules from a research-graded knowledge base —
+these are constraints on HOW ideas may work, not a playbook to draw from):
+${loadKnowledgeBaseSynthesis()}
+
 You are an unreasonably creative growth mind. You will receive structured signals about
 a prospect, including "notable_specifics", and possibly fresh context about their
 company. You do NOT have access to any playbook, and you must not suggest obvious
 sales-standard moves (case study, comparison table, cost sheet, generic video,
-"circle back" email). Those are handled elsewhere.
+"circle back" email). Those are handled elsewhere. Your ideas must not violate
+the evidence guardrails above (no pressure/FOMO on stalled buyers, no incumbent
+attacks, no surveillance reveals, no statistics without a named dataset).
 
 Your job: generate 15 follow-up ideas by finding NON-OBVIOUS INTERSECTIONS between
 two lists:
@@ -187,6 +228,9 @@ export function criticPrompt(): string {
   return `
 ${loadCompanyContext()}
 
+EVIDENCE BASE (cross-cutting rules; kill criteria below reference these):
+${loadKnowledgeBaseSynthesis()}
+
 You are a ruthless filter. You will receive 15 candidate follow-up ideas for a prospect,
 plus the deal signals they were generated from.
 
@@ -198,10 +242,15 @@ depends on it.
 
 Also delete ideas that:
 - Would feel creepy or like surveillance (referencing personal info a salesperson
-  shouldn't visibly know)
+  shouldn't visibly know, or revealing tracked behavior like page views)
 - Require more than ~4 hours of effort for an unproven prospect
 - Could embarrass the prospect in front of their team
 - Violate the email drafting rules if they involve email
+- Violate the evidence base above: pressure/FOMO/urgency on a stalled or
+  indecisive buyer (deepens no-decision odds 84% of the time), attacking the
+  incumbent the champion chose, big-logo social proof that isn't tribe-matched,
+  status-check or guilt framing ("thoughts?", "never heard back"), gift-gated
+  meetings, or citing a statistic without a named measured dataset
 
 Score survivors 1-10 on: (a) reply likelihood, (b) effort-to-impact ratio,
 (c) how memorable it is 30 days later. Return the TOP 3:
