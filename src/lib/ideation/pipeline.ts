@@ -12,9 +12,49 @@ import {
   criticPrompt,
 } from "./prompts";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const MODEL =
-  process.env.ENGINE_MODEL ?? process.env.ANTHROPIC_MODEL ?? "claude-opus-4-8";
+// --- LLM provider selection ------------------------------------------------
+// Two providers, picked by which credential is set:
+//   1. OpenRouter (OPENROUTER_API_KEY) — OpenAI-compatible gateway, used when
+//      set. No Anthropic prompt caching or adaptive thinking on this path.
+//   2. Anthropic direct (ANTHROPIC_AUTH_TOKEN subscription OAuth token, else the
+//      metered ANTHROPIC_API_KEY) — keeps prompt caching + adaptive thinking.
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+
+// Anthropic client (used only on the Anthropic path). Auth resolves lazily at
+// request time, so building it with no key is safe when OpenRouter is in use.
+const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
+const anthropic = authToken
+  ? new Anthropic({
+      authToken,
+      defaultHeaders: { "anthropic-beta": "oauth-2025-04-20" },
+    })
+  : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// Model id is provider-specific: OpenRouter uses namespaced slugs
+// (`anthropic/claude-haiku-4.5`), the Anthropic API uses bare ids
+// (`claude-haiku-4-5`). ENGINE_MODEL overrides either — match it to the provider.
+const MODEL = OPENROUTER_KEY
+  ? (process.env.ENGINE_MODEL ?? "anthropic/claude-haiku-4.5")
+  : (process.env.ENGINE_MODEL ??
+    process.env.ANTHROPIC_MODEL ??
+    "claude-haiku-4-5");
+
+// 8000 is plenty for the JSON outputs (drafts are short) and keeps per-call cost
+// down — it's also within Claude 3.5 Haiku's 8192 output cap on OpenRouter.
+const MAX_TOKENS = 8000;
+
+// Adaptive thinking exists only on the 4.6 generation and later, and only on the
+// Anthropic-direct path. Haiku 4.5 and older 400 on `thinking: {type:
+// "adaptive"}`, so it's gated to models that support it.
+const ADAPTIVE_THINKING_MODELS = [
+  "claude-opus-4-6",
+  "claude-opus-4-7",
+  "claude-opus-4-8",
+  "claude-sonnet-4-6",
+  "claude-fable-5",
+];
+const USE_ADAPTIVE_THINKING =
+  !OPENROUTER_KEY && ADAPTIVE_THINKING_MODELS.some((m) => MODEL.startsWith(m));
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -120,13 +160,15 @@ export const defaults = {
 };
 
 // ---------------------------------------------------------------------------
-// LLM call helper — returns parsed JSON, strips accidental fences.
+// LLM call helpers — return the model's raw text for a (system, user) pair.
 // ---------------------------------------------------------------------------
-async function llmJson(system: string, user: string): Promise<any> {
+async function anthropicText(system: string, user: string): Promise<string> {
   const msg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
+    max_tokens: MAX_TOKENS,
+    ...(USE_ADAPTIVE_THINKING
+      ? { thinking: { type: "adaptive" as const } }
+      : {}),
     // The system prompt embeds the company context + knowledge base — a large
     // stable prefix. Cache it so repeated runs (and the matcher/critic pair
     // within a run window) pay ~0.1x for it. Volatile content (date, signals)
@@ -134,10 +176,50 @@ async function llmJson(system: string, user: string): Promise<any> {
     system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: user }],
   });
-  const text = msg.content
+  return msg.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
     .join("\n");
+}
+
+async function openRouterText(system: string, user: string): Promise<string> {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${OPENROUTER_KEY}`,
+      "X-Title": "Linkrunner Ideation",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`OpenRouter ${res.status}: ${detail.slice(0, 500)}`);
+  }
+  const json = await res.json();
+  const text = json?.choices?.[0]?.message?.content;
+  if (typeof text !== "string" || !text.trim()) {
+    throw new Error(
+      `OpenRouter: no text in response: ${JSON.stringify(json).slice(0, 300)}`,
+    );
+  }
+  return text;
+}
+
+// ---------------------------------------------------------------------------
+// LLM call helper — returns parsed JSON, strips accidental fences.
+// ---------------------------------------------------------------------------
+async function llmJson(system: string, user: string): Promise<any> {
+  const text = OPENROUTER_KEY
+    ? await openRouterText(system, user)
+    : await anthropicText(system, user);
   const clean = text.replace(/```json|```/g, "").trim();
   return JSON.parse(clean);
 }
