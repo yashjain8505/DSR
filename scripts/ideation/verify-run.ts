@@ -25,19 +25,27 @@ if (existsSync(envPath)) {
   }
 }
 
-function draftOf(matched: unknown, wildCards: unknown): string | undefined {
-  const m = matched as Record<string, unknown> | unknown[] | null;
-  const firstFrom = (arr: unknown): string | undefined => {
+function ideasOf(
+  matched: unknown,
+  wildCards: unknown,
+): { idea: string; why: string }[] {
+  const out: { idea: string; why: string }[] = [];
+  const push = (arr: unknown, whyKey: string) => {
     const a = arr as Array<Record<string, unknown>> | undefined;
-    return a?.[0]?.draft as string | undefined;
+    for (const x of a ?? []) {
+      const idea = (x.idea ?? x.play) as string | undefined;
+      if (idea) out.push({ idea, why: (x[whyKey] as string) ?? "" });
+    }
   };
-  if (Array.isArray(m)) return firstFrom(m);
-  const rec = (m ?? {}) as Record<string, unknown>;
-  return (
-    firstFrom(rec.plays) ??
-    firstFrom(rec.timeline) ??
-    firstFrom(wildCards)
-  );
+  const m = matched as Record<string, unknown> | unknown[] | null;
+  if (Array.isArray(m)) push(m, "why_now");
+  else {
+    const rec = (m ?? {}) as Record<string, unknown>;
+    push(rec.plays, "why_now");
+    push(rec.timeline, "why");
+  }
+  push(wildCards, "built_on");
+  return out;
 }
 
 async function main() {
@@ -101,9 +109,11 @@ async function main() {
     `\n✅ Run ${result.runId} completed in ${secs}s — mode=${result.signals?.mode}, matched=${matchedCount}, wild_cards=${wild}`,
   );
 
-  const sample = draftOf(result.matched, result.wild_cards);
-  if (sample) {
-    console.log(`\n--- sample draft (first 600 chars) ---\n${sample.slice(0, 600)}`);
+  const ideas = ideasOf(result.matched, result.wild_cards);
+  console.log(`\n--- ideas (${ideas.length}) ---`);
+  for (const it of ideas) {
+    console.log(`• ${it.idea}`);
+    if (it.why) console.log(`    why: ${it.why}`);
   }
 }
 

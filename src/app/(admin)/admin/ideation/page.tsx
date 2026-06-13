@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
-  Check,
   ChevronDown,
-  Copy,
   Play,
   Plus,
   Send,
@@ -27,6 +25,7 @@ interface Prospect {
   current_vendor: string | null;
   contract_end_date: string | null;
   notes: string | null;
+  context: string | null;
   created_at: string;
 }
 
@@ -69,7 +68,9 @@ export default function IdeationPage() {
 
   const [runningId, setRunningId] = useState<number | null>(null);
   const [expandedTouch, setExpandedTouch] = useState<number | null>(null);
-  const [copiedTouch, setCopiedTouch] = useState<number | null>(null);
+  const [expandedProspectId, setExpandedProspectId] = useState<number | null>(
+    null,
+  );
   const [sendingDigest, setSendingDigest] = useState(false);
 
   async function fetchAll() {
@@ -204,13 +205,6 @@ export default function IdeationPage() {
     }
   }
 
-  async function copyDraft(touch: Touch) {
-    if (!touch.draft) return;
-    await navigator.clipboard.writeText(touch.draft);
-    setCopiedTouch(touch.id);
-    setTimeout(() => setCopiedTouch(null), 2000);
-  }
-
   if (loading) {
     return (
       <>
@@ -240,8 +234,8 @@ export default function IdeationPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Ideation Engine</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Plays and wild cards per prospect. Granola meetings are matched by
-            company name automatically.
+            Ideas per prospect — what to do and why, not the written message.
+            Granola meetings are matched by company name automatically.
           </p>
         </div>
         <div className="flex gap-2">
@@ -376,37 +370,77 @@ export default function IdeationPage() {
               </tr>
             </thead>
             <tbody>
-              {prospects.map((p) => (
-                <tr key={p.id} className="border-b border-gray-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {p.company}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {p.contact_name ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{p.stage}</td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {p.current_vendor ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {p.deal_size?.toLocaleString("en-IN") ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {fmtDate(p.contract_end_date)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      size="sm"
-                      onClick={() => handleRun(p)}
-                      loading={runningId === p.id}
-                      disabled={runningId !== null}
-                    >
-                      <Play className="h-3.5 w-3.5" />
-                      Run
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {prospects.map((p) => {
+                const open = expandedProspectId === p.id;
+                return (
+                  <Fragment key={p.id}>
+                    <tr className="border-b border-gray-100 last:border-0">
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {p.company}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {p.contact_name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{p.stage}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {p.current_vendor ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {p.deal_size?.toLocaleString("en-IN") ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {fmtDate(p.contract_end_date)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() =>
+                              setExpandedProspectId(open ? null : p.id)
+                            }
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "h-3.5 w-3.5 transition-transform",
+                                open && "rotate-180",
+                              )}
+                            />
+                            Context
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleRun(p)}
+                            loading={runningId === p.id}
+                            disabled={runningId !== null}
+                          >
+                            <Play className="h-3.5 w-3.5" />
+                            Run
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr className="border-b border-gray-100 bg-gray-50">
+                        <td colSpan={7} className="px-4 py-4">
+                          <ProspectContext
+                            prospect={p}
+                            onSaved={(updated) => {
+                              setProspects((prev) =>
+                                prev.map((x) =>
+                                  x.id === updated.id ? updated : x,
+                                ),
+                              );
+                              flash("Context saved");
+                            }}
+                            onError={setError}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -462,28 +496,17 @@ export default function IdeationPage() {
                 </button>
                 {open && (
                   <div className="border-t border-gray-100 px-4 py-4">
+                    <p className="mb-3 text-sm text-gray-800">
+                      <span className="font-medium text-gray-700">Idea:</span>{" "}
+                      {t.title}
+                    </p>
                     {t.why && (
-                      <p className="mb-3 text-sm text-gray-500">
+                      <p className="mb-4 text-sm text-gray-500">
                         <span className="font-medium text-gray-700">Why:</span>{" "}
                         {t.why}
                       </p>
                     )}
-                    {t.draft && (
-                      <pre className="mb-4 max-h-80 overflow-y-auto whitespace-pre-wrap rounded-lg bg-gray-50 p-4 font-sans text-sm leading-6 text-gray-800">
-                        {t.draft}
-                      </pre>
-                    )}
                     <div className="flex flex-wrap gap-2">
-                      {t.draft && (
-                        <Button size="sm" variant="secondary" onClick={() => copyDraft(t)}>
-                          {copiedTouch === t.id ? (
-                            <Check className="h-3.5 w-3.5" />
-                          ) : (
-                            <Copy className="h-3.5 w-3.5" />
-                          )}
-                          {copiedTouch === t.id ? "Copied" : "Copy draft"}
-                        </Button>
-                      )}
                       <Button size="sm" onClick={() => handleOutcome(t, "sent")}>
                         Mark sent
                       </Button>
@@ -520,5 +543,87 @@ export default function IdeationPage() {
         </div>
       </main>
     </>
+  );
+}
+
+function ProspectContext({
+  prospect,
+  onSaved,
+  onError,
+}: {
+  prospect: Prospect;
+  onSaved: (p: Prospect) => void;
+  onError: (m: string) => void;
+}) {
+  const [draft, setDraft] = useState(prospect.context ?? "");
+  const [saving, setSaving] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+
+  async function save() {
+    onError("");
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/ideation/prospects/${prospect.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ context: draft }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      onSaved(json.prospect);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Failed to save context");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function regenerate() {
+    onError("");
+    setRegenerating(true);
+    try {
+      const res = await fetch(`/api/ideation/prospects/${prospect.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "regenerate_context" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setDraft(json.prospect.context ?? "");
+      onSaved(json.prospect);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Failed to regenerate");
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-medium text-gray-500">
+        Company context — what the engine knows about {prospect.company}.
+        Auto-drafted from meetings on the first run; edit freely and it&apos;s
+        used on the next run.
+      </p>
+      <Textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={10}
+        placeholder="Run the engine once to auto-draft this from the company's meetings, then curate it here."
+      />
+      <div className="flex gap-2">
+        <Button size="sm" onClick={save} loading={saving}>
+          Save context
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={regenerate}
+          loading={regenerating}
+        >
+          Regenerate from meetings
+        </Button>
+      </div>
+    </div>
   );
 }

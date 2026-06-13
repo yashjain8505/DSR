@@ -35,11 +35,26 @@ export function loadKnowledgeBase(): string {
   }
 }
 
-/** The "Synthesis: cross-cutting rules" + "Conflicts" tail of the KB. */
-export function loadKnowledgeBaseSynthesis(): string {
-  const kb = loadKnowledgeBase();
+/** Slice the "## Synthesis ..." tail out of a knowledge-base string. */
+export function synthesisOf(kb: string): string {
   const idx = kb.indexOf("## Synthesis");
   return idx === -1 ? "" : kb.slice(idx);
+}
+
+/** The "Synthesis: cross-cutting rules" + "Conflicts" tail of the KB. */
+export function loadKnowledgeBaseSynthesis(): string {
+  return synthesisOf(loadKnowledgeBase());
+}
+
+/**
+ * The ideation engine's base layer. At run time pipeline.ts loads this from the
+ * DB (engine_config), falling back to the config/ files via the loaders above.
+ */
+export interface BaseLayer {
+  companyContext: string;
+  dataAssets: string;
+  knowledgeBase: string;
+  knowledgeBaseSynthesis: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,22 +111,22 @@ Rules:
 // STAGE 2 — MATCHER (proven plays)
 // Receives: company context, signals, play library, data assets, today's date.
 // ---------------------------------------------------------------------------
-export function matcherPrompt(): string {
+export function matcherPrompt(base: BaseLayer): string {
   return `
-${loadCompanyContext()}
+${base.companyContext}
 
 CURRENT DATA ASSETS (hand-maintained, treat as ground truth; if a value says
-"fill in", do NOT use that number — write the draft so the rep inserts it):
-${loadDataAssets()}
+"fill in", do NOT use that number):
+${base.dataAssets}
 
 FOLLOW-UP KNOWLEDGE BASE (evidence-graded; 10 workstreams). Treat this as your
 operating manual: follow its tactical playbooks for cadence, spacing, channel
 choice, CTA style, recap structure, nurture/renewal clocks, re-engagement arcs,
-multithreading and de-risking. Obey its anti-patterns absolutely. When citing a
-statistic inside a draft, use ONLY figures the KB labels "measured" with a
-named dataset; never cite anything it flags as unverified, vendor folklore, or
+multithreading and de-risking. Obey its anti-patterns absolutely. When an idea
+leans on a statistic, use ONLY figures the KB labels "measured" with a named
+dataset; never rely on anything it flags as unverified, vendor folklore, or
 fabricated:
-${loadKnowledgeBase()}
+${base.knowledgeBase}
 
 You are a sales strategist choosing from a PROVEN PLAY LIBRARY. You will receive:
 (1) structured deal signals, (2) the play library with trigger conditions, (3) today's date.
@@ -122,15 +137,17 @@ Pick the 3 best-matching plays. Return:
   "mode": "next_best_action",
   "plays": [{
     "play": string,                  // play name from the library
+    "idea": string,                  // ONE sentence: the concrete move to make for THIS prospect
+                                     // (what to do), specific to their signals. NOT an email or copy.
     "why_now": string,               // ONE sentence tying it to a SPECIFIC signal (quote it)
-    "draft": string,                 // the ready-to-send asset: full email, video script,
-                                     // table content, or page spec. Emails follow the drafting rules.
     "touch_type": "email" | "video" | "gift" | "page" | "call" | "content",
     "send_when": string              // "today", "after X", or an ISO date
   }]
 }
 Rank by expected impact. Respect cost_tier and min_deal_size — never suggest
 high-spend plays below the deal-size floor.
+Output the IDEA only — what to do and why. Do NOT write the email, script,
+message, table, page, or any send-ready copy. Drafting happens later, separately.
 
 MODE B — if signals.mode = "nurture":
 Build a dated touch plan working BACKWARD from the decision window
@@ -147,8 +164,9 @@ Build a dated touch plan working BACKWARD from the decision window
 Return:
 {
   "mode": "nurture",
-  "timeline": [{ "due_date": "ISO date", "play": string, "why": string,
-                 "draft": string, "touch_type": string, "cost_tier": number }],
+  "timeline": [{ "due_date": "ISO date", "play": string,
+                 "idea": string,   // ONE sentence: the concrete move for that date (what to do), NOT copy
+                 "why": string, "touch_type": string, "cost_tier": number }],
   "watch_triggers": [{ "trigger": string, "response": string }]
 }
 watch_triggers: 3-5 events that should compress the timeline (e.g. they view
@@ -168,17 +186,17 @@ Return ONLY the JSON object. No markdown fences.
 // STAGE 3 — CREATIVE PASS (wild cards)
 // Library is HIDDEN from this pass on purpose.
 // ---------------------------------------------------------------------------
-export function creativePrompt(): string {
+export function creativePrompt(base: BaseLayer): string {
   return `
-${loadCompanyContext()}
+${base.companyContext}
 
 CURRENT DATA ASSETS (hand-maintained, treat as ground truth; if a value says
 "fill in", build the idea but mark the number as [REP TO FILL]):
-${loadDataAssets()}
+${base.dataAssets}
 
 EVIDENCE GUARDRAILS (cross-cutting rules from a research-graded knowledge base —
 these are constraints on HOW ideas may work, not a playbook to draw from):
-${loadKnowledgeBaseSynthesis()}
+${base.knowledgeBaseSynthesis}
 
 You are an unreasonably creative growth mind. You will receive structured signals about
 a prospect, including "notable_specifics", and possibly fresh context about their
@@ -224,12 +242,12 @@ Return ONLY a JSON array of 15 ideas. No markdown fences.
 // ---------------------------------------------------------------------------
 // STAGE 4 — CRITIC
 // ---------------------------------------------------------------------------
-export function criticPrompt(): string {
+export function criticPrompt(base: BaseLayer): string {
   return `
-${loadCompanyContext()}
+${base.companyContext}
 
 EVIDENCE BASE (cross-cutting rules; kill criteria below reference these):
-${loadKnowledgeBaseSynthesis()}
+${base.knowledgeBaseSynthesis}
 
 You are a ruthless filter. You will receive 15 candidate follow-up ideas for a prospect,
 plus the deal signals they were generated from.
@@ -245,7 +263,6 @@ Also delete ideas that:
   shouldn't visibly know, or revealing tracked behavior like page views)
 - Require more than ~4 hours of effort for an unproven prospect
 - Could embarrass the prospect in front of their team
-- Violate the email drafting rules if they involve email
 - Violate the evidence base above: pressure/FOMO/urgency on a stalled or
   indecisive buyer (deepens no-decision odds 84% of the time), attacking the
   incumbent the champion chose, big-logo social proof that isn't tribe-matched,
@@ -260,7 +277,6 @@ Score survivors 1-10 on: (a) reply likelihood, (b) effort-to-impact ratio,
     "idea": string,
     "built_on": string,
     "scores": { "reply_likelihood": number, "effort_impact": number, "memorability": number },
-    "draft": string,
     "touch_type": "email" | "video" | "gift" | "page" | "call" | "content" | "other",
     "send_when": string
   }],
@@ -268,8 +284,8 @@ Score survivors 1-10 on: (a) reply likelihood, (b) effort-to-impact ratio,
   "kill_reasons_summary": string
 }
 
-draft: the actual artifact: full email / script / card copy / build spec.
-Emails follow the drafting rules exactly.
+Return the IDEA and why only — do NOT write the email, message, script, or any
+send-ready copy. Drafting happens later, separately.
 kill_reasons_summary: one sentence on the dominant failure mode, so the
 creative prompt can be improved over time.
 

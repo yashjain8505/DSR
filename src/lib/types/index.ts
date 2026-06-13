@@ -492,3 +492,36 @@ export interface SyncGranolaMeetingPayload {
   company_name?: string;
   contact_email?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Ideation engine
+// ---------------------------------------------------------------------------
+
+/** A play from the `plays` table (seeded from config, or promoted wild cards). */
+export interface Play {
+  id: number;
+  name: string;
+  description: string;
+  triggers: string;
+  asset_hint: string | null;
+  cost_tier: number;
+  min_deal_size: number;
+  origin: string; // seed | promoted
+  active: boolean;
+  created_at: string;
+}
+
+/**
+ * The ideation engine's base layer, moved from config/ files into the DB so it
+ * can be edited from the admin dashboard (engine_config table, migration 010).
+ */
+export type EngineConfigKey =
+  | "company_context"
+  | "data_assets"
+  | "knowledge_base";
+
+export interface EngineConfig {
+  key: EngineConfigKey;
+  value: string;
+  updated_at: string;
+}

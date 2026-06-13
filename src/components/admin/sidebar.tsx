@@ -31,6 +31,7 @@ const mainLinks = [
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/meetings", label: "Meetings", icon: Calendar },
   { href: "/admin/ideation", label: "Ideation", icon: Lightbulb },
+  { href: "/admin/ideation/engine", label: "Engine", icon: Settings },
   { href: "/admin/rooms/new", label: "Create Room", icon: Plus },
   { href: "/admin/assets", label: "Assets", icon: Package },
 ];
@@ -74,8 +75,8 @@ export function Sidebar({ roomId, roomName }: SidebarProps) {
         <ul className="mb-6 flex flex-col gap-0.5">
           {mainLinks.map((link) => {
             const active =
-              link.href === "/admin"
-                ? currentPath === "/admin"
+              link.href === "/admin" || link.href === "/admin/ideation"
+                ? currentPath === link.href
                 : currentPath === link.href ||
                   currentPath.startsWith(link.href + "/");
             return (

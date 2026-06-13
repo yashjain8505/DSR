@@ -10,6 +10,11 @@ import {
   matcherPrompt,
   creativePrompt,
   criticPrompt,
+  loadCompanyContext,
+  loadDataAssets,
+  loadKnowledgeBase,
+  synthesisOf,
+  type BaseLayer,
 } from "./prompts";
 
 // --- LLM provider selection ------------------------------------------------
@@ -69,6 +74,7 @@ export interface IdeationProspect {
   contract_end_date: string | null;
   room_id: string | null;
   notes: string | null;
+  context: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +231,71 @@ async function llmJson(system: string, user: string): Promise<any> {
 }
 
 // ---------------------------------------------------------------------------
+// Base layer — the engine_config rows (company context / data assets /
+// knowledge base), edited from the admin dashboard. Falls back to the config/
+// files per-key when a row is missing (e.g. before migration 010 + seeding).
+// ---------------------------------------------------------------------------
+async function loadBaseLayer(): Promise<BaseLayer> {
+  const admin = createAdminClient();
+  const { data, error } = await admin.from("engine_config").select("key, value");
+  const map = new Map<string, string>(
+    error ? [] : (data ?? []).map((r) => [r.key as string, r.value as string]),
+  );
+  const knowledgeBase = map.get("knowledge_base") ?? loadKnowledgeBase();
+  return {
+    companyContext: map.get("company_context") ?? loadCompanyContext(),
+    dataAssets: map.get("data_assets") ?? loadDataAssets(),
+    knowledgeBase,
+    knowledgeBaseSynthesis: synthesisOf(knowledgeBase),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Turn extracted signals into a readable, editable per-company context block.
+// Seeds prospect.context on the first run and on an explicit "regenerate".
+// ---------------------------------------------------------------------------
+export function formatSignalsAsContext(s: any): string {
+  const lines: string[] = [];
+  const add = (label: string, val: any) => {
+    if (
+      val === null ||
+      val === undefined ||
+      val === "" ||
+      (Array.isArray(val) && val.length === 0)
+    )
+      return;
+    lines.push(`- **${label}:** ${Array.isArray(val) ? val.join("; ") : val}`);
+  };
+  add("Stage", s?.stage);
+  add("Current vendor", s?.current_vendor);
+  add("Deal size", s?.deal_size_indicator);
+  add("Contract end", s?.contract_end_date);
+  if (Array.isArray(s?.contacts) && s.contacts.length) {
+    lines.push(
+      `- **Contacts:** ${s.contacts
+        .map(
+          (c: any) =>
+            `${c.name ?? "?"} (${c.role ?? "?"}, ${c.disposition ?? "?"})`,
+        )
+        .join("; ")}`,
+    );
+  }
+  if (Array.isArray(s?.objections) && s.objections.length) {
+    lines.push(
+      `- **Objections:** ${s.objections
+        .map((o: any) => o.objection)
+        .join("; ")}`,
+    );
+  }
+  add("Positive reactions", s?.positive_reactions);
+  add("Open questions", s?.open_questions);
+  add("Urgency signals", s?.urgency_signals);
+  add("Buying committee gaps", s?.buying_committee_gaps);
+  add("Notable specifics", s?.notable_specifics);
+  return `# Auto-drafted from meetings — edit freely\n\n${lines.join("\n")}`;
+}
+
+// ---------------------------------------------------------------------------
 // THE PIPELINE
 // ---------------------------------------------------------------------------
 export async function runIdeation(
@@ -234,6 +305,7 @@ export async function runIdeation(
   const { transcripts, webContext } = { ...defaults, ...deps };
   const admin = createAdminClient();
   const today = new Date().toISOString().slice(0, 10);
+  const base = await loadBaseLayer();
 
   // 0. Prospect facts + transcripts + play library
   const { data: prospect, error: pErr } = await admin
@@ -244,11 +316,16 @@ export async function runIdeation(
   if (pErr || !prospect) throw new Error(`No prospect ${prospectId}`);
 
   const chunks: string[] = [];
+  // Curated, human-maintained context is authoritative — put it first.
+  if (prospect.context)
+    chunks.push(
+      `--- Curated company context (human-maintained, authoritative) ---\n${prospect.context}`,
+    );
   for (const src of transcripts) chunks.push(...(await src.fetch(prospect)));
   if (prospect.notes) chunks.push(`--- Rep notes ---\n${prospect.notes}`);
   if (!chunks.length)
     throw new Error(
-      "No transcripts or notes found for this prospect (Granola match by company name, transcripts table, or prospect notes).",
+      "No context, transcripts, or notes for this prospect (add curated context, a Granola meeting matched by company name, a transcript, or rep notes).",
     );
   const dump = chunks.join("\n\n");
 
@@ -269,16 +346,25 @@ export async function runIdeation(
     })}\n\nDUMP:\n${dump}`,
   );
 
+  // First-time auto-draft of the per-company context from the signals, so the
+  // user has something to curate. Never overwrite an existing (edited) context.
+  if (!prospect.context) {
+    await admin
+      .from("prospects")
+      .update({ context: formatSignalsAsContext(signals) })
+      .eq("id", prospectId);
+  }
+
   // 2a. MATCHER and 2b. CREATIVE in parallel
   const [matched, wildIdeas] = await Promise.all([
     llmJson(
-      matcherPrompt(),
+      matcherPrompt(base),
       `Today's date: ${today}\n\nSIGNALS:\n${JSON.stringify(signals, null, 2)}\n\nPLAY LIBRARY:\n${JSON.stringify(plays, null, 2)}`,
     ),
     (async () => {
       const ctx = await webContext.fetch(prospect.company);
       return llmJson(
-        creativePrompt(),
+        creativePrompt(base),
         `Today's date: ${today}\n\nSIGNALS:\n${JSON.stringify(signals, null, 2)}\n\nFRESH CONTEXT:\n${ctx || "(none available)"}`,
       );
     })(),
@@ -286,7 +372,7 @@ export async function runIdeation(
 
   // 3. CRITIC filters the wild cards
   const critiqued = await llmJson(
-    criticPrompt(),
+    criticPrompt(base),
     `Today's date: ${today}\n\nSIGNALS:\n${JSON.stringify(signals, null, 2)}\n\nCANDIDATE IDEAS:\n${JSON.stringify(wildIdeas, null, 2)}`,
   );
 
@@ -300,15 +386,15 @@ export async function runIdeation(
   if (rErr) throw new Error(`runs: ${rErr.message}`);
 
   // 5. Persist touches
+  // Each touch is just the IDEA (what to do) + the why. No send-ready drafts.
   const touches: any[] = [];
   if (signals.mode === "nurture" && matched.timeline) {
     for (const t of matched.timeline) {
       touches.push({
         due: t.due_date,
         type: t.touch_type,
-        title: t.play,
+        title: t.idea ?? t.play,
         why: t.why,
-        draft: t.draft,
         wild: false,
       });
     }
@@ -318,9 +404,8 @@ export async function runIdeation(
       touches.push({
         due: p.send_when?.match(/^\d{4}-/) ? p.send_when : today,
         type: p.touch_type,
-        title: p.play,
+        title: p.idea ?? p.play,
         why: p.why_now,
-        draft: p.draft,
         wild: false,
       });
     }
@@ -331,7 +416,6 @@ export async function runIdeation(
       type: w.touch_type,
       title: w.idea,
       why: w.built_on,
-      draft: w.draft,
       wild: true,
     });
   }
@@ -345,7 +429,6 @@ export async function runIdeation(
         touch_type: t.type ?? "other",
         title: t.title,
         why: t.why,
-        draft: t.draft,
         is_wild_card: t.wild,
       })),
     );
@@ -416,7 +499,7 @@ export async function recordOutcome(
   ) {
     await admin.from("plays").insert({
       name: String(t.title).slice(0, 80),
-      description: `Promoted wild card. Draft that worked:\n${t.draft}`,
+      description: `Promoted wild card. Idea that worked: ${t.title}`,
       triggers: `Worked when: ${t.why}`,
       asset_hint: "see description",
       cost_tier: 0,
