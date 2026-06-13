@@ -220,14 +220,31 @@ async function openRouterText(system: string, user: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// LLM call helper — returns parsed JSON, strips accidental fences.
+// LLM call helper — returns parsed JSON, tolerant of code fences and any prose
+// the model wraps around the JSON (slices the outermost {...} / [...] and
+// retries if a direct parse fails).
 // ---------------------------------------------------------------------------
+function extractJson(s: string): string | null {
+  const starts = [s.indexOf("{"), s.indexOf("[")].filter((i) => i !== -1);
+  if (!starts.length) return null;
+  const start = Math.min(...starts);
+  const close = s[start] === "{" ? "}" : "]";
+  const end = s.lastIndexOf(close);
+  return end > start ? s.slice(start, end + 1) : null;
+}
+
 async function llmJson(system: string, user: string): Promise<any> {
   const text = OPENROUTER_KEY
     ? await openRouterText(system, user)
     : await anthropicText(system, user);
   const clean = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+  try {
+    return JSON.parse(clean);
+  } catch {
+    const extracted = extractJson(clean);
+    if (extracted) return JSON.parse(extracted);
+    throw new Error(`LLM did not return parseable JSON: ${clean.slice(0, 200)}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
