@@ -1,164 +1,80 @@
 "use client";
 
-import {
-  AudioWaveform,
-  Bell,
-  Download,
-  Fingerprint,
-  Gauge,
-  Link2,
-  Megaphone,
-  MessageCircle,
-  Network,
-  Route,
-  ShieldCheck,
-  Smartphone,
-  Users,
-  Webhook,
-} from "lucide-react";
-import type { ReactNode } from "react";
-
 /* ------------------------------------------------------------------ */
-/*  Content — mirrors "one platform for the signals growth teams use"  */
-/*  on linkrunner.io                                                   */
+/*  Features — balanced bento.                                          */
+/*  Two compact highlight cards (support + AI signals) over one wide    */
+/*  capability panel listing the actual product surface.               */
+/*  No shadows, no icon squares, no em dashes. Brand via --brand-primary.*/
 /* ------------------------------------------------------------------ */
 
-const CAPABILITIES: { icon: ReactNode; title: string; sub: string }[] = [
-  {
-    icon: <Gauge className="h-4 w-4" />,
-    title: "Attribution",
-    sub: "Installs and events, by campaign",
-  },
-  {
-    icon: <Link2 className="h-4 w-4" />,
-    title: "Deep links",
-    sub: "Right screen, every time",
-  },
-  {
-    icon: <Route className="h-4 w-4" />,
-    title: "Deferred deep links",
-    sub: "Survive the app store detour",
-  },
-  {
-    icon: <Smartphone className="h-4 w-4" />,
-    title: "SKAN",
-    sub: "iOS postbacks, decoded",
-  },
-  {
-    icon: <Users className="h-4 w-4" />,
-    title: "Audiences",
-    sub: "Cohorts built from behaviour",
-  },
-  {
-    icon: <Network className="h-4 w-4" />,
-    title: "Postbacks",
-    sub: "Clean events to ad partners",
-  },
-  {
-    icon: <Webhook className="h-4 w-4" />,
-    title: "Webhooks",
-    sub: "Push events anywhere",
-  },
-  {
-    icon: <AudioWaveform className="h-4 w-4" />,
-    title: "Cohorts",
-    sub: "Retention and payback curves",
-  },
-  {
-    icon: <Megaphone className="h-4 w-4" />,
-    title: "Remarketing",
-    sub: "Bring users back",
-  },
-  {
-    icon: <Download className="h-4 w-4" />,
-    title: "Data export",
-    sub: "Your data, your warehouse",
-  },
-  {
-    icon: <Fingerprint className="h-4 w-4" />,
-    title: "PII hashing",
-    sub: "Privacy by default",
-  },
-  {
-    icon: <ShieldCheck className="h-4 w-4" />,
-    title: "Fraud protection",
-    sub: "Included at every tier",
-  },
+const CAPABILITIES: { title: string; sub: string }[] = [
+  { title: "Attribution", sub: "Installs and events, by campaign" },
+  { title: "Deep links", sub: "Right screen, every time" },
+  { title: "Deferred deep links", sub: "Survive the app store detour" },
+  { title: "SKAN for iOS", sub: "iOS postbacks, decoded" },
+  { title: "Audiences", sub: "Cohorts built from behaviour" },
+  { title: "Postbacks", sub: "Clean events to ad partners" },
+  { title: "Webhooks", sub: "Push events anywhere" },
+  { title: "Cohorts", sub: "Retention and payback curves" },
+  { title: "Remarketing", sub: "Bring users back" },
+  { title: "Data export", sub: "Your data, your warehouse" },
+  { title: "PII hashing", sub: "Privacy by default" },
+  { title: "Fraud protection", sub: "Included at every tier" },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
-
 export function FeaturesBento() {
+  const brand = { color: "var(--brand-primary)" };
+
   return (
-    <div className="space-y-5">
-      {/* ── Capability grid ── */}
-      <section>
-        <div className="mb-4">
-          <h3 className="text-lg font-bold text-gray-900">
-            One platform for every growth signal
-          </h3>
+    <div className="space-y-3.5">
+      {/* ── Two highlight cards ── */}
+      <div className="grid gap-3.5 sm:grid-cols-2">
+        <div className="rounded-2xl bg-gray-50 p-5">
+          <p className="text-xs font-medium" style={brand}>
+            Support
+          </p>
+          <p className="mt-1.5 text-[15px] font-semibold text-gray-900">
+            Under 2 hours, on WhatsApp
+          </p>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            Legacy MMPs answer in 2 to 4 days. We sit in a shared group with
+            your team, answered by the people building the product.
+          </p>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="rounded-2xl bg-gray-50 p-5">
+          <p className="text-xs font-medium" style={brand}>
+            AI signals
+          </p>
+          <p className="mt-1.5 text-[15px] font-semibold text-gray-900">
+            Caught before the weekly review
+          </p>
+          <p className="mt-1.5 text-sm leading-6 text-gray-600">
+            A stale SDK or broken link drops ROAS. The signal pings you in
+            minutes, so you fix it the same day.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Capability panel ── */}
+      <div className="rounded-2xl bg-gray-50 p-6">
+        <p className="flex items-center gap-2 text-sm font-medium" style={brand}>
+          <span
+            className="inline-block h-2 w-2"
+            style={{ backgroundColor: "var(--brand-primary)" }}
+          />
+          Everything in the platform
+        </p>
+        <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
           {CAPABILITIES.map((cap) => (
-            <div
-              key={cap.title}
-              className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700">
-                {cap.icon}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900">
-                  {cap.title}
-                </p>
-                <p className="mt-0.5 text-xs leading-4 text-gray-500">
-                  {cap.sub}
-                </p>
-              </div>
+            <div key={cap.title}>
+              <p className="text-sm font-medium text-gray-900">{cap.title}</p>
+              <p className="mt-0.5 text-[13px] leading-5 text-gray-500">
+                {cap.sub}
+              </p>
             </div>
           ))}
         </div>
-      </section>
-
-      {/* ── AI signals + human support ── */}
-      <section className="grid gap-3 lg:grid-cols-2">
-        <div className="rounded-3xl bg-gray-950 p-7">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
-            <Bell className="h-3.5 w-3.5" />
-            AI signals
-          </span>
-          <p className="mt-4 text-base leading-7 text-white/85">
-            Linkrunner watches your campaigns around the clock. If ROAS
-            suddenly drops 10% because of an outdated SDK or a broken link,
-            the AI signal pings you immediately. You fix it in hours, not at
-            the weekly review, and lose no revenue.
-          </p>
-        </div>
-
-        <div className="rounded-3xl bg-sky-50 p-7">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm">
-            <MessageCircle className="h-3.5 w-3.5" />
-            Support in 2 hours, max
-          </span>
-          <p className="mt-4 text-base leading-7 text-gray-700">
-            We set up a shared WhatsApp and Slack group with your team. No
-            long email threads, just a quick text at any point, answered by
-            the people building the product.
-          </p>
-          <div className="mt-4 space-y-2">
-            <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-white px-3.5 py-2 text-xs text-gray-700 shadow-sm">
-              Hi, which events should we add?
-            </p>
-            <p className="w-fit max-w-[85%] rounded-2xl rounded-bl-sm bg-gray-900 px-3.5 py-2 text-xs text-white">
-              For your app: signUp, purchaseMade and addToCart. Want me to set
-              them up?
-            </p>
-            <p className="text-[11px] text-gray-400">Darshil, 2m ago</p>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
   );
 }
