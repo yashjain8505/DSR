@@ -42,6 +42,18 @@ const COHORT_USERS = [
   { name: "Ada Tanaka", email: "ada.tanaka@example.com" },
 ];
 
+// The rest of the platform, shown as a labelled grid below the glances.
+const MORE = [
+  { title: "Deep links", sub: "Deferred and unlimited" },
+  { title: "Referrals", sub: "Built-in referral tracking" },
+  { title: "Postbacks", sub: "Clean events to ad partners" },
+  { title: "Webhooks", sub: "Push events anywhere" },
+  { title: "Remarketing", sub: "Bring users back" },
+  { title: "Data export", sub: "Your data, your warehouse" },
+  { title: "PII hashing", sub: "Privacy by default" },
+  { title: "Fraud protection", sub: "Included at every tier" },
+];
+
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
@@ -204,6 +216,23 @@ export function FeaturesBento() {
               lr_mcp_••••8f2a
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* ── Also in the platform ── */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5">
+        <p className="text-xs font-semibold" style={brand}>
+          Also in the platform
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
+          {MORE.map((c) => (
+            <div key={c.title}>
+              <p className="text-sm font-medium text-gray-900">{c.title}</p>
+              <p className="mt-0.5 text-[12px] leading-4 text-gray-400">
+                {c.sub}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
