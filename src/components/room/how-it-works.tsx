@@ -14,20 +14,20 @@ const STEPS = [
     body: "Add three lines of code. Most teams are live in under ten minutes.",
   },
   {
+    title: "Add your subdomain",
+    body: "Point a branded subdomain at Linkrunner so your links and deep links run on your own domain.",
+  },
+  {
     title: "Connect your channels",
     body: "Link Meta, Google, TikTok, and the rest. Linkrunner starts attributing installs and events right away.",
   },
   {
-    title: "See the install path",
-    body: "Click, deep link, SDK event, cohort, revenue, and postback in one model, updated live.",
+    title: "Map your events",
+    body: "Tell us which events matter, like sign up, purchase, and add to cart, and we wire them up.",
   },
   {
-    title: "Let the AI watch it",
-    body: "Get pinged the moment a signal breaks, so you fix it in hours, not at the weekly review.",
-  },
-  {
-    title: "Ship and iterate",
-    body: "Move budget to what works. Export anything, anytime, with no fees.",
+    title: "Go live and iterate",
+    body: "Watch the install path update live, then move budget to what works.",
   },
 ];
 
@@ -44,7 +44,7 @@ export function HowItWorks() {
         How it works
       </p>
       <h2 className="mt-3.5 text-2xl font-semibold leading-tight text-gray-900 sm:text-3xl">
-        Five steps from SDK to your first answer
+        Five steps to go live
       </h2>
 
       <ol className="mt-8 space-y-6">
@@ -77,9 +77,8 @@ export function HowItWorks() {
           <p className="mt-1 text-sm leading-6 text-gray-600">
             Book a call with our technical team and we will get you live.
           </p>
-          {/* TODO: set the real booking link */}
           <a
-            href="https://calendly.com/linkrunner"
+            href="https://meet.darshal.linkrunner.io"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-4 inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white"
