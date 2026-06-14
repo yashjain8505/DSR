@@ -127,7 +127,7 @@ export function WhatIsLinkrunner() {
       {/* Backing + scale */}
       <div className="mt-8 mb-4 h-px w-full bg-gray-200" />
       <div className="flex flex-wrap justify-between gap-2 text-sm text-gray-500">
-        <span>Backed by Titan Capital, Sameer Sud, and 2AM VC.</span>
+        <span>Backed by Titan Capital, Sameer Sood, and 2AM VC.</span>
         <span>More than 250 customers across 10 countries.</span>
       </div>
     </div>
