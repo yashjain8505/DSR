@@ -195,11 +195,31 @@ export async function domainFromSlug(
  * They're typically white-on-transparent header wordmarks that break
  * on our white hero background.
  */
+/**
+ * Curated, hand-picked high-resolution logos for specific customer domains,
+ * self-hosted in our Supabase `assets` bucket. Auto-extraction only finds
+ * low-res favicons (or the wrong App Store icon) for these, so they take
+ * priority and survive room regeneration. Keyed by bare domain (no www).
+ */
+const CURATED_LOGOS: Record<string, string> = {
+  "khelomore.com":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/khelomore.png",
+  "sidsfarm.com":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/sids-farm.png",
+  "rforrabbit.com":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/r-for-rabbit.png",
+  // vama.app: pending the correct logo upload from the team.
+};
+
 async function extractLogo(
   html: string | null,
   domain: string,
   baseUrl: string
 ): Promise<string | null> {
+  // Curated logos win over auto-extraction and survive regeneration.
+  const curated = CURATED_LOGOS[domain.replace(/^www\./, "").toLowerCase()];
+  if (curated) return curated;
+
   if (html) {
     // Strategy 1: apple-touch-icon (always a clean square icon with solid bg)
     const touchIcon = extractLinkHref(
