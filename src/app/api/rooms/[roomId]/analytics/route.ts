@@ -86,7 +86,7 @@ export async function GET(
       (rv) => rv.visitor_id
     );
 
-    let eventCountMap: Record<string, number> = {};
+    const eventCountMap: Record<string, number> = {};
     if (visitorIds.length > 0) {
       const { data: eventCounts } = await admin
         .from("analytics_events")

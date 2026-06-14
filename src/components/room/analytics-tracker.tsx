@@ -18,9 +18,13 @@ interface AnalyticsTrackerProps {
  * isn't cancelled by the browser tearing down the page.
  */
 export function AnalyticsTracker({ roomId, visitorId }: AnalyticsTrackerProps) {
-  const mountedAt = useRef<number>(Date.now());
+  const mountedAt = useRef<number>(0);
 
   useEffect(() => {
+    // Stamp mount time inside the effect (Date.now() in the ref initializer
+    // runs during render, which the react-hooks purity rule forbids).
+    mountedAt.current = Date.now();
+
     // Track page view
     trackEvent(roomId, visitorId, EVENT_TYPES.PAGE_VIEW);
 

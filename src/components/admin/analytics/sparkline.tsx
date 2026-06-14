@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useId, useState, useRef } from "react";
 
 /**
  * Micro sparkline chart rendered as pure SVG.
@@ -25,6 +25,10 @@ export function Sparkline({
 }: SparklineProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  // Stable per-instance id (Math.random() in render is impure and regenerated
+  // the gradient every render). useId() is colon-bearing, so strip for url(#id).
+  // Must be above the early return to satisfy rules-of-hooks.
+  const gradientId = `sparkline-grad-${useId().replace(/:/g, "")}`;
 
   if (data.length === 0) return null;
 
@@ -47,8 +51,6 @@ export function Sparkline({
     `L ${points[points.length - 1].x},${height - padding}`,
     "Z",
   ].join(" ");
-
-  const gradientId = `sparkline-grad-${Math.random().toString(36).slice(2, 8)}`;
 
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
     if (!svgRef.current || !dates) return;
