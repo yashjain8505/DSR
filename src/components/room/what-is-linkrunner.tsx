@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 /* ------------------------------------------------------------------ */
 /*  "What is Linkrunner" — editorial split (locked mockup option 1).   */
 /*  Brand voice: confident, factual, no em dashes. Accent + mission    */
@@ -12,6 +14,25 @@ const NARRATIVE = [
   "We rebuilt the stack with the install path as the spine. Click, deep link, SDK event, cohort, revenue, and postback live in one model. See the answer before the next campaign review.",
 ];
 
+const VALUES = [
+  {
+    title: "Be honest",
+    body: "Say the real thing kindly. Do not hide risk, inflate progress, or make someone decode what you mean.",
+  },
+  {
+    title: "Care about the craft",
+    body: "Small details matter here. Product, code, docs, and conversations should feel considered.",
+  },
+  {
+    title: "Help each other win",
+    body: "Share context, unblock people early, and leave fewer open loops for the next person.",
+  },
+  {
+    title: "Keep learning",
+    body: "Read, test, ask better questions, and bring useful tools into the way the team works.",
+  },
+];
+
 export function WhatIsLinkrunner() {
   const brand = { color: "var(--brand-primary)" };
 
@@ -19,7 +40,8 @@ export function WhatIsLinkrunner() {
     <div>
       {/* Claim */}
       <h2 className="max-w-2xl text-3xl font-semibold leading-tight text-gray-900 sm:text-4xl">
-        Linkrunner is the world&apos;s first truly{" "}
+        Linkrunner is the world&apos;s first truly
+        <br />
         <span style={brand}>AI-native MMP</span>.
       </h2>
       <p className="mt-3 max-w-2xl text-lg leading-7 text-gray-500">
@@ -57,6 +79,48 @@ export function WhatIsLinkrunner() {
             Make mobile attribution trustworthy. Accurate, transparent, and in
             real time, for the growth teams running real spend.
           </p>
+        </div>
+      </div>
+
+      {/* What we value */}
+      <div className="mt-12">
+        <p className="flex items-center gap-2 text-sm font-medium" style={brand}>
+          <span
+            className="inline-block h-2 w-2"
+            style={{ backgroundColor: "var(--brand-primary)" }}
+          />
+          What we value
+        </p>
+        <h3 className="mt-3.5 text-2xl font-semibold leading-tight text-gray-900 sm:text-3xl">
+          Four lines we keep <span style={brand}>coming back to</span>
+        </h3>
+        <p className="mt-3 max-w-2xl text-[15px] leading-7 text-gray-500">
+          These show up in the product, the support threads, and the way we
+          ship. They are how we stay honest with each other and the growth teams
+          we work with.
+        </p>
+        <div className="mt-6 grid overflow-hidden rounded-2xl border border-gray-200 sm:grid-cols-2">
+          {VALUES.map((v, i) => (
+            <div
+              key={v.title}
+              className={cn(
+                "p-7",
+                i === 1 && "border-t border-gray-200 sm:border-t-0 sm:border-l",
+                i === 2 && "border-t border-gray-200",
+                i === 3 && "border-t border-gray-200 sm:border-l",
+              )}
+            >
+              <p className="font-mono text-sm" style={brand}>
+                0{i + 1}
+              </p>
+              <h4 className="mt-3 text-lg font-semibold text-gray-900">
+                {v.title}
+              </h4>
+              <p className="mt-2 text-[15px] leading-7 text-gray-600">
+                {v.body}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 

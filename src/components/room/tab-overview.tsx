@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Download, ExternalLink } from "lucide-react";
+import { ChevronDown, Download } from "lucide-react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { YouTubeEmbed } from "@/components/room/youtube-embed";
 import { IframeEmbed } from "@/components/room/iframe-embed";
@@ -9,6 +9,7 @@ import { SecurityCompliance } from "@/components/room/security-compliance";
 import { IntegrationsPage } from "@/components/room/integrations";
 import { FeaturesBento } from "@/components/room/features-bento";
 import { WhatIsLinkrunner } from "@/components/room/what-is-linkrunner";
+import { HowItWorks } from "@/components/room/how-it-works";
 import { OVERVIEW_SUB_TAB_LABELS } from "@/lib/constants";
 import type { OverviewSubTab, Asset } from "@/lib/types";
 import type { OverviewSubTabKey } from "@/lib/constants";
@@ -164,16 +165,7 @@ export function SubTabContent({
       return <FeaturesBento />;
 
     case "how_it_works":
-      return (
-        <div className="rounded-xl bg-white p-6 shadow-sm sm:p-8">
-          {content ? (
-            <MarkdownRenderer content={content} />
-          ) : (
-            <p className="text-sm text-gray-500">Content coming soon.</p>
-          )}
-          <DocsCallout />
-        </div>
-      );
+      return <HowItWorks />;
 
     default:
       return <FallbackContent content={content} />;
@@ -215,34 +207,4 @@ function FallbackContent({ content }: { content: string }) {
   );
 }
 
-/**
- * Branded link to the live docs. docs.linkrunner.io can't be iframed
- * (X-Frame-Options: DENY), so we surface the integration steps inline and
- * point to the full reference here. Shown on the How It Works sub-tab.
- */
-function DocsCallout() {
-  return (
-    <a
-      href="https://docs.linkrunner.io"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="mt-8 flex flex-col gap-3 rounded-xl bg-gray-100 p-5 transition-colors hover:bg-gray-200/70 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div>
-        <p className="font-semibold text-gray-900">
-          Full integration guide &amp; API reference
-        </p>
-        <p className="mt-0.5 text-sm text-gray-600">
-          SDK setup, code samples, and the latest reference
-        </p>
-      </div>
-      <span
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white"
-        style={{ backgroundColor: "var(--brand-primary)" }}
-      >
-        Open docs
-        <ExternalLink className="h-4 w-4" />
-      </span>
-    </a>
-  );
-}
+/* How It Works now renders the dedicated <HowItWorks /> component above. */

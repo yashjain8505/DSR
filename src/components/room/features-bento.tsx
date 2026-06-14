@@ -1,161 +1,96 @@
 "use client";
 
-import {
-  AudioWaveform,
-  Bell,
-  Download,
-  Fingerprint,
-  Gauge,
-  Link2,
-  Megaphone,
-  MessageCircle,
-  Network,
-  Route,
-  ShieldCheck,
-  Smartphone,
-  Users,
-  Webhook,
-} from "lucide-react";
-import type { ReactNode } from "react";
-
 /* ------------------------------------------------------------------ */
-/*  Content — mirrors "one platform for the signals growth teams use"  */
-/*  on linkrunner.io                                                   */
-/* ------------------------------------------------------------------ */
-
-const CAPABILITIES: { icon: ReactNode; title: string; sub: string }[] = [
-  {
-    icon: <Gauge className="h-4 w-4" />,
-    title: "Attribution",
-    sub: "Installs and events, by campaign",
-  },
-  {
-    icon: <Link2 className="h-4 w-4" />,
-    title: "Deep links",
-    sub: "Right screen, every time",
-  },
-  {
-    icon: <Route className="h-4 w-4" />,
-    title: "Deferred deep links",
-    sub: "Survive the app store detour",
-  },
-  {
-    icon: <Smartphone className="h-4 w-4" />,
-    title: "SKAN",
-    sub: "iOS postbacks, decoded",
-  },
-  {
-    icon: <Users className="h-4 w-4" />,
-    title: "Audiences",
-    sub: "Cohorts built from behaviour",
-  },
-  {
-    icon: <Network className="h-4 w-4" />,
-    title: "Postbacks",
-    sub: "Clean events to ad partners",
-  },
-  {
-    icon: <Webhook className="h-4 w-4" />,
-    title: "Webhooks",
-    sub: "Push events anywhere",
-  },
-  {
-    icon: <AudioWaveform className="h-4 w-4" />,
-    title: "Cohorts",
-    sub: "Retention and payback curves",
-  },
-  {
-    icon: <Megaphone className="h-4 w-4" />,
-    title: "Remarketing",
-    sub: "Bring users back",
-  },
-  {
-    icon: <Download className="h-4 w-4" />,
-    title: "Data export",
-    sub: "Your data, your warehouse",
-  },
-  {
-    icon: <Fingerprint className="h-4 w-4" />,
-    title: "PII hashing",
-    sub: "Privacy by default",
-  },
-  {
-    icon: <ShieldCheck className="h-4 w-4" />,
-    title: "Fraud protection",
-    sub: "Included at every tier",
-  },
-];
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
+/*  Features — what actually sets Linkrunner apart: support and the    */
+/*  AI signals. Editorial, no shadows, no em dashes.                   */
 /* ------------------------------------------------------------------ */
 
 export function FeaturesBento() {
+  const brand = { color: "var(--brand-primary)" };
+
   return (
-    <div className="space-y-5">
-      {/* ── Capability grid ── */}
+    <div className="space-y-12">
+      {/* Support */}
       <section>
-        <div className="mb-4">
-          <h3 className="text-lg font-bold text-gray-900">
-            One platform for every growth signal
-          </h3>
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {CAPABILITIES.map((cap) => (
-            <div
-              key={cap.title}
-              className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-700">
-                {cap.icon}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900">
-                  {cap.title}
-                </p>
-                <p className="mt-0.5 text-xs leading-4 text-gray-500">
-                  {cap.sub}
-                </p>
-              </div>
-            </div>
-          ))}
+        <p className="flex items-center gap-2 text-sm font-medium" style={brand}>
+          <span
+            className="inline-block h-2 w-2"
+            style={{ backgroundColor: "var(--brand-primary)" }}
+          />
+          Support
+        </p>
+        <h3 className="mt-3.5 max-w-2xl text-2xl font-semibold leading-tight text-gray-900 sm:text-3xl">
+          Answers in two hours, not two days
+        </h3>
+        <p className="mt-3 max-w-2xl text-[15px] leading-7 text-gray-600">
+          Most teams we talk to were stuck with attribution support that took
+          two to four days to resolve a single issue. Linkrunner runs on a
+          shared WhatsApp group with the people who build the product, so most
+          things are sorted within two hours.
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl bg-gray-50 p-6">
+            <p className="text-sm font-medium text-gray-400">
+              Legacy MMP support
+            </p>
+            <p className="mt-2 text-xl font-semibold text-gray-900">
+              2 to 4 days per issue
+            </p>
+            <p className="mt-1 text-sm leading-6 text-gray-500">
+              Email tickets, with SLAs that depend on your contract size.
+            </p>
+          </div>
+          <div
+            className="rounded-2xl border-2 p-6"
+            style={{ borderColor: "var(--brand-primary)" }}
+          >
+            <p className="text-sm font-medium" style={brand}>
+              Linkrunner
+            </p>
+            <p className="mt-2 text-xl font-semibold text-gray-900">
+              Under 2 hours, on WhatsApp
+            </p>
+            <p className="mt-1 text-sm leading-6 text-gray-500">
+              A shared group with the people who build the product. Quick text,
+              quick fix.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* ── AI signals + human support ── */}
-      <section className="grid gap-3 lg:grid-cols-2">
-        <div className="rounded-3xl bg-gray-950 p-7">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
-            <Bell className="h-3.5 w-3.5" />
-            AI signals
-          </span>
-          <p className="mt-4 text-base leading-7 text-white/85">
-            Linkrunner watches your campaigns around the clock. If ROAS
-            suddenly drops 10% because of an outdated SDK or a broken link,
-            the AI signal pings you immediately. You fix it in hours, not at
-            the weekly review, and lose no revenue.
-          </p>
-        </div>
-
-        <div className="rounded-3xl bg-sky-50 p-7">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm">
-            <MessageCircle className="h-3.5 w-3.5" />
-            Support in 2 hours, max
-          </span>
-          <p className="mt-4 text-base leading-7 text-gray-700">
-            We set up a shared WhatsApp and Slack group with your team. No
-            long email threads, just a quick text at any point, answered by
-            the people building the product.
-          </p>
-          <div className="mt-4 space-y-2">
-            <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-white px-3.5 py-2 text-xs text-gray-700 shadow-sm">
-              Hi, which events should we add?
-            </p>
-            <p className="w-fit max-w-[85%] rounded-2xl rounded-bl-sm bg-gray-900 px-3.5 py-2 text-xs text-white">
-              For your app: signUp, purchaseMade and addToCart. Want me to set
-              them up?
-            </p>
-            <p className="text-[11px] text-gray-400">Darshil, 2m ago</p>
+      {/* AI signals */}
+      <section>
+        <p className="flex items-center gap-2 text-sm font-medium" style={brand}>
+          <span
+            className="inline-block h-2 w-2"
+            style={{ backgroundColor: "var(--brand-primary)" }}
+          />
+          AI signals
+        </p>
+        <h3 className="mt-3.5 max-w-2xl text-2xl font-semibold leading-tight text-gray-900 sm:text-3xl">
+          It tells you the moment something breaks
+        </h3>
+        <p className="mt-3 max-w-2xl text-[15px] leading-7 text-gray-600">
+          Linkrunner watches your campaigns around the clock. If ROAS drops
+          because of an outdated SDK or a broken link, the AI signal pings you
+          immediately, not at the weekly review. You fix it in hours and lose no
+          spend.
+        </p>
+        <div className="mt-6 max-w-xl rounded-2xl bg-gray-50 p-5">
+          <div className="flex items-start gap-3">
+            <span
+              className="mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: "var(--brand-primary)" }}
+            />
+            <div>
+              <p className="text-sm font-semibold text-gray-900">
+                ROAS dropping on Meta
+              </p>
+              <p className="mt-0.5 text-sm leading-6 text-gray-500">
+                Outdated SDK on Android. Flagged 3 minutes ago, before the spend
+                added up.
+              </p>
+            </div>
           </div>
         </div>
       </section>

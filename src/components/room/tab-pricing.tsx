@@ -3,15 +3,6 @@
 import { useMemo, useState } from "react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { cn } from "@/lib/utils";
-import {
-  Check,
-  MessageCircle,
-  Sparkles,
-  Unlock,
-  Wallet,
-  Zap,
-} from "lucide-react";
-import type { ReactNode } from "react";
 import type {
   Pricing,
   PricingData,
@@ -52,33 +43,13 @@ const DEFAULT_COMPETITORS: CompetitorPricing[] = [
   },
 ];
 
-/** Designed perk tiles shown when the admin hasn't customized value props. */
-const DEFAULT_PERKS: { icon: ReactNode; title: string; sub: string }[] = [
-  {
-    icon: <Sparkles className="h-4 w-4" />,
-    title: "Everything included",
-    sub: "No paid add-ons",
-  },
-  {
-    icon: <Wallet className="h-4 w-4" />,
-    title: "Postpaid",
-    sub: "Billed after usage",
-  },
-  {
-    icon: <Unlock className="h-4 w-4" />,
-    title: "No lock-in",
-    sub: "Leave anytime",
-  },
-  {
-    icon: <MessageCircle className="h-4 w-4" />,
-    title: "Real support",
-    sub: "Slack & WhatsApp",
-  },
-  {
-    icon: <Zap className="h-4 w-4" />,
-    title: "50M custom events",
-    sub: "Free every month",
-  },
+/** Perk tiles shown when the admin hasn't customized value props. */
+const DEFAULT_PERKS: { title: string; sub: string }[] = [
+  { title: "Everything included", sub: "No paid add-ons" },
+  { title: "Postpaid", sub: "Billed after usage" },
+  { title: "No lock-in", sub: "Leave anytime" },
+  { title: "Real support", sub: "Slack & WhatsApp" },
+  { title: "50M custom events", sub: "Free every month" },
 ];
 
 /** Old stored defaults — rooms with these are treated as not customized. */
@@ -368,30 +339,19 @@ function PricingEstimator({
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {customProps.length > 0
             ? customProps.map((prop) => (
-                <div
-                  key={prop}
-                  className="flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-2.5"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 shadow-sm">
-                    <Check className="h-4 w-4" />
-                  </span>
+                <div key={prop} className="rounded-xl bg-gray-50 px-4 py-2.5">
                   <p className="text-sm font-semibold text-gray-900">{prop}</p>
                 </div>
               ))
             : DEFAULT_PERKS.map((perk) => (
                 <div
                   key={perk.title}
-                  className="flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-2.5"
+                  className="rounded-xl bg-gray-50 px-4 py-2.5"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-gray-600 shadow-sm">
-                    {perk.icon}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-tight text-gray-900">
-                      {perk.title}
-                    </p>
-                    <p className="text-xs text-gray-400">{perk.sub}</p>
-                  </div>
+                  <p className="text-sm font-semibold leading-tight text-gray-900">
+                    {perk.title}
+                  </p>
+                  <p className="text-xs text-gray-400">{perk.sub}</p>
                 </div>
               ))}
         </div>

@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+
 /* ------------------------------------------------------------------ */
 /*  Comparison data                                                    */
 /* ------------------------------------------------------------------ */
@@ -51,7 +54,7 @@ const ROWS: ComparisonRow[] = [
   },
   {
     dimension: "Fraud Detection",
-    linkrunner: "Included at every tier. Click spam, bots, device farms, SDK spoofing - all built-in.",
+    linkrunner: "Included at every tier. Click spam, bots, device farms, SDK spoofing, all built-in.",
     appsflyer: "Protect360 is a paid add-on ($10K-$50K+/yr). Basic ProtectLITE is free but limited.",
     adjust: "Fraud Prevention Suite is a paid add-on. Adds 15-30% to contract value.",
     branch: "Basic detection in Performance tiers. ML-based pattern detection.",
@@ -108,7 +111,8 @@ const ROWS: ComparisonRow[] = [
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Component                                                          */
+/*  Component — pick a vendor, see Linkrunner vs them, capability      */
+/*  by capability. No shadows, no em dashes.                           */
 /* ------------------------------------------------------------------ */
 
 interface TabComparisonsProps {
@@ -117,7 +121,10 @@ interface TabComparisonsProps {
 
 export function TabComparisons({ competitors }: TabComparisonsProps) {
   const enabled = competitors.filter(
-    (c): c is CompetitorKey => c in COMPETITOR_LABELS
+    (c): c is CompetitorKey => c in COMPETITOR_LABELS,
+  );
+  const [selected, setSelected] = useState<CompetitorKey>(
+    enabled[0] ?? "appsflyer",
   );
 
   if (enabled.length === 0) {
@@ -128,66 +135,85 @@ export function TabComparisons({ competitors }: TabComparisonsProps) {
     );
   }
 
+  const active: CompetitorKey = enabled.includes(selected) ? selected : enabled[0];
+  const brand = { color: "var(--brand-primary)" };
+
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">How We Compare</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          See how Linkrunner stacks up against legacy MMPs
-        </p>
+    <div className="mx-auto max-w-4xl">
+      <p className="flex items-center gap-2 text-sm font-medium" style={brand}>
+        <span
+          className="inline-block h-2 w-2"
+          style={{ backgroundColor: "var(--brand-primary)" }}
+        />
+        How we compare
+      </p>
+      <h2 className="mt-3.5 text-2xl font-semibold leading-tight text-gray-900 sm:text-3xl">
+        Linkrunner vs <span style={brand}>{COMPETITOR_LABELS[active]}</span>
+      </h2>
+      <p className="mt-3 max-w-2xl text-[15px] leading-7 text-gray-500">
+        The same install path, capability by capability. Pick a vendor to see
+        the difference.
+      </p>
+
+      {/* Selector */}
+      <div className="mt-5 flex flex-wrap gap-2">
+        {enabled.map((key) => {
+          const on = key === active;
+          return (
+            <button
+              key={key}
+              onClick={() => setSelected(key)}
+              className={cn(
+                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                !on && "bg-gray-100 text-gray-600 hover:bg-gray-200",
+              )}
+              style={
+                on
+                  ? { backgroundColor: "var(--brand-primary)", color: "#fff" }
+                  : undefined
+              }
+            >
+              {COMPETITOR_LABELS[key]}
+            </button>
+          );
+        })}
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
-        <table className="w-full min-w-[600px] text-sm">
-          {/* Header */}
+      <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200">
+        <table className="w-full table-fixed text-sm">
           <thead>
-            <tr>
-              <th className="w-[160px] bg-white p-4 text-left text-xs font-semibold text-gray-400" />
-              {enabled.map((key) => (
-                <th
-                  key={key}
-                  className="bg-gray-50 p-4 text-center text-xs font-semibold text-gray-500"
-                >
-                  {COMPETITOR_LABELS[key]}
-                </th>
-              ))}
-              <th className="bg-gray-900 p-4 text-center text-xs font-semibold text-white">
+            <tr className="border-b border-gray-200 text-left">
+              <th className="w-[22%] p-4 align-bottom text-xs font-medium text-gray-400">
+                Capability
+              </th>
+              <th
+                className="w-[39%] p-4 align-bottom text-xs font-semibold"
+                style={brand}
+              >
                 Linkrunner
+              </th>
+              <th className="w-[39%] p-4 align-bottom text-xs font-medium text-gray-400">
+                {COMPETITOR_LABELS[active]}
               </th>
             </tr>
           </thead>
-
-          {/* Body */}
           <tbody>
             {ROWS.map((row, i) => (
               <tr
                 key={row.dimension}
-                className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                className={cn(
+                  "border-b border-gray-200 align-top last:border-0",
+                  i % 2 === 1 && "bg-gray-50/60",
+                )}
               >
-                {/* Dimension */}
-                <td className="p-4 align-top font-bold text-gray-900">
+                <td className="p-4 font-semibold text-gray-900">
                   {row.dimension}
                 </td>
-
-                {/* Competitor cells */}
-                {enabled.map((key) => (
-                  <td
-                    key={key}
-                    className="p-4 align-top text-gray-500"
-                  >
-                    {row[key]}
-                  </td>
-                ))}
-
-                {/* Linkrunner cell */}
-                <td
-                  className={`p-4 align-top font-medium text-gray-900 ${
-                    i % 2 === 0 ? "bg-gray-100/60" : "bg-gray-100"
-                  }`}
-                >
+                <td className="p-4 font-medium leading-6 text-gray-900">
                   {row.linkrunner}
                 </td>
+                <td className="p-4 leading-6 text-gray-500">{row[active]}</td>
               </tr>
             ))}
           </tbody>
