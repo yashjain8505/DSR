@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${room.company_name} — Linkrunner`,
+    title: `${room.company_name} 🤝 Linkrunner`,
     description: `Digital Sales Room for ${room.company_name}`,
   };
 }
