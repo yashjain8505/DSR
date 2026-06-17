@@ -89,7 +89,11 @@ function SnapshotStrip({
       {snapshot.attendees && (
         <span className="flex items-start gap-2 text-sm text-gray-600">
           <Users className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
-          <span>{snapshot.attendees}</span>
+          <span className="flex flex-col gap-0.5">
+            {snapshot.attendees.split(/\s*·\s*/).map((group, i) => (
+              <span key={i}>{group}</span>
+            ))}
+          </span>
         </span>
       )}
     </div>

@@ -129,39 +129,22 @@ function isSnapshotHeader(h: string): boolean {
   return /summary|snapshot|overview|recap|attendees/i.test(h);
 }
 
-/** Remove Linkrunner team members from the attendees string. */
-function stripLinkrunnerAttendees(attendees: string): string {
-  // Standard MoM format uses · to separate prospect and LR teams:
-  // "Prospect1 (Company) · LR1, LR2 (Linkrunner)"
-  if (/[·•]/.test(attendees)) {
-    const segments = attendees.split(/\s*[·•]\s*/);
-    const prospect = segments.filter((s) => !/\blinkrunner\b/i.test(s));
-    return prospect.join(" · ").trim() || attendees;
-  }
-  // Comma-separated: split on commas NOT inside parentheses, then filter.
-  // Handles "Krishna (CTO & Co-founder, Chai Biscuit), Shreyans (Linkrunner)".
-  const parts = splitOutsideParens(attendees);
-  const prospect = parts.filter((p) => !/\blinkrunner\b/i.test(p));
-  return prospect.join(", ").trim() || attendees;
-}
-
-/** Split a string on commas that are outside parentheses. */
-function splitOutsideParens(str: string): string[] {
-  const parts: string[] = [];
-  let depth = 0;
-  let cur = "";
-  for (const ch of str) {
-    if (ch === "(") depth++;
-    else if (ch === ")") depth = Math.max(0, depth - 1);
-    if (ch === "," && depth === 0) {
-      parts.push(cur.trim());
-      cur = "";
-    } else {
-      cur += ch;
-    }
-  }
-  if (cur.trim()) parts.push(cur.trim());
-  return parts;
+/**
+ * Clean the attendees line for display: drop email addresses and em/en dashes,
+ * keep everyone (both the prospect team and the Linkrunner team). The content
+ * supplies the grouping, e.g. "Team Hudle: A, B · Team Linkrunner: C, D".
+ */
+function cleanAttendees(attendees: string): string {
+  return attendees
+    // "Name — name@co.com" / "Name - name@co.com" -> "Name"
+    .replace(/\s*[—–-]?\s*[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi, "")
+    // any leftover em/en dashes -> space
+    .replace(/\s*[—–]\s*/g, " ")
+    // tidy up artifacts left by removed emails
+    .replace(/\s*,\s*,/g, ",")
+    .replace(/,\s*(·|$)/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 interface RawBlock {
@@ -212,7 +195,7 @@ export function parseBrief(content: string): BriefData {
       if (date || attendees) {
         snapshot = {
           date: date ?? "",
-          attendees: stripLinkrunnerAttendees(attendees ?? ""),
+          attendees: cleanAttendees(attendees ?? ""),
         };
       }
       continue;
