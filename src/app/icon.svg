@@ -1,8 +1,16 @@
-<svg width="340" height="340" viewBox="0 0 340 340" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Linkrunner logo mark">
-  <rect x="40" y="40" width="125" height="120" fill="#4D4BF7"/>
-  <rect x="40" y="170" width="125" height="80" fill="#4D4BF7"/>
-  <rect x="40" y="260" width="125" height="40" fill="#4D4BF7"/>
-  <rect x="175" y="40" width="125" height="40" fill="#4D4BF7" opacity="0.2"/>
-  <rect x="175" y="90" width="125" height="80" fill="#4D4BF7" opacity="0.2"/>
-  <rect x="175" y="180" width="125" height="120" fill="#4D4BF7"/>
+<svg width="340" height="340" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg" aria-label="Linkrunner logo mark">
+  <style>
+    .solid { fill: #2A2D34; }
+    .faded { fill: #2A2D34; opacity: 0.2; }
+    @media (prefers-color-scheme: dark) {
+      .solid { fill: #FFFFFF; }
+      .faded { fill: #FFFFFF; opacity: 0.28; }
+    }
+  </style>
+  <rect class="solid" x="40" y="40" width="125" height="120"/>
+  <rect class="solid" x="40" y="170" width="125" height="80"/>
+  <rect class="solid" x="40" y="260" width="125" height="40"/>
+  <rect class="faded" x="175" y="40" width="125" height="40"/>
+  <rect class="faded" x="175" y="90" width="125" height="80"/>
+  <rect class="solid" x="175" y="180" width="125" height="120"/>
 </svg>
