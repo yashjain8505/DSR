@@ -95,20 +95,37 @@ async function fetchTranscript(noteId) {
 }
 
 // Same extraction logic as src/app/api/granola/sync/route.ts
+const FREE_EMAIL_DOMAINS = new Set([
+  "gmail.com", "yahoo.com", "yahoo.in", "outlook.com", "hotmail.com",
+  "icloud.com", "proton.me", "protonmail.com", "rediffmail.com",
+]);
 function extractCompanyName(title, participants) {
+  // 1. Explicit participant company.
+  const withCompany = participants.find(
+    (p) =>
+      p.company &&
+      p.company.trim() &&
+      !p.is_creator &&
+      !(p.email || "").toLowerCase().endsWith("@linkrunner.io")
+  );
+  if (withCompany && withCompany.company) return withCompany.company.trim();
+  // 2. Prospect work-email domain (titles usually hold a person's name).
+  const prospect = participants.find((p) => {
+    if (!p.email || p.is_creator) return false;
+    const domain = p.email.split("@")[1]?.toLowerCase();
+    return (
+      !!domain &&
+      !domain.endsWith("linkrunner.io") &&
+      !FREE_EMAIL_DOMAINS.has(domain)
+    );
+  });
+  if (prospect && prospect.email) {
+    const label = prospect.email.split("@")[1].toLowerCase().split(".")[0];
+    if (label) return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+  // 3. Fall back to the title token.
   const match = title.match(/<>\s*(.+?)\s*\|\|/);
   if (match) return match[1].trim();
-  const prospect = participants.find(
-    (p) =>
-      p.email &&
-      !p.is_creator &&
-      !p.email.endsWith("@linkrunner.io") &&
-      !p.email.endsWith("@gmail.com")
-  );
-  if (prospect && prospect.email) {
-    const domain = prospect.email.split("@")[1]?.split(".")[0];
-    if (domain) return domain.charAt(0).toUpperCase() + domain.slice(1);
-  }
   return null;
 }
 
@@ -132,6 +149,18 @@ async function main() {
   console.log(`Found ${notes.length} meetings.`);
   if (notes.length === 0) return;
 
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  // Preserve already-curated company names: a re-sync must not overwrite a
+  // hand-fixed company_name with the auto-derived one.
+  const { data: existingRows } = await supabase
+    .from("granola_meeting_cache")
+    .select("granola_meeting_id, company_name")
+    .in("granola_meeting_id", notes.map((n) => n.id));
+  const existingCompany = new Map(
+    (existingRows ?? []).map((r) => [r.granola_meeting_id, r.company_name])
+  );
+
   const rows = [];
   let transcriptsFetched = 0;
   for (let i = 0; i < notes.length; i++) {
@@ -154,7 +183,9 @@ async function main() {
       meeting_date: note.start_time ?? note.created_at,
       participants,
       summary: transcript || note.summary || "",
-      company_name: extractCompanyName(note.title, participants),
+      company_name:
+        existingCompany.get(note.id) ??
+        extractCompanyName(note.title, participants),
       contact_email: extractContactEmail(participants),
       synced_at: new Date().toISOString(),
     });
@@ -162,7 +193,6 @@ async function main() {
   }
   console.log("");
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
   const { data, error } = await supabase
     .from("granola_meeting_cache")
     .upsert(rows, { onConflict: "granola_meeting_id" })

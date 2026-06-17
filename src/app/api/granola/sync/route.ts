@@ -26,32 +26,57 @@ interface GranolaMeeting {
   notes?: string;
 }
 
+/** Free/personal email domains that don't indicate a company. */
+const FREE_EMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "yahoo.com",
+  "yahoo.in",
+  "outlook.com",
+  "hotmail.com",
+  "icloud.com",
+  "proton.me",
+  "protonmail.com",
+  "rediffmail.com",
+]);
+
 /**
- * Extract a company name from a meeting title like "Linkrunner <> CompanyName || Intro call"
- * or from non-Linkrunner participant emails.
+ * Resolve the prospect's company. Meeting titles usually carry a person's first
+ * name ("Linkrunner <> Aditya || Intro call"), not the company, so prefer an
+ * explicit participant company, then the prospect's work-email domain, and only
+ * fall back to the "<> X ||" title token (which is occasionally a real company).
  */
 function extractCompanyName(
   title: string,
   participants: GranolaParticipant[]
 ): string | null {
-  // Try pattern: "Linkrunner <> Person/Company || ..."
-  const match = title.match(/<>\s*(.+?)\s*\|\|/);
-  if (match) {
-    return match[1].trim();
+  // 1. Explicit company on a non-Linkrunner participant, when Granola provides it.
+  const withCompany = participants.find(
+    (p) =>
+      p.company &&
+      p.company.trim() &&
+      !p.is_creator &&
+      !(p.email ?? "").toLowerCase().endsWith("@linkrunner.io")
+  );
+  if (withCompany?.company) return withCompany.company.trim();
+
+  // 2. Prospect's work-email domain (skip Linkrunner + free/personal mailboxes).
+  const prospect = participants.find((p) => {
+    if (!p.email || p.is_creator) return false;
+    const domain = p.email.split("@")[1]?.toLowerCase();
+    return (
+      !!domain &&
+      !domain.endsWith("linkrunner.io") &&
+      !FREE_EMAIL_DOMAINS.has(domain)
+    );
+  });
+  if (prospect?.email) {
+    const label = prospect.email.split("@")[1].toLowerCase().split(".")[0];
+    if (label) return label.charAt(0).toUpperCase() + label.slice(1);
   }
 
-  // Try extracting from non-Linkrunner participant email domain
-  const prospect = participants.find(
-    (p) =>
-      p.email &&
-      !p.is_creator &&
-      !p.email.endsWith("@linkrunner.io") &&
-      !p.email.endsWith("@gmail.com")
-  );
-  if (prospect?.email) {
-    const domain = prospect.email.split("@")[1]?.split(".")[0];
-    if (domain) return domain.charAt(0).toUpperCase() + domain.slice(1);
-  }
+  // 3. Fall back to the title token.
+  const match = title.match(/<>\s*(.+?)\s*\|\|/);
+  if (match) return match[1].trim();
 
   return null;
 }
@@ -194,6 +219,22 @@ export async function POST() {
       });
     }
 
+    const admin = createAdminClient();
+
+    // Preserve already-curated company names: a re-sync must not overwrite a
+    // hand-fixed company_name with the auto-derived one. New rows (or rows with
+    // no company yet) fall through to extractCompanyName.
+    const { data: existingRows } = await admin
+      .from("granola_meeting_cache")
+      .select("granola_meeting_id, company_name")
+      .in(
+        "granola_meeting_id",
+        meetings.map((m) => m.id)
+      );
+    const existingCompany = new Map(
+      (existingRows ?? []).map((r) => [r.granola_meeting_id, r.company_name])
+    );
+
     // Transform to our cache format — use transcript as primary content
     const rows = meetings.map((m) => {
       const participants = (m.people ?? []).map((p) => ({
@@ -213,13 +254,13 @@ export async function POST() {
         meeting_date: m.created_at,
         participants,
         summary,
-        company_name: extractCompanyName(m.title, participants),
+        company_name:
+          existingCompany.get(m.id) ??
+          extractCompanyName(m.title, participants),
         contact_email: extractContactEmail(participants),
         synced_at: new Date().toISOString(),
       };
     });
-
-    const admin = createAdminClient();
 
     const { data: upserted, error: dbError } = await admin
       .from("granola_meeting_cache")
