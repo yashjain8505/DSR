@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Mail } from "lucide-react";
+import { ChevronDown, Mail, Phone } from "lucide-react";
 
 interface RoomHeroProps {
   companyName: string;
@@ -8,6 +8,35 @@ interface RoomHeroProps {
   contactName: string | null;
   onScrollDown: () => void;
 }
+
+/** Linkrunner contacts shown on every room hero. */
+const LINKRUNNER_TEAM: {
+  initials: string;
+  name: string;
+  role: string;
+  email: string;
+  phone?: string;
+}[] = [
+  {
+    initials: "YJ",
+    name: "Yash Jain",
+    role: "GTM",
+    email: "yash@linkrunner.io",
+    phone: "9425136999",
+  },
+  {
+    initials: "SS",
+    name: "Shreyans Sancheti",
+    role: "CEO",
+    email: "Shreyans@linkrunner.io",
+  },
+  {
+    initials: "LD",
+    name: "Lakshith Dinesh",
+    role: "Head of Growth",
+    email: "lakshith@linkrunner.io",
+  },
+];
 
 /**
  * Full-viewport hero / landing section for the prospect-facing room.
@@ -135,30 +164,47 @@ export function RoomHero({
           </div>
         </div>
 
-        {/* Right column: seller info card */}
+        {/* Right column: Linkrunner team card */}
         <div className="w-full max-w-xs shrink-0">
           <div className="rounded-2xl bg-white/[0.08] p-6 shadow-lg backdrop-blur-md">
-            {/* Seller avatar placeholder */}
-            <div className="mb-4 flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-lg font-bold text-white">
-                YJ
-              </div>
-              <div>
-                <p className="text-base font-semibold text-white">
-                  Yash Jain
-                </p>
-                <p className="text-sm text-white/60">GTM</p>
-              </div>
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-white/50">
+              Your Linkrunner team
+            </p>
+            <div className="flex flex-col gap-5">
+              {LINKRUNNER_TEAM.map((member) => (
+                <div key={member.email} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
+                      {member.initials}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {member.name}
+                      </p>
+                      <p className="text-xs text-white/60">{member.role}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5 pl-[52px]">
+                    <a
+                      href={`mailto:${member.email}`}
+                      className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-white"
+                    >
+                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                      {member.email}
+                    </a>
+                    {member.phone && (
+                      <a
+                        href={`tel:${member.phone.replace(/\s+/g, "")}`}
+                        className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-white"
+                      >
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        {member.phone}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-
-            {/* Contact detail */}
-            <a
-              href="mailto:yash@linkrunner.io"
-              className="flex items-center gap-2.5 text-sm text-white/70 transition-colors hover:text-white"
-            >
-              <Mail className="h-4 w-4 shrink-0" />
-              yash@linkrunner.io
-            </a>
           </div>
         </div>
       </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
+  ArrowRight,
   BadgeCheck,
   BookOpen,
   Boxes,
@@ -82,6 +83,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     useState<RecapSubKey>("what_we_discussed");
   const [recapExpanded, setRecapExpanded] = useState(true);
   const [mobileRecapOpen, setMobileRecapOpen] = useState(false);
+  const topRef = useRef<HTMLDivElement>(null);
 
   function handleTabChange(tab: MainTabKey) {
     setActiveTab(tab);
@@ -128,8 +130,43 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     return data.overview_sub_tabs.find((t) => t.sub_tab_key === tab) ?? null;
   }
 
+  // Linear page order for the floating "Go to next page" button. Recap counts as
+  // two pages (what we discussed / next steps); every other tab is one page.
+  const pages: { tab: MainTabKey; recapSub?: RecapSubKey }[] = [];
+  for (const tab of visibleTabs) {
+    if (tab === "meeting_brief") {
+      for (const s of RECAP_SUB_ITEMS) pages.push({ tab, recapSub: s.key });
+    } else {
+      pages.push({ tab });
+    }
+  }
+  const currentPageIndex = pages.findIndex(
+    (p) =>
+      p.tab === activeTab &&
+      (p.tab !== "meeting_brief" || p.recapSub === activeRecapSub),
+  );
+  const nextPage =
+    currentPageIndex >= 0 && currentPageIndex < pages.length - 1
+      ? pages[currentPageIndex + 1]
+      : null;
+
+  function goToNextPage() {
+    if (!nextPage) return;
+    if (nextPage.tab === "meeting_brief") {
+      setActiveTab("meeting_brief");
+      setActiveRecapSub(nextPage.recapSub ?? "what_we_discussed");
+      setRecapExpanded(true);
+      setMobileRecapOpen(false);
+      trackTabClick("meeting_brief");
+    } else {
+      handleTabChange(nextPage.tab);
+    }
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
-    <div className="flex flex-col lg:flex-row lg:gap-8">
+    <>
+    <div ref={topRef} className="flex flex-col lg:flex-row lg:gap-8">
       {/* ---- Desktop sidebar ---- */}
       <nav
         className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:pr-6 lg:pt-2"
@@ -304,6 +341,21 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
         )}
       </div>
     </div>
+
+      {nextPage && (
+        <div className="pointer-events-none sticky bottom-6 z-30 mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={goToNextPage}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur-sm transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            style={{ backgroundColor: "var(--brand-primary)" }}
+          >
+            Go to next page
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
