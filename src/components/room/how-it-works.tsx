@@ -78,7 +78,7 @@ export function HowItWorks() {
             Book a call with our technical team and we will get you live.
           </p>
           <a
-            href="https://meet.darshal.linkrunner.io"
+            href="https://meet.darshil.linkrunner.io"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-4 inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-white"
