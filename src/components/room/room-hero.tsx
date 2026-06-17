@@ -164,47 +164,48 @@ export function RoomHero({
           </div>
         </div>
 
-        {/* Right column: Linkrunner team card */}
+        {/* Right column: Linkrunner team — one card (tag) per person */}
         <div className="w-full max-w-xs shrink-0">
-          <div className="rounded-2xl bg-white/[0.08] p-6 shadow-lg backdrop-blur-md">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-white/50">
-              Your Linkrunner team
-            </p>
-            <div className="flex flex-col gap-5">
-              {LINKRUNNER_TEAM.map((member) => (
-                <div key={member.email} className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
-                      {member.initials}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">
-                        {member.name}
-                      </p>
-                      <p className="text-xs text-white/60">{member.role}</p>
-                    </div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+            Linkrunner team
+          </p>
+          <div className="flex flex-col gap-3">
+            {LINKRUNNER_TEAM.map((member) => (
+              <div
+                key={member.email}
+                className="rounded-2xl bg-white/[0.08] p-4 shadow-lg backdrop-blur-md"
+              >
+                <div className="mb-2.5 flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
+                    {member.initials}
                   </div>
-                  <div className="flex flex-col gap-1.5 pl-[52px]">
-                    <a
-                      href={`mailto:${member.email}`}
-                      className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-white"
-                    >
-                      <Mail className="h-3.5 w-3.5 shrink-0" />
-                      {member.email}
-                    </a>
-                    {member.phone && (
-                      <a
-                        href={`tel:${member.phone.replace(/\s+/g, "")}`}
-                        className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-white"
-                      >
-                        <Phone className="h-3.5 w-3.5 shrink-0" />
-                        {member.phone}
-                      </a>
-                    )}
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      {member.name}
+                    </p>
+                    <p className="text-xs text-white/60">{member.role}</p>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="flex flex-col gap-1.5">
+                  <a
+                    href={`mailto:${member.email}`}
+                    className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-white"
+                  >
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    {member.email}
+                  </a>
+                  {member.phone && (
+                    <a
+                      href={`tel:${member.phone.replace(/\s+/g, "")}`}
+                      className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-white"
+                    >
+                      <Phone className="h-3.5 w-3.5 shrink-0" />
+                      {member.phone}
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
