@@ -286,13 +286,15 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
           />
         )}
         {activeTab === "customers_references" && (
-          <CustomersReferences references={data.customer_references} />
+          <div className="space-y-12">
+            <CustomersReferences references={data.customer_references} />
+            {data.case_studies.length > 0 && (
+              <TabCaseStudies caseStudies={data.case_studies} />
+            )}
+          </div>
         )}
         {activeTab === "pricing" && (
           <TabPricing pricing={data.pricing} companyName={data.room.company_name} />
-        )}
-        {activeTab === "case_studies" && (
-          <TabCaseStudies caseStudies={data.case_studies} />
         )}
         {activeTab === "comparison" && (
           <TabComparisons competitors={data.room.comparison_competitors ?? ["appsflyer", "adjust", "branch"]} />
@@ -334,11 +336,13 @@ function OverviewTabRenderer({
 function computeVisibleTabs(data: RoomWithContent): MainTabKey[] {
   const tabs: MainTabKey[] = [...ALWAYS_VISIBLE_TABS];
 
-  if (data.room.tab_customers_references_visible) {
+  // "Our Customers and Case Studies" merges the two sections: show the tab when
+  // either customer references or case studies are enabled.
+  if (
+    data.room.tab_customers_references_visible ||
+    data.room.tab_case_studies_visible
+  ) {
     tabs.push("customers_references");
-  }
-  if (data.room.tab_case_studies_visible) {
-    tabs.push("case_studies");
   }
   if (data.room.tab_comparison_visible) {
     tabs.push("comparison");

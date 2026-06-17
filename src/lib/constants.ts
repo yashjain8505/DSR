@@ -81,7 +81,7 @@ export const MAIN_TAB_LABELS: Record<MainTabKey, string> = {
   meeting_brief: "Recap",
   ...OVERVIEW_SUB_TAB_LABELS,
   pricing: "Pricing",
-  customers_references: "Our Customers & References",
+  customers_references: "Our Customers and Case Studies",
   case_studies: "Case Studies",
   comparison: "How We Compare",
   getting_started: "Getting Started",
