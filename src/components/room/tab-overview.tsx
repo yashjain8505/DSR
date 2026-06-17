@@ -123,38 +123,30 @@ export function SubTabContent({
       return <IntegrationsPage />;
 
     case "company_deck": {
-      const pdfUrl = subTab.iframe_url || asset?.url || "";
-      const isPdf =
-        pdfUrl.toLowerCase().endsWith(".pdf") ||
-        pdfUrl.includes("/assets/"); // Supabase storage PDFs
-      return pdfUrl ? (
-        <div className="rounded-xl bg-white p-4 shadow-sm sm:p-6">
-          {isPdf && (
-            <div className="mb-3 flex justify-end">
-              <a
-                href={pdfUrl}
-                download
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
-                style={{ backgroundColor: "var(--brand-primary)" }}
-              >
-                <Download className="h-4 w-4" />
-                Download
-              </a>
-            </div>
-          )}
-          {isPdf ? (
-            <PdfEmbed url={pdfUrl} title="Company Deck" />
-          ) : (
-            <IframeEmbed url={pdfUrl} height={700} title="Company Deck" />
-          )}
+      // Render every deck in the company_deck category in sort order
+      // (Pitch Deck first, then Onboarding Deck), each as its own labelled block.
+      const decks = assets
+        .filter((a) => a.category === "company_deck" && a.url)
+        .sort((a, b) => a.sort_order - b.sort_order);
+      const fallbackUrl = subTab.iframe_url || asset?.url || "";
+      if (decks.length === 0) {
+        return fallbackUrl ? (
+          <DeckBlock title="Company Deck" url={fallbackUrl} />
+        ) : (
+          <FallbackContent content={content} />
+        );
+      }
+      return (
+        <div className="space-y-8">
+          {decks.map((d) => (
+            <DeckBlock key={d.id} title={d.title} url={d.url as string} />
+          ))}
           {content && (
-            <div className="mt-6">
+            <div className="mt-2">
               <MarkdownRenderer content={content} />
             </div>
           )}
         </div>
-      ) : (
-        <FallbackContent content={content} />
       );
     }
 
@@ -190,6 +182,35 @@ function PdfEmbed({ url, title }: { url: string; title: string }) {
   );
 }
 
+
+/** A single labelled deck: heading + download button + same-origin PDF embed. */
+function DeckBlock({ title, url }: { title: string; url: string }) {
+  const isPdf =
+    url.toLowerCase().endsWith(".pdf") || url.includes("/assets/");
+  return (
+    <div className="rounded-xl bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+        {isPdf && (
+          <a
+            href={url}
+            download
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
+            style={{ backgroundColor: "var(--brand-primary)" }}
+          >
+            <Download className="h-4 w-4" />
+            Download
+          </a>
+        )}
+      </div>
+      {isPdf ? (
+        <PdfEmbed url={url} title={title} />
+      ) : (
+        <IframeEmbed url={url} height={700} title={title} />
+      )}
+    </div>
+  );
+}
 
 function FallbackContent({ content }: { content: string }) {
   if (!content) {
