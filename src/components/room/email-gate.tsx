@@ -21,7 +21,6 @@ export function EmailGate({
   onAuthenticated,
 }: EmailGateProps) {
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -44,7 +43,6 @@ export function EmailGate({
     try {
       const payload: EmailGatePayload = {
         email: email.trim().toLowerCase(),
-        name: name.trim() || undefined,
         room_id: roomId,
       };
 
@@ -111,19 +109,13 @@ export function EmailGate({
             required
             autoFocus
           />
-          <Input
-            label="Your name (optional)"
-            type="text"
-            placeholder="John Doe"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
           <Button
             type="submit"
             variant="primary"
             size="lg"
             loading={isSubmitting}
-            className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] focus-visible:ring-[var(--brand-primary)]"
+            className="w-full text-white! hover:opacity-90 focus-visible:ring-[var(--brand-primary)]"
+            style={{ backgroundColor: "var(--brand-primary, #4d4bf7)" }}
           >
             Continue
           </Button>
