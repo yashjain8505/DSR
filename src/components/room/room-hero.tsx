@@ -34,7 +34,7 @@ const LINKRUNNER_TEAM: {
     name: "Yash Jain",
     role: "GTM",
     email: "yash@linkrunner.io",
-    phone: "9425136999",
+    phone: "9425136499",
   },
 ];
 

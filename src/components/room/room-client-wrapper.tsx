@@ -5,6 +5,7 @@ import { EmailGate } from "@/components/room/email-gate";
 import { RoomHero } from "@/components/room/room-hero";
 import { RoomTabs } from "@/components/room/room-tabs";
 import { AnalyticsTracker } from "@/components/room/analytics-tracker";
+import { TalkToUs } from "@/components/room/talk-to-us";
 import type { RoomWithContent } from "@/lib/types";
 
 interface RoomClientWrapperProps {
@@ -111,6 +112,8 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
       </div>
 
       <AnalyticsTracker roomId={data.room.id} visitorId={visitorId} />
+
+      {gateCleared && <TalkToUs />}
     </div>
   );
 }
