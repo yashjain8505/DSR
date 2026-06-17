@@ -18,13 +18,6 @@ const LINKRUNNER_TEAM: {
   phone?: string;
 }[] = [
   {
-    initials: "YJ",
-    name: "Yash Jain",
-    role: "GTM",
-    email: "yash@linkrunner.io",
-    phone: "9425136999",
-  },
-  {
     initials: "SS",
     name: "Shreyans Sancheti",
     role: "CEO",
@@ -35,6 +28,13 @@ const LINKRUNNER_TEAM: {
     name: "Lakshith Dinesh",
     role: "Head of Growth",
     email: "lakshith@linkrunner.io",
+  },
+  {
+    initials: "YJ",
+    name: "Yash Jain",
+    role: "GTM",
+    email: "yash@linkrunner.io",
+    phone: "9425136999",
   },
 ];
 
@@ -186,7 +186,7 @@ export function RoomHero({
                     <p className="text-xs text-white/60">{member.role}</p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
                   <a
                     href={`mailto:${member.email}`}
                     className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-white"
