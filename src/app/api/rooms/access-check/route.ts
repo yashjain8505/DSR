@@ -37,6 +37,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: true });
     }
 
+    // Anyone on the Linkrunner team (@linkrunner.io) can always enter any room.
+    if (email.endsWith("@linkrunner.io")) {
+      return NextResponse.json({ allowed: true });
+    }
+
     const { data: entry } = await admin
       .from("room_access")
       .select("id")

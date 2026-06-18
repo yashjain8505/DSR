@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    if (room.restrict_access === true) {
+    // Anyone on the Linkrunner team (@linkrunner.io) can always enter any room.
+    if (room.restrict_access === true && !email.endsWith("@linkrunner.io")) {
       const { data: allowed } = await admin
         .from("room_access")
         .select("id")
