@@ -135,10 +135,6 @@ export const ROOM_CUSTOMIZABLE_SUB_TABS: readonly OverviewSubTabKey[] =
  * Admin can toggle each on/off per room.
  */
 export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] = [
-  { name: "CARS24", logo_url: "/logos/cars24.png" },
-  { name: "FatakPay", logo_url: "/logos/fatakpay.png" },
-  { name: "KreditPe", logo_url: "/logos/kreditpe.png" },
-  { name: "Cash247", logo_url: "/logos/cash247.png" },
   { name: "Bounce Daily", logo_url: "/logos/bounce-daily.png" },
   { name: "Zypp Electric", logo_url: "/logos/zypp-electric.png" },
   { name: "Meatigo", logo_url: "/logos/meatigo.png" },

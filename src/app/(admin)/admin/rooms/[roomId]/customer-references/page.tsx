@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog } from "@/components/ui/dialog";
@@ -16,6 +16,10 @@ export default function CustomerReferencesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Drag-to-reorder
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   // New reference form
   const [showForm, setShowForm] = useState(false);
@@ -103,21 +107,23 @@ export default function CustomerReferencesPage() {
     }
   }
 
-  async function handleMove(index: number, dir: -1 | 1) {
-    const target = index + dir;
-    if (target < 0 || target >= refs.length) return;
-
-    // Swap in the array, then persist each ref's new position as its
-    // sort_order so duplicate/gappy orders self-heal as rows are moved.
+  /** Move a row from one position to another (drag-and-drop) and persist. */
+  function handleReorder(from: number, to: number) {
+    if (from === to || from < 0 || to < 0) return;
     const next = [...refs];
-    [next[index], next[target]] = [next[target], next[index]];
-    next[index] = { ...next[index], sort_order: index };
-    next[target] = { ...next[target], sort_order: target };
-    setRefs(next);
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    const reindexed = next.map((r, idx) => ({ ...r, sort_order: idx }));
+    setRefs(reindexed);
+    persistOrder(reindexed);
+  }
 
+  async function persistOrder(list: CustomerReference[]) {
+    // Persist each row's new position as its sort_order so gappy/duplicate
+    // orders self-heal as rows move.
     try {
       const results = await Promise.all(
-        [next[index], next[target]].map((r) =>
+        list.map((r) =>
           fetch(`/api/rooms/${roomId}/customer-references/${r.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -174,8 +180,8 @@ export default function CustomerReferencesPage() {
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             Add customer logos to show on the &ldquo;Our Customers &amp;
-            References&rdquo; tab. Toggle each logo on or off and use the
-            arrows to reorder them per room.
+            References&rdquo; tab. Toggle each logo on or off and drag the
+            handle to reorder them per room.
           </p>
         </div>
         <Button onClick={() => setShowForm(true)}>
@@ -250,32 +256,40 @@ export default function CustomerReferencesPage() {
           {refs.map((ref, index) => (
             <div
               key={ref.id}
+              draggable
+              onDragStart={() => setDragIndex(index)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOverIndex(index);
+              }}
+              onDragLeave={() =>
+                setOverIndex((cur) => (cur === index ? null : cur))
+              }
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIndex !== null) handleReorder(dragIndex, index);
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              onDragEnd={() => {
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
               className={`flex items-center gap-4 rounded-xl border bg-white p-4 transition-colors ${
-                ref.is_visible
-                  ? "border-gray-200"
-                  : "border-gray-100 opacity-50"
+                ref.is_visible ? "border-gray-200" : "border-gray-100 opacity-50"
+              } ${dragIndex === index ? "opacity-40" : ""} ${
+                overIndex === index && dragIndex !== null && dragIndex !== index
+                  ? "border-blue-300 ring-2 ring-blue-400"
+                  : ""
               }`}
             >
-              {/* Reorder */}
-              <div className="flex shrink-0 flex-col">
-                <button
-                  type="button"
-                  onClick={() => handleMove(index, -1)}
-                  disabled={index === 0}
-                  className="rounded p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-30"
-                  aria-label={`Move ${ref.name} up`}
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleMove(index, 1)}
-                  disabled={index === refs.length - 1}
-                  className="rounded p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-30"
-                  aria-label={`Move ${ref.name} down`}
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </button>
+              {/* Drag handle */}
+              <div
+                className="shrink-0 cursor-grab text-gray-300 active:cursor-grabbing"
+                aria-label={`Drag ${ref.name} to reorder`}
+                title="Drag to reorder"
+              >
+                <GripVertical className="h-5 w-5" />
               </div>
 
               {/* Logo preview */}
