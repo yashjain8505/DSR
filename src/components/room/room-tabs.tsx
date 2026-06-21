@@ -277,7 +277,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
             }}
             className={cn(
               "scroll-mt-4 py-10 lg:py-14",
-              i > 0 && "border-t-2 border-gray-300",
+              i > 0 && "border-t-2 border-gray-900",
             )}
           >
             {/* Section eyebrow — clear marker for the start of each page */}
@@ -288,10 +288,9 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
               >
                 {num(i)}
               </span>
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-700">
                 {MAIN_TAB_LABELS[tab]}
               </span>
-              <span className="h-px flex-1 bg-gray-200" />
             </div>
             {renderSection(tab)}
           </section>

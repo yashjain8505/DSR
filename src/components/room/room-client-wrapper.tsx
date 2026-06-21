@@ -21,6 +21,8 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
   const [gateCleared, setGateCleared] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const snapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check localStorage after hydration. Restricted rooms re-validate the
   // stored email against the allowlist — removed visitors fall back to the
@@ -76,14 +78,34 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
     contentRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
+  // The first scroll out of the hero settles firmly on the content (the first
+  // page); beyond that boundary the content scrolls freely. We only snap within
+  // the hero -> content boundary zone, never inside the content itself.
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (snapTimer.current) clearTimeout(snapTimer.current);
+    snapTimer.current = setTimeout(() => {
+      const vh = el.clientHeight;
+      const top = el.scrollTop;
+      if (top > 4 && top < vh - 4) {
+        el.scrollTo({ top: top < vh / 2 ? 0 : vh, behavior: "smooth" });
+      }
+    }, 90);
+  }
+
   if (!hydrated) {
     return null;
   }
 
   return (
-    /* Full-height scroll container. The hero snaps to the content on the first
-       scroll (proximity); the content itself then scrolls freely. */
-    <div className="h-[100dvh] snap-y snap-proximity overflow-y-auto">
+    /* Full-height scroll container. A scroll handler firmly settles the first
+       scroll on the content; the content then scrolls freely. */
+    <div
+      ref={scrollRef}
+      onScroll={handleScroll}
+      className="h-[100dvh] overflow-y-auto"
+    >
       {!gateCleared && (
         <EmailGate
           roomId={data.room.id}
@@ -93,7 +115,7 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
       )}
 
       {/* Hero landing section */}
-      <div className="snap-start">
+      <div>
         <RoomHero
           companyName={data.room.company_name}
           logoUrl={data.room.logo_url}
@@ -105,7 +127,7 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
       {/* Tab content area */}
       <div
         ref={contentRef}
-        className="min-h-screen snap-start snap-always bg-gray-100"
+        className="min-h-screen bg-gray-100"
       >
         <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
           <RoomTabs data={data} visitorId={visitorId} />
