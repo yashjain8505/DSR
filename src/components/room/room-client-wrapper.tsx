@@ -81,8 +81,8 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
   }
 
   return (
-    /* Scroll-snap container: hero snaps to content in one go, no halfway stop */
-    <div className="h-[100dvh] snap-y snap-mandatory overflow-y-auto">
+    /* Full-height scroll container: hero, then freely-scrollable content. */
+    <div className="h-[100dvh] overflow-y-auto">
       {!gateCleared && (
         <EmailGate
           roomId={data.room.id}
@@ -91,8 +91,8 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
         />
       )}
 
-      {/* Hero landing section — snap stop */}
-      <div className="snap-start snap-always">
+      {/* Hero landing section */}
+      <div>
         <RoomHero
           companyName={data.room.company_name}
           logoUrl={data.room.logo_url}
@@ -101,10 +101,10 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
         />
       </div>
 
-      {/* Tab content area — snap stop, neutral background */}
+      {/* Tab content area */}
       <div
         ref={contentRef}
-        className="min-h-screen snap-start snap-always bg-gray-100"
+        className="min-h-screen scroll-mt-0 bg-gray-100"
       >
         <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
           <RoomTabs data={data} visitorId={visitorId} />

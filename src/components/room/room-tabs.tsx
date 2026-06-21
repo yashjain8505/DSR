@@ -169,7 +169,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     <div ref={topRef} className="flex flex-col lg:flex-row lg:gap-8">
       {/* ---- Desktop sidebar ---- */}
       <nav
-        className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:pr-6 lg:pt-2"
+        className="hidden lg:flex lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:self-start lg:overflow-y-auto lg:pr-6 lg:pt-2"
         aria-label="Room tabs"
       >
         {visibleTabs.map((tab) => {
@@ -236,8 +236,8 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
         })}
       </nav>
 
-      {/* ---- Mobile horizontal tabs ---- */}
-      <div className="relative lg:hidden">
+      {/* ---- Mobile horizontal tabs (sticky to the top while scrolling) ---- */}
+      <div className="sticky top-0 z-20 -mx-4 bg-gray-100/95 px-4 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:hidden">
         <nav
           className="flex gap-1 overflow-x-auto scrollbar-hide"
           aria-label="Room tabs"

@@ -111,7 +111,7 @@ export function RoomHero({
                 className="h-12 w-12 object-contain sm:h-16 sm:w-16"
               />
             </div>
-            <span className="text-2xl font-light text-white/70 sm:text-3xl">&times;</span>
+            <span className="text-2xl font-light text-white/70 sm:text-3xl">🤝</span>
             {logoUrl ? (
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg sm:h-20 sm:w-20">
                 <img
@@ -139,7 +139,7 @@ export function RoomHero({
             Welcome to your
             <br />
             <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-              Digital Boardroom
+              Linkrunner Digital Boardroom
             </span>
           </h1>
 
