@@ -81,8 +81,9 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
   }
 
   return (
-    /* Full-height scroll container: hero, then freely-scrollable content. */
-    <div className="h-[100dvh] overflow-y-auto">
+    /* Full-height scroll container. The hero snaps to the content on the first
+       scroll (proximity); the content itself then scrolls freely. */
+    <div className="h-[100dvh] snap-y snap-proximity overflow-y-auto">
       {!gateCleared && (
         <EmailGate
           roomId={data.room.id}
@@ -92,7 +93,7 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
       )}
 
       {/* Hero landing section */}
-      <div>
+      <div className="snap-start">
         <RoomHero
           companyName={data.room.company_name}
           logoUrl={data.room.logo_url}
@@ -101,10 +102,15 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
         />
       </div>
 
-      {/* Tab content area */}
+      {/* Tab content area — grid-line backdrop */}
       <div
         ref={contentRef}
-        className="min-h-screen scroll-mt-0 bg-gray-100"
+        className="min-h-screen snap-start bg-gray-100"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(15,23,42,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.05) 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+        }}
       >
         <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
           <RoomTabs data={data} visitorId={visitorId} />

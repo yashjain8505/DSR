@@ -1,25 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
-import {
-  ArrowRight,
-  BadgeCheck,
-  BookOpen,
-  Boxes,
-  CreditCard,
-  FileText,
-  GitCompareArrows,
-  HelpCircle,
-  MonitorPlay,
-  PlayCircle,
-  Plug,
-  Presentation,
-  ShieldCheck,
-
-  Users,
-  Workflow,
-  ChevronDown,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   ALWAYS_VISIBLE_TABS,
@@ -43,77 +24,42 @@ interface RoomTabsProps {
   visitorId: string | null;
 }
 
-const TAB_ICONS: Record<MainTabKey, React.ElementType> = {
-  meeting_brief: FileText,
-  what_is_linkrunner: HelpCircle,
-  product_demo: MonitorPlay,
-  features: Boxes,
-  how_it_works: Workflow,
-  company_deck: Presentation,
-
-  integrations: Plug,
-  security_compliance: ShieldCheck,
-  customers_references: Users,
-  pricing: CreditCard,
-  case_studies: BookOpen,
-  comparison: GitCompareArrows,
-  getting_started: PlayCircle,
-};
-
-/** Sub-items for the "Recap" tab. */
-const RECAP_SUB_ITEMS = [
-  { key: "what_we_discussed", label: "What we discussed so far" },
-  { key: "next_steps", label: "Next Steps" },
-] as const;
-
-type RecapSubKey = (typeof RECAP_SUB_ITEMS)[number]["key"];
-
 function isOverviewTab(tab: MainTabKey): tab is OverviewSubTabKey {
   return (OVERVIEW_SUB_TAB_KEYS as readonly string[]).includes(tab);
 }
 
 /**
- * Main tab navigation for the prospect-facing room.
- * All content sections are first-class tabs; Recap alone keeps its sub-items.
+ * Prospect room content: every section is stacked into one continuous scroll.
+ * The left rail is a sticky, numbered page index (p.01, p.02 …) that highlights
+ * the section currently in view (scroll-spy) and scrolls to a section on click.
  */
 export function RoomTabs({ data, visitorId }: RoomTabsProps) {
   const visibleTabs = computeVisibleTabs(data);
   const [activeTab, setActiveTab] = useState<MainTabKey>(visibleTabs[0]);
-  const [activeRecapSub, setActiveRecapSub] =
-    useState<RecapSubKey>("what_we_discussed");
-  const [recapExpanded, setRecapExpanded] = useState(true);
-  const [mobileRecapOpen, setMobileRecapOpen] = useState(false);
-  const topRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  function handleTabChange(tab: MainTabKey) {
+  // Scroll-spy: the section nearest the middle of the viewport is "active".
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) setActiveTab(visible[0].target.id as MainTabKey);
+      },
+      { rootMargin: "-40% 0px -55% 0px", threshold: [0, 0.25, 0.5, 1] },
+    );
+    visibleTabs.forEach((t) => {
+      const el = sectionRefs.current[t];
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleTabs.join("|")]);
+
+  function scrollTo(tab: MainTabKey) {
+    sectionRefs.current[tab]?.scrollIntoView({ behavior: "smooth", block: "start" });
     setActiveTab(tab);
-    setMobileRecapOpen(false);
-    if (tab === "meeting_brief") {
-      setRecapExpanded((expanded) => !expanded);
-    } else {
-      setRecapExpanded(false);
-    }
-    trackTabClick(tab);
-  }
-
-  function handleMobileTabClick(tab: MainTabKey) {
-    setActiveTab(tab);
-    if (tab === "meeting_brief") {
-      setMobileRecapOpen((open) => !open);
-    } else {
-      setMobileRecapOpen(false);
-    }
-    trackTabClick(tab);
-  }
-
-  function handleRecapSubClick(subKey: RecapSubKey) {
-    setActiveTab("meeting_brief");
-    setActiveRecapSub(subKey);
-    setRecapExpanded(true);
-    setMobileRecapOpen(false);
-  }
-
-  function trackTabClick(tab: MainTabKey) {
     fetch("/api/analytics", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -130,232 +76,175 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     return data.overview_sub_tabs.find((t) => t.sub_tab_key === tab) ?? null;
   }
 
-  // Linear page order for the floating "Go to next page" button. Recap counts as
-  // two pages (what we discussed / next steps); every other tab is one page.
-  const pages: { tab: MainTabKey; recapSub?: RecapSubKey }[] = [];
-  for (const tab of visibleTabs) {
+  function renderSection(tab: MainTabKey) {
     if (tab === "meeting_brief") {
-      for (const s of RECAP_SUB_ITEMS) pages.push({ tab, recapSub: s.key });
-    } else {
-      pages.push({ tab });
-    }
-  }
-  const currentPageIndex = pages.findIndex(
-    (p) =>
-      p.tab === activeTab &&
-      (p.tab !== "meeting_brief" || p.recapSub === activeRecapSub),
-  );
-  const nextPage =
-    currentPageIndex >= 0 && currentPageIndex < pages.length - 1
-      ? pages[currentPageIndex + 1]
-      : null;
-
-  function goToNextPage() {
-    if (!nextPage) return;
-    if (nextPage.tab === "meeting_brief") {
-      setActiveTab("meeting_brief");
-      setActiveRecapSub(nextPage.recapSub ?? "what_we_discussed");
-      setRecapExpanded(true);
-      setMobileRecapOpen(false);
-      trackTabClick("meeting_brief");
-    } else {
-      handleTabChange(nextPage.tab);
-    }
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  return (
-    <>
-    <div ref={topRef} className="flex flex-col lg:flex-row lg:gap-8">
-      {/* ---- Desktop sidebar ---- */}
-      <nav
-        className="hidden lg:flex lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:self-start lg:overflow-y-auto lg:pr-6 lg:pt-2"
-        aria-label="Room tabs"
-      >
-        {visibleTabs.map((tab) => {
-          const Icon = TAB_ICONS[tab] ?? BadgeCheck;
-          const isActive = activeTab === tab;
-          const isRecap = tab === "meeting_brief";
-          const isExpanded = isRecap && isActive && recapExpanded;
-
-          return (
-            <div key={tab}>
-              <button
-                type="button"
-                onClick={() => handleTabChange(tab)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400",
-                  isActive
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:bg-gray-200/70 hover:text-gray-900",
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "h-4 w-4 shrink-0",
-                    isActive ? "text-gray-700" : "text-gray-400",
-                  )}
-                />
-                <span className="flex-1">{MAIN_TAB_LABELS[tab]}</span>
-                {isRecap && (
-                  <ChevronDown
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200",
-                      isExpanded && "rotate-180",
-                    )}
-                  />
-                )}
-              </button>
-
-              {isRecap && isExpanded && (
-                <div className="ml-7 mt-0.5 flex flex-col gap-0.5 pb-1 pl-3">
-                  {RECAP_SUB_ITEMS.map((item) => {
-                    const isSubActive = activeRecapSub === item.key;
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => handleRecapSubClick(item.key)}
-                        className={cn(
-                          "rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400",
-                          isSubActive
-                            ? "bg-white font-medium text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:bg-gray-200/70 hover:text-gray-800",
-                        )}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* ---- Mobile horizontal tabs (sticky to the top while scrolling) ---- */}
-      <div className="sticky top-0 z-20 -mx-4 bg-gray-100/95 px-4 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:hidden">
-        <nav
-          className="flex gap-1 overflow-x-auto scrollbar-hide"
-          aria-label="Room tabs"
-        >
-          {visibleTabs.map((tab) => {
-            const isActive = activeTab === tab;
-            const isRecap = tab === "meeting_brief";
-
-            return (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => handleMobileTabClick(tab)}
-                className={cn(
-                  "relative flex shrink-0 items-center gap-1 whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-inset",
-                  isActive
-                    ? "text-gray-900"
-                    : "text-gray-500 hover:text-gray-700",
-                )}
-              >
-                {MAIN_TAB_LABELS[tab]}
-                {isRecap && (
-                  <ChevronDown
-                    className={cn(
-                      "h-3 w-3 transition-transform duration-200",
-                      mobileRecapOpen && "rotate-180",
-                    )}
-                  />
-                )}
-                {isActive && (
-                  <span className="absolute inset-x-0 -bottom-px h-0.5 bg-gray-900" />
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {mobileRecapOpen && (
-          <div className="absolute left-0 right-0 z-20 bg-white shadow-md">
-            <div className="flex flex-col px-2 py-1">
-              {RECAP_SUB_ITEMS.map((item) => {
-                const isSubActive =
-                  activeRecapSub === item.key && activeTab === "meeting_brief";
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => handleRecapSubClick(item.key)}
-                    className={cn(
-                      "rounded-md px-4 py-2.5 text-left text-sm transition-colors",
-                      isSubActive
-                        ? "bg-gray-100 font-medium text-gray-900"
-                        : "text-gray-600 hover:bg-gray-50",
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ---- Tab content ---- */}
-      <div className="min-w-0 flex-1 py-6 lg:py-2">
-        {activeTab === "meeting_brief" &&
-          activeRecapSub === "what_we_discussed" && (
-            <TabMeetingBrief meetingBrief={data.meeting_brief} />
-          )}
-        {activeTab === "meeting_brief" && activeRecapSub === "next_steps" && (
+      return (
+        <div className="space-y-10">
+          <TabMeetingBrief meetingBrief={data.meeting_brief} />
           <TabNextSteps
             nextSteps={data.meeting_brief?.next_steps ?? ""}
             customerLogoUrl={data.room.logo_url}
             customerName={data.room.company_name}
           />
-        )}
-        {isOverviewTab(activeTab) && (
-          <OverviewTabRenderer
-            subTab={getOverviewTab(activeTab)}
-            assets={data.assets}
-          />
-        )}
-        {activeTab === "customers_references" && (
-          <div className="space-y-12">
-            <CustomersReferences references={data.customer_references} />
-            {data.case_studies.length > 0 && (
-              <TabCaseStudies caseStudies={data.case_studies} />
+        </div>
+      );
+    }
+    if (isOverviewTab(tab)) {
+      return (
+        <OverviewTabRenderer
+          subTab={getOverviewTab(tab)}
+          assets={data.assets}
+        />
+      );
+    }
+    if (tab === "pricing") {
+      return (
+        <TabPricing
+          pricing={data.pricing}
+          companyName={data.room.company_name}
+        />
+      );
+    }
+    if (tab === "customers_references") {
+      return (
+        <div className="space-y-12">
+          <CustomersReferences references={data.customer_references} />
+          {data.case_studies.length > 0 && (
+            <TabCaseStudies caseStudies={data.case_studies} />
+          )}
+        </div>
+      );
+    }
+    if (tab === "comparison") {
+      return (
+        <TabComparisons
+          competitors={
+            data.room.comparison_competitors ?? ["appsflyer", "adjust", "branch"]
+          }
+        />
+      );
+    }
+    if (tab === "getting_started") {
+      return <TabGettingStarted gettingStarted={data.getting_started} />;
+    }
+    return null;
+  }
+
+  const num = (i: number) => `p.${String(i + 1).padStart(2, "0")}`;
+
+  return (
+    <div className="flex flex-col lg:flex-row lg:gap-8">
+      {/* ---- Desktop: numbered page index (sticky) ---- */}
+      <nav
+        className="hidden lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100dvh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:self-start lg:overflow-y-auto lg:pr-2 lg:pt-2"
+        aria-label="Room pages"
+      >
+        {visibleTabs.map((tab, i) => {
+          const active = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => scrollTo(tab)}
+              className={cn(
+                "group flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
+                active ? "" : "hover:bg-black/[0.04]",
+              )}
+              style={
+                active
+                  ? { backgroundColor: "var(--brand-primary-light, #eef2ff)" }
+                  : undefined
+              }
+            >
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                <span
+                  className="h-2 w-2 rounded-full transition-all"
+                  style={
+                    active
+                      ? {
+                          backgroundColor: "var(--brand-primary)",
+                          boxShadow:
+                            "0 0 0 4px color-mix(in srgb, var(--brand-primary) 20%, transparent)",
+                        }
+                      : { backgroundColor: "#cbd5e1" }
+                  }
+                />
+              </span>
+              <span
+                className="font-mono text-xs"
+                style={{
+                  color: active ? "var(--brand-primary)" : "#9ca3af",
+                }}
+              >
+                {num(i)}
+              </span>
+              <span
+                className={cn(
+                  "text-sm",
+                  active
+                    ? "font-bold text-gray-900"
+                    : "text-gray-600 group-hover:text-gray-900",
+                )}
+              >
+                {MAIN_TAB_LABELS[tab]}
+              </span>
+            </button>
+          );
+        })}
+
+        <div className="mt-4 border-t border-gray-200 pt-3">
+          <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+            Powered by
+          </p>
+          <p className="px-3 text-sm font-bold text-gray-900">Linkrunner</p>
+        </div>
+      </nav>
+
+      {/* ---- Mobile: sticky horizontal page bar ---- */}
+      <div className="sticky top-0 z-20 -mx-4 mb-4 flex gap-1 overflow-x-auto border-b border-gray-200 bg-gray-100/95 px-4 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:hidden">
+        {visibleTabs.map((tab) => {
+          const active = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => scrollTo(tab)}
+              className={cn(
+                "relative shrink-0 whitespace-nowrap px-3 py-3 text-sm transition-colors",
+                active ? "font-semibold text-gray-900" : "text-gray-500",
+              )}
+            >
+              {MAIN_TAB_LABELS[tab]}
+              {active && (
+                <span
+                  className="absolute inset-x-2 -bottom-px h-0.5 rounded-full"
+                  style={{ backgroundColor: "var(--brand-primary)" }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ---- Stacked, scrollable sections ---- */}
+      <div className="min-w-0 flex-1">
+        {visibleTabs.map((tab, i) => (
+          <section
+            key={tab}
+            id={tab}
+            ref={(el) => {
+              sectionRefs.current[tab] = el;
+            }}
+            className={cn(
+              "scroll-mt-4 py-8 lg:py-10",
+              i < visibleTabs.length - 1 && "border-b border-gray-200/70",
             )}
-          </div>
-        )}
-        {activeTab === "pricing" && (
-          <TabPricing pricing={data.pricing} companyName={data.room.company_name} />
-        )}
-        {activeTab === "comparison" && (
-          <TabComparisons competitors={data.room.comparison_competitors ?? ["appsflyer", "adjust", "branch"]} />
-        )}
-        {activeTab === "getting_started" && (
-          <TabGettingStarted gettingStarted={data.getting_started} />
-        )}
+          >
+            {renderSection(tab)}
+          </section>
+        ))}
       </div>
     </div>
-
-      {nextPage && (
-        <div className="pointer-events-none sticky bottom-6 z-30 mt-4 flex justify-center">
-          <button
-            type="button"
-            onClick={goToNextPage}
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur-sm transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            style={{ backgroundColor: "var(--brand-primary)" }}
-          >
-            Go to next page
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-    </>
   );
 }
 
@@ -388,8 +277,6 @@ function OverviewTabRenderer({
 function computeVisibleTabs(data: RoomWithContent): MainTabKey[] {
   const tabs: MainTabKey[] = [...ALWAYS_VISIBLE_TABS];
 
-  // "Our Customers and Case Studies" merges the two sections: show the tab when
-  // either customer references or case studies are enabled.
   if (
     data.room.tab_customers_references_visible ||
     data.room.tab_case_studies_visible
