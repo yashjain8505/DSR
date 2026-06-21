@@ -140,7 +140,6 @@ export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] =
   { name: "KreditPe", logo_url: "/logos/kreditpe.png" },
   { name: "Cash247", logo_url: "/logos/cash247.png" },
   { name: "Bounce Daily", logo_url: "/logos/bounce-daily.png" },
-  { name: "Pronto", logo_url: "/logos/pronto.png" },
   { name: "Zypp Electric", logo_url: "/logos/zypp-electric.png" },
   { name: "Meatigo", logo_url: "/logos/meatigo.png" },
   { name: "Playo", logo_url: "/logos/playo.png" },
@@ -153,6 +152,10 @@ export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] =
   { name: "Sid's Farm", logo_url: "/logos/sids-farm.png" },
   { name: "Zavo", logo_url: "/logos/zavo.png" },
   { name: "1% Club", logo_url: "/logos/one-percent-club.png" },
+  { name: "August AI", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/august-ai.png" },
+  { name: "Grapevine", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/grapevine.png" },
+  { name: "Lakmé", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/lakme.png" },
+  { name: "Ferry Scanners", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/ferryscanner.png" },
 ];
 
 /**
