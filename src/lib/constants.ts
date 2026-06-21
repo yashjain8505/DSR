@@ -155,6 +155,30 @@ export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] =
 ];
 
 /**
+ * Play Store links for customer reference logos, keyed by the reference `name`.
+ * Clicking a logo on the customer wall opens the customer's Play Store page.
+ */
+export const CUSTOMER_PLAY_STORE_LINKS: Record<string, string> = {
+  Playo: "https://play.google.com/store/apps/details?id=com.techmash.playo",
+  "Zypp Electric": "https://play.google.com/store/apps/details?id=com.zyppdelivery",
+  Meatigo: "https://play.google.com/store/apps/details?id=com.urbanpiper.meatigo",
+  "August AI": "https://play.google.com/store/apps/details?id=com.augustai.mobileapp",
+  Grapevine: "https://play.google.com/store/apps/details?id=com.app.gvine",
+  Lakmé: "https://play.google.com/store/apps/details?id=com.lakme.lakmesalon",
+  "Ferry Scanners": "https://play.google.com/store/apps/details?id=com.ferryscanner.mobile",
+  "Sid's Farm": "https://play.google.com/store/apps/details?id=com.sidsfarm.customer",
+  abcoffee: "https://play.google.com/store/apps/details?id=com.abcoffee",
+  CashBook: "https://play.google.com/store/apps/details?id=gn.cashbook",
+  "1% Club": "https://play.google.com/store/apps/details?id=com.freedom.android",
+  "Astro 247": "https://play.google.com/store/apps/details?id=com.aroha.astrochat",
+  "Bounce Daily": "https://play.google.com/store/apps/details?id=com.bouncedaily.app",
+  Matiks: "https://play.google.com/store/apps/details?id=com.matiks.app",
+  "Urban Money": "https://play.google.com/store/apps/details?id=com.sqyrd.umpartner",
+  "Jumbo Gaming": "https://play.google.com/store/apps/details?id=com.joinjumbo",
+  Zavo: "https://play.google.com/store/apps/details?id=com.zavo.app",
+};
+
+/**
  * Default case studies seeded into every new room.
  * Sourced from linkrunner.io/customer-stories. Admin can toggle visibility.
  */

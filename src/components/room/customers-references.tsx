@@ -1,5 +1,6 @@
 "use client";
 
+import { CUSTOMER_PLAY_STORE_LINKS } from "@/lib/constants";
 import type { CustomerReference } from "@/lib/types";
 
 interface CustomersReferencesProps {
@@ -66,22 +67,40 @@ export function CustomersReferences({ references }: CustomersReferencesProps) {
 
       <div className="rounded-2xl bg-white p-4 sm:p-8">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
-          {visible.map((ref) => (
-            <div
-              key={ref.id}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-4"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={ref.logo_url}
-                alt={ref.name}
-                className="max-h-10 max-w-[130px] object-contain"
-              />
-              <span className="text-xs font-medium text-gray-500">
-                {ref.name}
-              </span>
-            </div>
-          ))}
+          {visible.map((ref) => {
+            const link = CUSTOMER_PLAY_STORE_LINKS[ref.name];
+            const cardClass =
+              "flex flex-col items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-4";
+            const inner = (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={ref.logo_url}
+                  alt={ref.name}
+                  className="max-h-10 max-w-[130px] object-contain"
+                />
+                <span className="text-xs font-medium text-gray-500">
+                  {ref.name}
+                </span>
+              </>
+            );
+            return link ? (
+              <a
+                key={ref.id}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${cardClass} transition-colors hover:bg-gray-200`}
+                title={`${ref.name} on the Play Store`}
+              >
+                {inner}
+              </a>
+            ) : (
+              <div key={ref.id} className={cardClass}>
+                {inner}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
