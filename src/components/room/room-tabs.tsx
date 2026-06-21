@@ -276,10 +276,23 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
               sectionRefs.current[tab] = el;
             }}
             className={cn(
-              "scroll-mt-4 py-8 lg:py-10",
-              i < visibleTabs.length - 1 && "border-b border-gray-300",
+              "scroll-mt-4 py-10 lg:py-14",
+              i > 0 && "border-t-2 border-gray-300",
             )}
           >
+            {/* Section eyebrow — clear marker for the start of each page */}
+            <div className="mb-8 flex items-center gap-2.5">
+              <span
+                className="font-mono text-xs font-bold"
+                style={{ color: "var(--brand-primary)" }}
+              >
+                {num(i)}
+              </span>
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+                {MAIN_TAB_LABELS[tab]}
+              </span>
+              <span className="h-px flex-1 bg-gray-200" />
+            </div>
             {renderSection(tab)}
           </section>
         ))}
