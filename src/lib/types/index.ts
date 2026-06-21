@@ -22,6 +22,8 @@ export interface Room {
   notes: string;
   /** Optional until migration 007 has been applied. */
   restrict_access?: boolean;
+  /** Page keys hidden in this room (migration 011). Optional until applied. */
+  hidden_sections?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -405,6 +407,7 @@ export interface UpdateRoomPayload {
   brand_secondary_color?: string | null;
   notes?: string;
   restrict_access?: boolean;
+  hidden_sections?: string[];
 }
 
 /**

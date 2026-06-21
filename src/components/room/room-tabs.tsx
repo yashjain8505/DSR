@@ -42,6 +42,8 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
   const visibleTabs = computeVisibleTabs(data);
   const [activeTab, setActiveTab] = useState<MainTabKey>(visibleTabs[0]);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const hidden = new Set(data.room.hidden_sections ?? []);
+  const recapSubs = RECAP_SUBS.filter((s) => !hidden.has(s.id));
 
   // Scroll-spy: the section nearest the middle of the viewport is "active".
   useEffect(() => {
@@ -91,16 +93,20 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     if (tab === "meeting_brief") {
       return (
         <div className="space-y-10">
-          <div id="recap_discussed" className="scroll-mt-4">
-            <TabMeetingBrief meetingBrief={data.meeting_brief} />
-          </div>
-          <div id="recap_next_steps" className="scroll-mt-4">
-            <TabNextSteps
-              nextSteps={data.meeting_brief?.next_steps ?? ""}
-              customerLogoUrl={data.room.logo_url}
-              customerName={data.room.company_name}
-            />
-          </div>
+          {!hidden.has("recap_discussed") && (
+            <div id="recap_discussed" className="scroll-mt-4">
+              <TabMeetingBrief meetingBrief={data.meeting_brief} />
+            </div>
+          )}
+          {!hidden.has("recap_next_steps") && (
+            <div id="recap_next_steps" className="scroll-mt-4">
+              <TabNextSteps
+                nextSteps={data.meeting_brief?.next_steps ?? ""}
+                customerLogoUrl={data.room.logo_url}
+                customerName={data.room.company_name}
+              />
+            </div>
+          )}
         </div>
       );
     }
@@ -208,9 +214,9 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
                 </span>
               </button>
 
-              {tab === "meeting_brief" && (
+              {tab === "meeting_brief" && recapSubs.length > 0 && (
                 <div className="ml-[26px] mt-0.5 flex flex-col gap-0.5 border-l border-gray-300/70 pl-3">
-                  {RECAP_SUBS.map((s) => (
+                  {recapSubs.map((s) => (
                     <button
                       key={s.id}
                       type="button"
@@ -309,21 +315,27 @@ function OverviewTabRenderer({
 /* ------------------------------------------------------------------ */
 
 function computeVisibleTabs(data: RoomWithContent): MainTabKey[] {
-  const r = data.room;
-  const tabs: MainTabKey[] = [
+  const hidden = new Set(data.room.hidden_sections ?? []);
+  // Fixed order; Integrations / Security & Compliance / How It Works pinned last.
+  const order: MainTabKey[] = [
     "meeting_brief",
     "what_is_linkrunner",
     "product_demo",
     "features",
     "company_deck",
     "pricing",
+    "customers_references",
+    "comparison",
+    "getting_started",
+    "integrations",
+    "security_compliance",
+    "how_it_works",
   ];
-  if (r.tab_customers_references_visible || r.tab_case_studies_visible) {
-    tabs.push("customers_references");
-  }
-  if (r.tab_comparison_visible) tabs.push("comparison");
-  if (r.tab_getting_started_visible) tabs.push("getting_started");
-  // Pinned to the end, in this order: third-last, second-last, last.
-  tabs.push("integrations", "security_compliance", "how_it_works");
-  return tabs;
+  return order.filter((t) => {
+    if (t === "meeting_brief") {
+      // Recap shows if at least one of its sub-pages is visible.
+      return !(hidden.has("recap_discussed") && hidden.has("recap_next_steps"));
+    }
+    return !hidden.has(t);
+  });
 }

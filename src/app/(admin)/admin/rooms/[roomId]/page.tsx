@@ -9,6 +9,23 @@ import { Toggle } from "@/components/ui/toggle";
 import { Dialog } from "@/components/ui/dialog";
 import type { Room, RoomAccessEntry } from "@/lib/types";
 
+/** Every page a room can show, in display order, for the visibility toggles. */
+const PAGE_TOGGLES: { key: string; label: string }[] = [
+  { key: "recap_discussed", label: "Recap: What we discussed so far" },
+  { key: "recap_next_steps", label: "Recap: Next Steps" },
+  { key: "what_is_linkrunner", label: "What is Linkrunner" },
+  { key: "product_demo", label: "Product Demo" },
+  { key: "features", label: "Features" },
+  { key: "company_deck", label: "Company Deck" },
+  { key: "pricing", label: "Pricing" },
+  { key: "customers_references", label: "Our Customers and Case Studies" },
+  { key: "comparison", label: "How We Compare" },
+  { key: "getting_started", label: "Getting Started" },
+  { key: "integrations", label: "Integrations" },
+  { key: "security_compliance", label: "Security & Compliance" },
+  { key: "how_it_works", label: "How It Works" },
+];
+
 export default function RoomSettingsPage() {
   const { roomId } = useParams<{ roomId: string }>();
   const router = useRouter();
@@ -37,6 +54,7 @@ export default function RoomSettingsPage() {
   const [compareBranch, setCompareBranch] = useState(true);
   const [brandColor, setBrandColor] = useState("");
   const [secondaryColor, setSecondaryColor] = useState("");
+  const [hiddenSections, setHiddenSections] = useState<string[]>([]);
 
   // Access control
   const [restrictAccess, setRestrictAccess] = useState(false);
@@ -72,6 +90,7 @@ export default function RoomSettingsPage() {
         setBrandColor(r.brand_primary_color ?? "");
         setSecondaryColor(r.brand_secondary_color ?? "");
         setRestrictAccess(r.restrict_access ?? false);
+        setHiddenSections(r.hidden_sections ?? []);
       } catch {
         setError("Failed to load room");
       } finally {
@@ -92,6 +111,29 @@ export default function RoomSettingsPage() {
     fetchRoom();
     fetchAccessList();
   }, [roomId]);
+
+  async function togglePage(key: string, visible: boolean) {
+    const prev = hiddenSections;
+    const next = visible
+      ? hiddenSections.filter((k) => k !== key)
+      : [...new Set([...hiddenSections, key])];
+    setHiddenSections(next);
+    try {
+      const res = await fetch(`/api/rooms/${roomId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden_sections: next }),
+      });
+      if (!res.ok) throw new Error();
+      setSuccess("Page visibility updated");
+      setTimeout(() => setSuccess(""), 2000);
+    } catch {
+      setHiddenSections(prev);
+      setError(
+        "Failed to update page visibility (has migration 011 been applied?)",
+      );
+    }
+  }
 
   async function handleToggleRestrictAccess(value: boolean) {
     setAccessError("");
@@ -314,36 +356,23 @@ export default function RoomSettingsPage() {
           </div>
         </section>
 
-        {/* Tab visibility */}
+        {/* Page visibility */}
         <section className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
-            Tab Visibility
+          <h2 className="mb-1 text-lg font-semibold text-gray-900">
+            Page Visibility
           </h2>
           <p className="mb-4 text-sm text-gray-500">
-            Meeting Brief, Product, Why Linkrunner, and Pricing are always
-            visible. Toggle additional tabs below.
+            Toggle any page on or off for this room. Changes save immediately.
           </p>
           <div className="flex flex-col gap-3">
-            <Toggle
-              checked={tabCustomersReferences}
-              onChange={setTabCustomersReferences}
-              label="Our Customers & References"
-            />
-            <Toggle
-              checked={tabCaseStudies}
-              onChange={setTabCaseStudies}
-              label="Case Studies"
-            />
-            <Toggle
-              checked={tabComparison}
-              onChange={setTabComparison}
-              label="How We Compare"
-            />
-            <Toggle
-              checked={tabGettingStarted}
-              onChange={setTabGettingStarted}
-              label="Getting Started"
-            />
+            {PAGE_TOGGLES.map((p) => (
+              <Toggle
+                key={p.key}
+                checked={!hiddenSections.includes(p.key)}
+                onChange={(v) => togglePage(p.key, v)}
+                label={p.label}
+              />
+            ))}
           </div>
         </section>
 
