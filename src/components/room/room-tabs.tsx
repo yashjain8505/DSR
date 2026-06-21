@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
-  ALWAYS_VISIBLE_TABS,
   MAIN_TAB_LABELS,
   OVERVIEW_SUB_TAB_KEYS,
   type MainTabKey,
@@ -152,7 +151,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     <div className="flex flex-col lg:flex-row lg:gap-8">
       {/* ---- Desktop: numbered page index (sticky) ---- */}
       <nav
-        className="hidden lg:sticky lg:top-4 lg:flex lg:h-[calc(100dvh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:self-start lg:overflow-y-auto lg:rounded-xl lg:px-2 lg:py-3"
+        className="hidden lg:sticky lg:top-4 lg:flex lg:h-[calc(100dvh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:self-start lg:overflow-y-auto lg:border-r lg:border-gray-300 lg:px-2 lg:py-3 lg:pr-4"
         aria-label="Room pages"
         style={{
           backgroundImage:
@@ -272,7 +271,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
             }}
             className={cn(
               "scroll-mt-4 py-8 lg:py-10",
-              i < visibleTabs.length - 1 && "border-b border-gray-200/70",
+              i < visibleTabs.length - 1 && "border-b border-gray-300",
             )}
           >
             {renderSection(tab)}
@@ -310,20 +309,21 @@ function OverviewTabRenderer({
 /* ------------------------------------------------------------------ */
 
 function computeVisibleTabs(data: RoomWithContent): MainTabKey[] {
-  const tabs: MainTabKey[] = [...ALWAYS_VISIBLE_TABS];
-
-  if (
-    data.room.tab_customers_references_visible ||
-    data.room.tab_case_studies_visible
-  ) {
+  const r = data.room;
+  const tabs: MainTabKey[] = [
+    "meeting_brief",
+    "what_is_linkrunner",
+    "product_demo",
+    "features",
+    "company_deck",
+    "pricing",
+  ];
+  if (r.tab_customers_references_visible || r.tab_case_studies_visible) {
     tabs.push("customers_references");
   }
-  if (data.room.tab_comparison_visible) {
-    tabs.push("comparison");
-  }
-  if (data.room.tab_getting_started_visible) {
-    tabs.push("getting_started");
-  }
-
+  if (r.tab_comparison_visible) tabs.push("comparison");
+  if (r.tab_getting_started_visible) tabs.push("getting_started");
+  // Pinned to the end, in this order: third-last, second-last, last.
+  tabs.push("integrations", "security_compliance", "how_it_works");
   return tabs;
 }
