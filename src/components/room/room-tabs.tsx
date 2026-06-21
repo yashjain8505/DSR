@@ -28,6 +28,12 @@ function isOverviewTab(tab: MainTabKey): tab is OverviewSubTabKey {
   return (OVERVIEW_SUB_TAB_KEYS as readonly string[]).includes(tab);
 }
 
+/** Sub-items shown under the Recap page in the index. */
+const RECAP_SUBS = [
+  { id: "recap_discussed", label: "What we discussed so far" },
+  { id: "recap_next_steps", label: "Next Steps" },
+] as const;
+
 /**
  * Prospect room content: every section is stacked into one continuous scroll.
  * The left rail is a sticky, numbered page index (p.01, p.02 …) that highlights
@@ -72,6 +78,12 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     }).catch(() => {});
   }
 
+  function scrollToId(id: string) {
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function getOverviewTab(tab: OverviewSubTabKey): OverviewSubTab | null {
     return data.overview_sub_tabs.find((t) => t.sub_tab_key === tab) ?? null;
   }
@@ -80,12 +92,16 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     if (tab === "meeting_brief") {
       return (
         <div className="space-y-10">
-          <TabMeetingBrief meetingBrief={data.meeting_brief} />
-          <TabNextSteps
-            nextSteps={data.meeting_brief?.next_steps ?? ""}
-            customerLogoUrl={data.room.logo_url}
-            customerName={data.room.company_name}
-          />
+          <div id="recap_discussed" className="scroll-mt-4">
+            <TabMeetingBrief meetingBrief={data.meeting_brief} />
+          </div>
+          <div id="recap_next_steps" className="scroll-mt-4">
+            <TabNextSteps
+              nextSteps={data.meeting_brief?.next_steps ?? ""}
+              customerLogoUrl={data.room.logo_url}
+              customerName={data.room.company_name}
+            />
+          </div>
         </div>
       );
     }
@@ -136,63 +152,82 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     <div className="flex flex-col lg:flex-row lg:gap-8">
       {/* ---- Desktop: numbered page index (sticky) ---- */}
       <nav
-        className="hidden lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100dvh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:self-start lg:overflow-y-auto lg:pr-2 lg:pt-2"
+        className="hidden lg:sticky lg:top-4 lg:flex lg:h-[calc(100dvh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-0.5 lg:self-start lg:overflow-y-auto lg:rounded-xl lg:px-2 lg:py-3"
         aria-label="Room pages"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(15,23,42,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.05) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+        }}
       >
         {visibleTabs.map((tab, i) => {
           const active = activeTab === tab;
           return (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => scrollTo(tab)}
-              className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
-                active ? "" : "hover:bg-black/[0.04]",
-              )}
-              style={
-                active
-                  ? { backgroundColor: "var(--brand-primary-light, #eef2ff)" }
-                  : undefined
-              }
-            >
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                <span
-                  className="h-2 w-2 rounded-full transition-all"
-                  style={
-                    active
-                      ? {
-                          backgroundColor: "var(--brand-primary)",
-                          boxShadow:
-                            "0 0 0 4px color-mix(in srgb, var(--brand-primary) 20%, transparent)",
-                        }
-                      : { backgroundColor: "#cbd5e1" }
-                  }
-                />
-              </span>
-              <span
-                className="font-mono text-xs"
-                style={{
-                  color: active ? "var(--brand-primary)" : "#9ca3af",
-                }}
-              >
-                {num(i)}
-              </span>
-              <span
+            <div key={tab}>
+              <button
+                type="button"
+                onClick={() => scrollTo(tab)}
                 className={cn(
-                  "text-sm",
-                  active
-                    ? "font-bold text-gray-900"
-                    : "text-gray-600 group-hover:text-gray-900",
+                  "group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
+                  active ? "" : "hover:bg-black/[0.04]",
                 )}
+                style={
+                  active
+                    ? { backgroundColor: "var(--brand-primary-light, #eef2ff)" }
+                    : undefined
+                }
               >
-                {MAIN_TAB_LABELS[tab]}
-              </span>
-            </button>
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                  <span
+                    className="h-2 w-2 rounded-full transition-all"
+                    style={
+                      active
+                        ? {
+                            backgroundColor: "var(--brand-primary)",
+                            boxShadow:
+                              "0 0 0 4px color-mix(in srgb, var(--brand-primary) 20%, transparent)",
+                          }
+                        : { backgroundColor: "#cbd5e1" }
+                    }
+                  />
+                </span>
+                <span
+                  className="font-mono text-xs"
+                  style={{ color: active ? "var(--brand-primary)" : "#9ca3af" }}
+                >
+                  {num(i)}
+                </span>
+                <span
+                  className={cn(
+                    "text-sm",
+                    active
+                      ? "font-bold text-gray-900"
+                      : "text-gray-600 group-hover:text-gray-900",
+                  )}
+                >
+                  {MAIN_TAB_LABELS[tab]}
+                </span>
+              </button>
+
+              {tab === "meeting_brief" && (
+                <div className="ml-[26px] mt-0.5 flex flex-col gap-0.5 border-l border-gray-300/70 pl-3">
+                  {RECAP_SUBS.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => scrollToId(s.id)}
+                      className="rounded-md px-2 py-1 text-left text-[13px] text-gray-500 transition-colors hover:bg-black/[0.04] hover:text-gray-800"
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           );
         })}
 
-        <div className="mt-4 border-t border-gray-200 pt-3">
+        <div className="mt-auto pt-4">
           <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
             Powered by
           </p>

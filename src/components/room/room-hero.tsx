@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Handshake, Mail, Phone } from "lucide-react";
+import { ChevronDown, Mail, Phone } from "lucide-react";
 
 interface RoomHeroProps {
   companyName: string;
@@ -111,11 +111,17 @@ export function RoomHero({
                 className="h-12 w-12 object-contain sm:h-16 sm:w-16"
               />
             </div>
-            <Handshake
-              className="h-7 w-7 text-white sm:h-8 sm:w-8"
-              strokeWidth={1.5}
-              aria-label="x"
-            />
+            <span
+              className="text-3xl sm:text-4xl"
+              style={{
+                filter:
+                  "brightness(1.25) saturate(1.15) drop-shadow(0 1px 3px rgba(0,0,0,0.25))",
+              }}
+              role="img"
+              aria-label="handshake"
+            >
+              🤝
+            </span>
             {logoUrl ? (
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg sm:h-20 sm:w-20">
                 <img

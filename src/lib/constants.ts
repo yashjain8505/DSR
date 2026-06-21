@@ -173,8 +173,8 @@ export const CUSTOMER_PLAY_STORE_LINKS: Record<string, string> = {
   "Astro 247": "https://play.google.com/store/apps/details?id=com.aroha.astrochat",
   "Bounce Daily": "https://play.google.com/store/apps/details?id=com.bouncedaily.app",
   Matiks: "https://play.google.com/store/apps/details?id=com.matiks.app",
-  "Urban Money": "https://play.google.com/store/apps/details?id=com.sqyrd.umpartner",
-  "Jumbo Gaming": "https://play.google.com/store/apps/details?id=com.joinjumbo",
+  "Urban Money": "https://play.google.com/store/apps/details?id=com.urbanhmpl",
+  "Jumbo Gaming": "https://play.google.com/store/apps/details?id=com.joinjumbo.pro",
   Zavo: "https://play.google.com/store/apps/details?id=com.zavo.app",
 };
 

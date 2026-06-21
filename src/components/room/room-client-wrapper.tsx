@@ -102,15 +102,10 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
         />
       </div>
 
-      {/* Tab content area — grid-line backdrop */}
+      {/* Tab content area */}
       <div
         ref={contentRef}
-        className="min-h-screen snap-start bg-gray-100"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, rgba(15,23,42,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.05) 1px, transparent 1px)",
-          backgroundSize: "72px 72px",
-        }}
+        className="min-h-screen snap-start snap-always bg-gray-100"
       >
         <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
           <RoomTabs data={data} visitorId={visitorId} />
