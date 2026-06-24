@@ -65,7 +65,7 @@ export function RoomHero({
       className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-6"
       style={{
         background:
-          "linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary) 35%, color-mix(in srgb, var(--brand-primary) 50%, #4d4bf7 50%) 65%, #4d4bf7 100%)",
+          "linear-gradient(135deg, #4d4bf7 0%, #4d4bf7 40%, #5b59f9 70%, #6e6cff 100%)",
       }}
     >
       {/* Subtle dot pattern overlay */}
@@ -94,7 +94,7 @@ export function RoomHero({
         className="pointer-events-none absolute inset-0 opacity-30"
         style={{
           background:
-            "radial-gradient(ellipse 70% 55% at 80% 75%, var(--brand-secondary) 0%, transparent 65%)",
+            "radial-gradient(ellipse 70% 55% at 80% 75%, #6e6cff 0%, transparent 65%)",
         }}
       />
 
@@ -166,7 +166,7 @@ export function RoomHero({
               type="button"
               onClick={onScrollDown}
               className="inline-flex items-center gap-2 rounded-full bg-white/95 px-7 py-3 text-sm font-semibold shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-white hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
-              style={{ color: "var(--brand-primary)" }}
+              style={{ color: "#4d4bf7" }}
             >
               Explore Your Room
               <ChevronDown className="h-4 w-4" />
