@@ -17,9 +17,9 @@ import { normalizePricingData } from "@/lib/types";
 /* ------------------------------------------------------------------ */
 
 const DEFAULT_RANGES: RangeTier[] = [
-  { min_volume: 0, max_volume: 100_000, per_install_price: 0.9 },
+  { min_volume: 0, max_volume: 50_000, per_install_price: 1 },
+  { min_volume: 50_000, max_volume: 100_000, per_install_price: 0.9 },
   { min_volume: 100_000, max_volume: 500_000, per_install_price: 0.8 },
-  { min_volume: 500_000, max_volume: 1_000_000, per_install_price: 0.7 },
 ];
 
 const DEFAULT_COMPETITORS: CompetitorPricing[] = [

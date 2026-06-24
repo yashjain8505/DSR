@@ -120,7 +120,7 @@ export default function PricingEditorPage() {
                 Math.round((last.per_install_price - 0.1) * 100) / 100,
               ),
             }
-          : { min_volume: 0, max_volume: 100000, per_install_price: 0.9 },
+          : { min_volume: 0, max_volume: 50000, per_install_price: 1 },
       ];
     });
   }
