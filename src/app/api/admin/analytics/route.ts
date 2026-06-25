@@ -30,36 +30,51 @@ export async function GET(request: NextRequest) {
     const admin = createAdminClient();
 
     // Run all queries in parallel
-    const [roomsResult, eventsResult, visitsResult, visitorsResult] =
-      await Promise.all([
-        admin
-          .from("rooms")
-          .select("id, slug, company_name, logo_url, created_at")
-          .order("created_at", { ascending: false }),
+    const [
+      roomsResult,
+      eventsResult,
+      visitsResult,
+      visitorsResult,
+      internalResult,
+    ] = await Promise.all([
+      admin
+        .from("rooms")
+        .select("id, slug, company_name, logo_url, created_at")
+        .order("created_at", { ascending: false }),
 
-        admin
-          .from("analytics_events")
-          .select("room_id, visitor_id, event_type, created_at")
-          .gte("created_at", since),
+      admin
+        .from("analytics_events")
+        .select("room_id, visitor_id, event_type, event_data, created_at")
+        .gte("created_at", since),
 
-        admin
-          .from("room_visits")
-          .select(
-            "room_id, visitor_id, last_visited_at, visitors!inner(id, email, name, company)"
-          )
-          .order("last_visited_at", { ascending: false }),
+      admin
+        .from("room_visits")
+        .select(
+          "room_id, visitor_id, last_visited_at, visitors!inner(id, email, name, company)"
+        )
+        .order("last_visited_at", { ascending: false }),
 
-        admin
-          .from("visitors")
-          .select("id, email, name, company, created_at")
-          .order("created_at", { ascending: false })
-          .limit(200),
-      ]);
+      admin
+        .from("visitors")
+        .select("id, email, name, company, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200),
+
+      // Internal testing accounts — excluded from every metric below.
+      admin.from("visitors").select("id").ilike("email", "%@linkrunner.io"),
+    ]);
 
     const rooms = roomsResult.data ?? [];
-    const events = eventsResult.data ?? [];
     const visits = visitsResult.data ?? [];
     const visitors = visitorsResult.data ?? [];
+
+    // Exclude @linkrunner.io visitors (internal testing) from all analytics.
+    const internalIds = new Set(
+      (internalResult.data ?? []).map((v) => v.id)
+    );
+    const events = (eventsResult.data ?? []).filter(
+      (ev) => !(ev.visitor_id && internalIds.has(ev.visitor_id))
+    );
 
     // --- Single-pass event aggregation ---
 
@@ -69,6 +84,8 @@ export async function GET(request: NextRequest) {
     const roomVideoPlays = new Map<string, number>();
     const roomUniqueVisitors = new Map<string, Set<string>>();
     const roomDailyPageViews = new Map<string, Map<string, number>>();
+    // Active engaged seconds per visitor, summed from time_on_tab deltas.
+    const visitorActiveSeconds = new Map<string, number>();
     const dailyBuckets = new Map<
       string,
       Record<string, number>
@@ -103,6 +120,19 @@ export async function GET(request: NextRequest) {
         visSet.add(ev.visitor_id);
         roomUniqueVisitors.set(rid, visSet);
         allUniqueVisitors.add(ev.visitor_id);
+
+        // Engaged time (active, visible seconds) from the tracker.
+        if (ev.event_type === "time_on_tab") {
+          const secs = Number(
+            (ev.event_data as { seconds?: number } | null)?.seconds ?? 0
+          );
+          if (secs > 0) {
+            visitorActiveSeconds.set(
+              ev.visitor_id,
+              (visitorActiveSeconds.get(ev.visitor_id) ?? 0) + secs
+            );
+          }
+        }
       }
 
       // Daily page views per room (for sparklines)
@@ -216,6 +246,7 @@ export async function GET(request: NextRequest) {
     >();
     for (const v of visits) {
       const vid = v.visitor_id;
+      if (internalIds.has(vid)) continue; // skip @linkrunner.io
       const existing = visitorRoomMap.get(vid);
       const roomEntry = {
         room_id: v.room_id,
@@ -254,11 +285,13 @@ export async function GET(request: NextRequest) {
       const visitor = visitorMap.get(vid);
       if (!visitor) continue;
       recentVisitors.push({
+        visitor_id: vid,
         email: visitor.email,
         name: visitor.name,
         company: visitor.company,
         rooms_visited: data.rooms,
         total_events: visitorEventCount.get(vid) ?? 0,
+        active_seconds: visitorActiveSeconds.get(vid) ?? 0,
         last_active: data.lastActive,
       });
     }

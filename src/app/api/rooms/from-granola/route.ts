@@ -69,6 +69,19 @@ export async function POST(request: Request) {
     const prospect = prospects[0] ?? null;
     const companyName = meeting.company_name || prospect?.company || "Unknown";
 
+    // Every external attendee's email, deduped. These are auto-granted access
+    // to the room below, so an admin never has to invite them by hand.
+    const attendeeEmails = Array.from(
+      new Set(
+        prospects
+          .map((p) => p.email?.trim().toLowerCase())
+          .filter(
+            (e): e is string =>
+              !!e && e.includes("@") && !e.endsWith("@linkrunner.io")
+          )
+      )
+    );
+
     // 3. Extract brand assets (logo + color) from prospect's website
     let brandColor: string | null = null;
     let secondaryColor: string | null = null;
@@ -120,6 +133,10 @@ export async function POST(request: Request) {
         logo_url: logoUrl,
         brand_primary_color: brandColor,
         brand_secondary_color: secondaryColor,
+        // Lock the room to its meeting attendees (seeded below). We only
+        // restrict when there is at least one attendee to admit, so a room
+        // with no external attendees is never accidentally sealed shut.
+        restrict_access: attendeeEmails.length > 0,
       })
       .select()
       .single();
@@ -231,10 +248,24 @@ export async function POST(request: Request) {
       );
     }
 
+    // 8. Auto-grant access to every meeting attendee. Best-effort: a failure
+    // here must not fail room creation (the room already exists and the admin
+    // can still invite emails manually). restrict_access was set above.
+    if (attendeeEmails.length > 0) {
+      const { error: accessError } = await admin
+        .from("room_access")
+        .insert(attendeeEmails.map((email) => ({ room_id: roomId, email })));
+      if (accessError) {
+        console.warn(
+          `[from-granola] failed to seed room_access for ${slug}: ${accessError.message}`
+        );
+      }
+    }
+
     return NextResponse.json(
       {
         room,
-        message: `Room created for ${companyName} with meeting brief populated from Granola.`,
+        message: `Room created for ${companyName} with meeting brief populated from Granola. ${attendeeEmails.length} attendee(s) auto-granted access.`,
       },
       { status: 201 }
     );
@@ -402,13 +433,18 @@ function sanitizeBriefForCustomer(content: string): string {
 
 const CUSTOMER_POV_SYSTEM_PROMPT = `You are editing an internal sales-meeting brief so it can be shown to the customer in a "What we discussed so far" recap inside their sales room. Rewrite it so it reads as if the customer is reading it.
 
-Rules:
+GROUNDING (most important):
+- Use ONLY information explicitly stated in the brief provided. Do NOT add context, infer motivations, speculate about goals, generalize, or "fill in" anything that is not written. An inaccurate detail is far worse than a missing one.
+- Do not change the meaning of any statement. When unsure how to phrase something, keep the original wording.
+- If a section has little or no supporting content in the source, OMIT that section entirely. Never pad a section with invented detail, assumed pain points, or boilerplate.
+- Every company name, person, number, metric, integration, and product name must match the source exactly. Do not invent or alter any of them.
+
+STYLE:
 - Write in the second person ("you", "your"). Never refer to the customer in the third person ("they", "their", "the customer", or the company name as the subject of analysis).
-- Preserve every fact, number, and product name exactly. Do not invent, infer, or remove facts.
 - Do NOT include any pricing information, pricing sections, or cost/pricing figures. Pricing is handled in a separate tab.
 - In the attendees/participants line, only list the prospect's team. Remove all Linkrunner team members (Shreyans, Lakshith, Yash, etc.).
 - Do not use em-dashes or en-dashes. Use a hyphen with spaces ( - ) instead.
-- Keep it well-structured in Markdown. Use warm, customer-facing section headings such as: Your Situation, Pain Points, What We Showed You, Questions & Answers, Security & Compliance, Next Steps. Map internal headings ("THEIR SITUATION", "WHAT WE SHOWED THEM", "THEIR QUESTIONS", etc.) onto these.
+- Keep it well-structured in Markdown. Use warm, customer-facing section headings such as: Your Situation, Pain Points, What We Showed You, Questions & Answers, Security & Compliance, Next Steps. Map internal headings ("THEIR SITUATION", "WHAT WE SHOWED THEM", "THEIR QUESTIONS", etc.) onto these. Only include a heading if the source has real content for it.
 - Remove internal sales-triage language and any qualifier that could read as doubt about handling the customer's scale. Never use phrases like "very high volume" or "extremely high volume" — state scale with the concrete numbers only (e.g. "3.5M downloads in ~6 months").
 - Keep "Linkrunner" as the product name. Keep the tone confident, warm, and concise.
 - Output ONLY the rewritten Markdown brief. No preamble, no explanation, no code fences.`;

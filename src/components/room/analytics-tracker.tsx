@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { EVENT_TYPES } from "@/lib/constants";
 
 interface AnalyticsTrackerProps {
@@ -8,29 +8,67 @@ interface AnalyticsTrackerProps {
   visitorId: string | null;
 }
 
+// Pause counting after this much inactivity (no mouse / key / scroll / touch).
+const IDLE_MS = 30_000;
+// Flush accrued active time on this cadence so long sessions are captured even
+// without a tab switch or unload.
+const FLUSH_MS = 20_000;
+
 /**
- * Invisible component that tracks page views and time on page.
+ * Invisible component that tracks page views and ACTIVE time on the room.
  *
- * - On mount: sends a page_view event.
- * - On unmount / page hide: sends a time_on_tab event for total time spent.
+ * "Active" time only accrues while the tab is visible AND the visitor has
+ * interacted within the last IDLE_MS. A tab left open in the background, or
+ * sitting idle in the foreground, does not inflate the number. Time is flushed
+ * as `time_on_tab` events in deltas (seconds since the last flush), so the sum
+ * of a visitor's events equals their real engaged time on the room.
  *
- * Uses `navigator.sendBeacon` for the unload event so the request
- * isn't cancelled by the browser tearing down the page.
+ * Uses `navigator.sendBeacon` for flushes so requests survive page teardown.
  */
 export function AnalyticsTracker({ roomId, visitorId }: AnalyticsTrackerProps) {
-  const mountedAt = useRef<number>(0);
-
   useEffect(() => {
-    // Stamp mount time inside the effect (Date.now() in the ref initializer
-    // runs during render, which the react-hooks purity rule forbids).
-    mountedAt.current = Date.now();
+    // Active time accrued but not yet sent, in ms.
+    let accumulatedMs = 0;
+    // Timestamp the current active window began accruing from (null = paused).
+    let activeSince: number | null = null;
+    let lastActivityAt = Date.now();
+    let idleTimer: ReturnType<typeof setTimeout> | null = null;
+    let flushTimer: ReturnType<typeof setInterval> | null = null;
 
-    // Track page view
-    trackEvent(roomId, visitorId, EVENT_TYPES.PAGE_VIEW);
+    const isVisible = () =>
+      typeof document === "undefined" || document.visibilityState === "visible";
 
-    function sendTimeOnPage() {
-      const seconds = Math.round((Date.now() - mountedAt.current) / 1000);
-      if (seconds < 1) return;
+    // Fold the in-flight active window into the accumulator.
+    function settle(now: number) {
+      if (activeSince !== null) {
+        accumulatedMs += now - activeSince;
+        activeSince = null;
+      }
+    }
+
+    function resume(now: number) {
+      if (activeSince === null && isVisible()) activeSince = now;
+    }
+
+    function armIdleTimer() {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        // Gone idle: stop accruing until the next interaction.
+        settle(Date.now());
+      }, IDLE_MS);
+    }
+
+    function flush(useBeacon: boolean) {
+      settle(Date.now());
+      const seconds = Math.round(accumulatedMs / 1000);
+      if (seconds < 1) {
+        // Keep sub-second remainder; resume accruing if still active.
+        if (isVisible() && Date.now() - lastActivityAt < IDLE_MS) {
+          activeSince = Date.now();
+        }
+        return;
+      }
+      accumulatedMs -= seconds * 1000;
 
       const payload = JSON.stringify({
         room_id: roomId,
@@ -39,8 +77,7 @@ export function AnalyticsTracker({ roomId, visitorId }: AnalyticsTrackerProps) {
         event_data: { seconds, tab: "page" },
       });
 
-      // Prefer sendBeacon for reliability during page unload
-      if (navigator.sendBeacon) {
+      if (useBeacon && typeof navigator !== "undefined" && navigator.sendBeacon) {
         navigator.sendBeacon("/api/analytics", payload);
       } else {
         fetch("/api/analytics", {
@@ -50,23 +87,61 @@ export function AnalyticsTracker({ roomId, visitorId }: AnalyticsTrackerProps) {
           keepalive: true,
         }).catch(() => {});
       }
-    }
 
-    // visibilitychange fires when the user switches tabs or minimises.
-    // pagehide fires when the user navigates away or closes the tab.
-    function handleVisibilityChange() {
-      if (document.visibilityState === "hidden") {
-        sendTimeOnPage();
+      // Resume accruing right away if the visitor is still engaged.
+      if (isVisible() && Date.now() - lastActivityAt < IDLE_MS) {
+        activeSince = Date.now();
       }
     }
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("pagehide", sendTimeOnPage);
+    function onActivity() {
+      const now = Date.now();
+      lastActivityAt = now;
+      resume(now);
+      armIdleTimer();
+    }
+
+    function onVisibilityChange() {
+      const now = Date.now();
+      if (document.visibilityState === "hidden") {
+        // Stop the clock and persist what we have before the tab is backgrounded.
+        flush(true);
+        if (idleTimer) clearTimeout(idleTimer);
+      } else {
+        lastActivityAt = now;
+        resume(now);
+        armIdleTimer();
+      }
+    }
+
+    // --- init ---
+    trackEvent(roomId, visitorId, EVENT_TYPES.PAGE_VIEW);
+    resume(Date.now());
+    armIdleTimer();
+
+    const activityEvents = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+    ] as const;
+    activityEvents.forEach((evt) =>
+      window.addEventListener(evt, onActivity, { passive: true })
+    );
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", () => flush(true));
+    flushTimer = setInterval(() => flush(true), FLUSH_MS);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("pagehide", sendTimeOnPage);
-      sendTimeOnPage();
+      activityEvents.forEach((evt) =>
+        window.removeEventListener(evt, onActivity)
+      );
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (idleTimer) clearTimeout(idleTimer);
+      if (flushTimer) clearInterval(flushTimer);
+      flush(true);
     };
   }, [roomId, visitorId]);
 

@@ -28,6 +28,7 @@ export async function GET(
       uniqueVisitorsResult,
       tabClicksResult,
       recentVisitorsResult,
+      internalResult,
     ] = await Promise.all([
       // Total page views
       admin
@@ -62,11 +63,20 @@ export async function GET(
         .eq("room_id", roomId)
         .order("last_visited_at", { ascending: false })
         .limit(20),
+
+      // Internal testing accounts — excluded from the visitor list + counts.
+      admin.from("visitors").select("id").ilike("email", "%@linkrunner.io"),
     ]);
 
-    // Compute unique visitor count
+    const internalIds = new Set(
+      (internalResult.data ?? []).map((v) => v.id)
+    );
+
+    // Compute unique visitor count (excluding internal testers)
     const uniqueVisitorIds = new Set(
-      (uniqueVisitorsResult.data ?? []).map((row) => row.visitor_id)
+      (uniqueVisitorsResult.data ?? [])
+        .map((row) => row.visitor_id)
+        .filter((id) => id && !internalIds.has(id))
     );
 
     // Compute tab click breakdown
@@ -102,7 +112,14 @@ export async function GET(
       }
     }
 
-    const recentVisitors = (recentVisitorsResult.data ?? []).map((rv) => {
+    const recentVisitors = (recentVisitorsResult.data ?? [])
+      .filter(
+        (rv) =>
+          !(
+            rv.visitors as unknown as { email: string }
+          ).email.endsWith("@linkrunner.io")
+      )
+      .map((rv) => {
       const visitor = rv.visitors as unknown as {
         id: string;
         email: string;

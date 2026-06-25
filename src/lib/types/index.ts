@@ -361,12 +361,32 @@ export interface DailyActivity {
 }
 
 export interface CrossRoomVisitorEntry {
+  visitor_id: string;
   email: string;
   name: string | null;
   company: string | null;
   rooms_visited: { room_id: string; company_name: string }[];
   total_events: number;
+  /** Active, engaged seconds across all rooms (idle time excluded). */
+  active_seconds: number;
   last_active: string;
+}
+
+/** A single event in a visitor's cross-room activity timeline. */
+export interface VisitorTimelineEvent {
+  id: string;
+  room_id: string;
+  room_name: string;
+  event_type: string;
+  event_data: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/** Full cross-room activity for one visitor (admin drilldown). */
+export interface VisitorTimeline {
+  visitor: Visitor;
+  total_active_seconds: number;
+  events: VisitorTimelineEvent[];
 }
 
 /**
