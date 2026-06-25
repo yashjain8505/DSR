@@ -1,240 +1,352 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import {
+  Activity,
+  Apple,
+  ArrowUpRight,
+  BarChart3,
+  Code2,
+  CornerDownRight,
+  Database,
+  Globe,
+  IndianRupee,
+  Infinity as InfinityIcon,
+  Link2,
+  Megaphone,
+  PlugZap,
+  Route,
+  Share2,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Store,
+  Target,
+  TrendingDown,
+  Users,
+  Webhook,
+  type LucideIcon,
+} from "lucide-react";
 
 /* ------------------------------------------------------------------ */
-/*  Features — a glance at the real product (locked "Comp 3").          */
-/*  Campaign analytics hero on top, then SKAN, audience builder and     */
-/*  MCP as a trio. White product cards on the room's grey content area. */
-/*  No shadows, no em dashes. Labels + SKAN tiers use --brand-primary.  */
+/*  Features — bento highlights + categorised feature grids.            */
+/*  Three marquee tiles up top (one in --brand-primary), then Core      */
+/*  Features, SDK-less Integration and API Reference as labelled        */
+/*  strips. Every tile and card deep-links to its exact page on         */
+/*  docs.linkrunner.io. No shadows, no em dashes.                       */
 /* ------------------------------------------------------------------ */
 
-const brand = { color: "var(--brand-primary)" };
+const DOCS = "https://docs.linkrunner.io";
 
-const CAMPAIGN_STATS = [
-  { value: "25,000", label: "Clicks" },
-  { value: "10,120", label: "Installs" },
-  { value: "9,613", label: "Sign-ups" },
-  { value: "$35,609", label: "Revenue" },
-  { value: "2,114", label: "Paying users" },
+interface FeatureItem {
+  icon: LucideIcon;
+  title: string;
+  sub: string;
+  href: string;
+}
+
+interface FeatureCategory {
+  key: string;
+  title: string;
+  sub: string;
+  items: FeatureItem[];
+}
+
+// Marquee capabilities. The first renders filled in the brand colour.
+const HIGHLIGHTS: (FeatureItem & { feature?: boolean })[] = [
+  {
+    icon: CornerDownRight,
+    title: "Deferred deep linking",
+    sub: "Preserve the destination through install, every time",
+    href: `${DOCS}/features/deferred-deep-linking`,
+    feature: true,
+  },
+  {
+    icon: ShieldCheck,
+    title: "iOS SKAdNetwork",
+    sub: "Apple-certified iOS install measurement",
+    href: `${DOCS}/features/skadnetwork-integration`,
+  },
+  {
+    icon: Sparkles,
+    title: "MCP for Claude",
+    sub: "Ask your attribution data in plain language",
+    href: `${DOCS}/features/mcp`,
+  },
 ];
 
-const SKAN_STATS = [
-  { value: "45,823", label: "Installs" },
-  { value: "17.97%", label: "CV null rate" },
+const CATEGORIES: FeatureCategory[] = [
+  {
+    key: "core",
+    title: "Core Features",
+    sub: "The attribution and growth toolkit",
+    items: [
+      {
+        icon: Globe,
+        title: "Subdomain Setup",
+        sub: "White-label every link on your own domain",
+        href: `${DOCS}/features/subdomain-setup`,
+      },
+      {
+        icon: Link2,
+        title: "Deep Linking Setup",
+        sub: "Route users to the exact in-app screen",
+        href: `${DOCS}/features/deep-linking-setup`,
+      },
+      {
+        icon: Route,
+        title: "Web to App Journeys",
+        sub: "Carry web context into the app seamlessly",
+        href: `${DOCS}/features/web-to-app-journeys`,
+      },
+      {
+        icon: Smartphone,
+        title: "Link Redirection",
+        sub: "Smart routing by platform and locale",
+        href: `${DOCS}/features/link-redirection`,
+      },
+      {
+        icon: Users,
+        title: "Referral Code Tracking",
+        sub: "Unique referral links per user, no limits",
+        href: `${DOCS}/features/referral-codes`,
+      },
+      {
+        icon: Store,
+        title: "Custom Store Listings",
+        sub: "Tie creatives to custom product pages",
+        href: `${DOCS}/features/custom-store-listing`,
+      },
+      {
+        icon: TrendingDown,
+        title: "Uninstall Tracking",
+        sub: "See churn cohorts across campaigns",
+        href: `${DOCS}/features/uninstall-tracking`,
+      },
+      {
+        icon: InfinityIcon,
+        title: "Meta Install Referrer",
+        sub: "Higher Android attribution accuracy",
+        href: `${DOCS}/features/meta-install-referrer`,
+      },
+      {
+        icon: Apple,
+        title: "iOS Campaign Data",
+        sub: "Aggregate iOS insight within Apple limits",
+        href: `${DOCS}/features/ios-campaign-data-limitations`,
+      },
+      {
+        icon: Webhook,
+        title: "Webhooks",
+        sub: "Stream attribution events to your stack",
+        href: `${DOCS}/features/webhooks`,
+      },
+      {
+        icon: Share2,
+        title: "Social Intermediary Page",
+        sub: "Reliable deep links from social apps",
+        href: `${DOCS}/features/social-media-intermediary-page`,
+      },
+      {
+        icon: Target,
+        title: "Remarketing",
+        sub: "Export cohorts to Google and Meta",
+        href: `${DOCS}/features/remarketing`,
+      },
+    ],
+  },
+  {
+    key: "sdkless",
+    title: "SDK-less Integration",
+    sub: "Attribute without shipping an SDK",
+    items: [
+      {
+        icon: PlugZap,
+        title: "SDK-less Overview",
+        sub: "Measure installs with zero app changes",
+        href: `${DOCS}/sdk-less/introduction`,
+      },
+      {
+        icon: Smartphone,
+        title: "Android (S2S)",
+        sub: "Server-to-server install attribution",
+        href: `${DOCS}/sdk-less/android-quickstart`,
+      },
+      {
+        icon: Apple,
+        title: "iOS (S2S)",
+        sub: "Server-to-server iOS measurement",
+        href: `${DOCS}/sdk-less/ios-quickstart`,
+      },
+      {
+        icon: Code2,
+        title: "API-only Setup",
+        sub: "Integrate entirely over REST",
+        href: `${DOCS}/sdk-less/api-reference`,
+      },
+    ],
+  },
+  {
+    key: "api",
+    title: "API Reference",
+    sub: "Build directly on the platform",
+    items: [
+      {
+        icon: Database,
+        title: "Data APIs",
+        sub: "Pull clicks, installs and revenue on demand",
+        href: `${DOCS}/api-reference/data-apis`,
+      },
+      {
+        icon: IndianRupee,
+        title: "Revenue Tracking",
+        sub: "Post purchase and subscription events",
+        href: `${DOCS}/api-reference/revenue-tracking`,
+      },
+      {
+        icon: Activity,
+        title: "Event Capture",
+        sub: "Send custom events at scale",
+        href: `${DOCS}/api-reference/event-capture`,
+      },
+      {
+        icon: Megaphone,
+        title: "Campaign APIs",
+        sub: "Create, edit and bulk-manage campaigns",
+        href: `${DOCS}/api-reference/campaign-apis`,
+      },
+      {
+        icon: BarChart3,
+        title: "Reporting API",
+        sub: "Automated performance reporting",
+        href: `${DOCS}/api-reference/reporting-campaigns`,
+      },
+    ],
+  },
 ];
 
-// Each channel's privacy-tier split (Tier 3 -> Tier 0).
-const SKAN_TIERS = [
-  { name: "Meta", seg: [6, 3, 1.6, 0.8] },
-  { name: "Google", seg: [3, 4, 3, 1.5] },
-  { name: "TikTok", seg: [4, 3, 2, 0.7] },
-];
+// Brand-tinted icon tile (themes per room via --brand-primary).
+const tileStyle = {
+  backgroundColor: "color-mix(in srgb, var(--brand-primary) 12%, white)",
+  color: "var(--brand-primary)",
+};
+const brandText = { color: "var(--brand-primary)" };
 
-// Tier shade = brand colour mixed toward white, so it themes per room.
-const TIER_PCT = [100, 60, 32, 14];
-const tierStyle = (i: number) => ({
-  backgroundColor: `color-mix(in srgb, var(--brand-primary) ${TIER_PCT[i]}%, white)`,
-});
-
-const COHORT_USERS = [
-  { name: "Dev Silva", email: "dev.silva@example.com" },
-  { name: "Ada Tanaka", email: "ada.tanaka@example.com" },
-];
-
-// The rest of the platform, shown as a labelled grid below the glances.
-const MORE = [
-  { title: "Deep links", sub: "Deferred and unlimited" },
-  { title: "Referrals", sub: "Built-in referral tracking" },
-  { title: "Postbacks", sub: "Clean events to ad partners" },
-  { title: "Webhooks", sub: "Push events anywhere" },
-  { title: "Remarketing", sub: "Bring users back" },
-  { title: "Data export", sub: "Your data, your warehouse" },
-  { title: "PII hashing", sub: "Privacy by default" },
-  { title: "Fraud protection", sub: "Included at every tier" },
-];
-
-function Stat({ value, label }: { value: string; label: string }) {
+function HighlightTile({
+  item,
+}: {
+  item: FeatureItem & { feature?: boolean };
+}) {
+  const Icon = item.icon;
+  if (item.feature) {
+    return (
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex flex-col rounded-2xl p-5 text-white transition-transform hover:-translate-y-0.5"
+        style={{ backgroundColor: "var(--brand-primary)" }}
+      >
+        <div className="flex items-start justify-between">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+            <Icon className="h-5 w-5" />
+          </span>
+          <ArrowUpRight className="h-4 w-4 opacity-60 transition-opacity group-hover:opacity-100" />
+        </div>
+        <h3 className="mt-7 text-base font-bold">{item.title}</h3>
+        <p className="mt-1 text-[12.5px] leading-5 text-white/85">{item.sub}</p>
+      </a>
+    );
+  }
   return (
-    <div>
-      <p className="text-lg font-bold text-gray-900">{value}</p>
-      <p className="mt-0.5 text-[11px] text-gray-400">{label}</p>
-    </div>
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 transition-colors hover:border-gray-300"
+    >
+      <div className="flex items-start justify-between">
+        <span
+          className="flex h-10 w-10 items-center justify-center rounded-xl"
+          style={tileStyle}
+        >
+          <Icon className="h-5 w-5" />
+        </span>
+        <ArrowUpRight className="h-4 w-4 text-gray-300 transition-colors group-hover:text-gray-500" />
+      </div>
+      <h3 className="mt-7 text-base font-bold text-gray-900">{item.title}</h3>
+      <p className="mt-1 text-[12.5px] leading-5 text-gray-500">{item.sub}</p>
+    </a>
+  );
+}
+
+function FeatureCard({ item }: { item: FeatureItem }) {
+  const Icon = item.icon;
+  return (
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-start gap-2.5"
+    >
+      <span
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+        style={tileStyle}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="flex items-center gap-1 text-[12.5px] font-semibold text-gray-900">
+          {item.title}
+          <ArrowUpRight className="h-3 w-3 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100" />
+        </p>
+        <p className="mt-0.5 text-[11px] leading-4 text-gray-400">{item.sub}</p>
+      </div>
+    </a>
   );
 }
 
 export function FeaturesBento() {
   return (
     <div className="space-y-3">
-      {/* ── Hero: campaign analytics ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-semibold" style={brand}>
-            Campaign analytics
-          </p>
-          <span className="shrink-0 text-[11px] text-gray-400">
-            Google search ad campaign
-          </span>
-        </div>
+      {/* ── Highlights ── */}
+      <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr]">
+        {HIGHLIGHTS.map((h) => (
+          <HighlightTile key={h.title} item={h} />
+        ))}
+      </div>
 
-        <div className="mt-3 flex flex-wrap gap-x-8 gap-y-3">
-          {CAMPAIGN_STATS.map((s) => (
-            <Stat key={s.label} value={s.value} label={s.label} />
-          ))}
-        </div>
-
-        <svg
-          viewBox="0 0 700 70"
-          preserveAspectRatio="none"
-          className="mt-3 block h-16 w-full"
+      {/* ── Categorised strips ── */}
+      {CATEGORIES.map((cat) => (
+        <div
+          key={cat.key}
+          className="rounded-2xl border border-gray-200 bg-white p-5"
         >
-          <path
-            d="M0,52 L70,46 L140,49 L210,34 L280,40 L350,26 L420,31 L490,18 L560,24 L630,9 L700,14"
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth="2.5"
-          />
-          <path
-            d="M0,60 L70,58 L140,59 L210,54 L280,56 L350,51 L420,53 L490,48 L560,50 L630,45 L700,47"
-            fill="none"
-            stroke="#22c55e"
-            strokeWidth="2.5"
-          />
-          <path
-            d="M0,63 L70,61 L140,62 L210,57 L280,59 L350,54 L420,56 L490,51 L560,53 L630,48 L700,50"
-            fill="none"
-            stroke="#818cf8"
-            strokeWidth="2.5"
-          />
-        </svg>
-        <div className="mt-2 flex gap-4 text-[11px] text-gray-400">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#f59e0b]" /> Clicks
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#22c55e]" /> Installs
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#818cf8]" /> Sign Ups
-          </span>
-        </div>
-      </div>
-
-      {/* ── Trio: SKAN, audience builder, MCP ── */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {/* SKAN */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4">
-          <p className="text-xs font-semibold" style={brand}>
-            SKAN dashboard
-          </p>
-          <div className="mt-2.5 flex gap-5">
-            {SKAN_STATS.map((s) => (
-              <Stat key={s.label} value={s.value} label={s.label} />
-            ))}
-          </div>
-          <div className="mt-3 space-y-1.5">
-            {SKAN_TIERS.map((ch) => (
-              <div key={ch.name} className="flex items-center gap-2">
-                <span className="w-12 shrink-0 text-right text-[10px] text-gray-400">
-                  {ch.name}
-                </span>
-                <span className="flex h-2.5 flex-1 gap-0.5">
-                  {ch.seg.map((f, i) => (
-                    <span
-                      key={i}
-                      className="rounded-sm"
-                      style={{ flexGrow: f, flexBasis: 0, ...tierStyle(i) }}
-                    />
-                  ))}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-2.5 flex gap-2.5 text-[9px] text-gray-400">
-            {["Tier 3", "Tier 2", "Tier 1", "Tier 0"].map((t, i) => (
-              <span key={t} className="flex items-center gap-1">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={tierStyle(i)}
-                />
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Audience builder */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4">
-          <p className="text-xs font-semibold" style={brand}>
-            Audience builder
-          </p>
-          <div className="mt-2.5">
-            <p className="text-[13px] font-semibold text-gray-900">
-              Cart Abandoners
-            </p>
-            <p className="mt-0.5 text-[11px] text-gray-400">11,970 users</p>
-          </div>
-          <div className="mt-3 space-y-1.5 text-[11px]">
-            {COHORT_USERS.map((u) => (
-              <div
-                key={u.name}
-                className="flex items-center justify-between gap-2"
-              >
-                <span className="shrink-0 text-gray-700">{u.name}</span>
-                <span className="min-w-0 truncate text-gray-400">
-                  {u.email}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 flex gap-2">
-            <span className="flex-1 rounded-lg border border-gray-200 py-1.5 text-center text-[11px] font-medium text-gray-600">
-              Google Ads
-            </span>
-            <span className="flex-1 rounded-lg border border-gray-200 py-1.5 text-center text-[11px] font-medium text-gray-600">
-              Meta Ads
+          <div className="flex items-baseline gap-2.5">
+            <p className="text-sm font-bold text-gray-900">{cat.title}</p>
+            <p className="text-[12px] text-gray-400">{cat.sub}</p>
+            <span className="ml-auto rounded-full border border-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
+              {cat.items.length}
             </span>
           </div>
-        </div>
-
-        {/* MCP for Claude */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4">
-          <p
-            className="flex items-center gap-1.5 text-xs font-semibold"
-            style={brand}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            MCP for Claude
-          </p>
-          <p className="mt-2.5 text-[11.5px] leading-5 text-gray-600">
-            &ldquo;How did my campaigns perform last week?&rdquo;
-          </p>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
-            <span className="text-[10.5px] text-gray-400">Active</span>
-            <span className="ml-auto rounded-md bg-gray-50 px-2 py-1 font-mono text-[10px] text-gray-500">
-              lr_mcp_••••8f2a
-            </span>
+          <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
+            {cat.items.map((item) => (
+              <FeatureCard key={item.title} item={item} />
+            ))}
           </div>
         </div>
-      </div>
+      ))}
 
-      {/* ── Also in the platform ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-5">
-        <p className="text-xs font-semibold" style={brand}>
-          Also in the platform
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3 lg:grid-cols-4">
-          {MORE.map((c) => (
-            <div key={c.title}>
-              <p className="text-sm font-medium text-gray-900">{c.title}</p>
-              <p className="mt-0.5 text-[12px] leading-4 text-gray-400">
-                {c.sub}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* ── Docs link ── */}
+      <a
+        href={`${DOCS}/introduction`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex items-center justify-center gap-1.5 rounded-2xl border border-dashed border-gray-300 bg-white py-3 text-[12.5px] font-semibold transition-colors hover:border-gray-400"
+        style={brandText}
+      >
+        Explore the full documentation
+        <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      </a>
     </div>
   );
 }
