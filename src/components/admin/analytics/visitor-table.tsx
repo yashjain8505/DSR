@@ -200,9 +200,17 @@ function FragmentRows({
           </div>
         </td>
         <td className="px-5 py-3 text-center">
-          <div className="inline-flex items-center gap-1 rounded-full bg-[#e6ecff] px-2 py-0.5">
+          <div
+            className="inline-flex items-center gap-1 rounded-full bg-[#e6ecff] px-2 py-0.5"
+            title={
+              visitor.active_is_estimate
+                ? "Approximate, estimated from pre-upgrade data"
+                : undefined
+            }
+          >
             <Timer className="h-3 w-3 text-[#4d4bf7]" />
             <span className="text-xs font-semibold text-[#4d4bf7]">
+              {visitor.active_is_estimate ? "~" : ""}
               {formatDuration(visitor.active_seconds)}
             </span>
           </div>

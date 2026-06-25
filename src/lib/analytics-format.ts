@@ -56,6 +56,78 @@ export function totalActiveSeconds(events: TimedEvent[]): number {
   return total;
 }
 
+/** Per-session cap for rough legacy estimates (pre-upgrade wall-clock data). */
+export const LEGACY_TIME_CAP_SECONDS = 900; // 15 min
+
+/**
+ * Rough engaged-time estimate from LEGACY (pre-upgrade) time events only. The
+ * old tracker logged cumulative wall-clock per session, so we take the longest
+ * single session per room (capped at 15 min) instead of summing, which avoids
+ * the double-count and overnight inflation. Conservative and clearly approximate.
+ */
+export function legacyEstimateSeconds(events: TimedEvent[]): number {
+  const perRoomMax = new Map<string, number>();
+  for (const e of events) {
+    if (e.event_type !== "time_on_tab") continue;
+    if (Number((e.event_data as { v?: number } | null)?.v ?? 0) >= 2) continue;
+    const secs = Math.min(
+      LEGACY_TIME_CAP_SECONDS,
+      Number((e.event_data as { seconds?: number } | null)?.seconds ?? 0)
+    );
+    if (secs <= 0) continue;
+    const room = e.room_name ?? "room";
+    perRoomMax.set(room, Math.max(perRoomMax.get(room) ?? 0, secs));
+  }
+  let total = 0;
+  for (const v of perRoomMax.values()) total += v;
+  return total;
+}
+
+/**
+ * The time to display: accurate (v>=2) total if any, otherwise a capped legacy
+ * estimate. `isEstimate` tells the UI to mark it approximate.
+ */
+export function displayActiveTime(events: TimedEvent[]): {
+  seconds: number;
+  isEstimate: boolean;
+} {
+  const reliable = totalActiveSeconds(events);
+  if (reliable > 0) return { seconds: reliable, isEstimate: false };
+  const est = legacyEstimateSeconds(events);
+  return { seconds: est, isEstimate: est > 0 };
+}
+
+/**
+ * Section breakdown for a drilldown. Uses accurate per-section data when
+ * present; otherwise falls back to a capped legacy estimate shown as whole-room
+ * time (old data has no section), flagged as an estimate.
+ */
+export function sectionBreakdown(
+  events: TimedEvent[],
+  includeRoom = false
+): { label: string; seconds: number; isEstimate: boolean }[] {
+  const reliable = aggregateSectionTime(events, includeRoom);
+  if (reliable.length > 0) {
+    return reliable.map((r) => ({ ...r, isEstimate: false }));
+  }
+  const perRoomMax = new Map<string, number>();
+  for (const e of events) {
+    if (e.event_type !== "time_on_tab") continue;
+    if (Number((e.event_data as { v?: number } | null)?.v ?? 0) >= 2) continue;
+    const secs = Math.min(
+      LEGACY_TIME_CAP_SECONDS,
+      Number((e.event_data as { seconds?: number } | null)?.seconds ?? 0)
+    );
+    if (secs <= 0) continue;
+    const label =
+      includeRoom && e.room_name ? `${e.room_name} · the room` : "the room";
+    perRoomMax.set(label, Math.max(perRoomMax.get(label) ?? 0, secs));
+  }
+  return Array.from(perRoomMax.entries())
+    .map(([label, seconds]) => ({ label, seconds, isEstimate: true }))
+    .sort((a, b) => b.seconds - a.seconds);
+}
+
 /**
  * Roll active time up by section (and optionally room), so a drilldown can show
  * exactly where a visitor's minutes went. Sorted by time, descending.

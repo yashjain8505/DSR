@@ -4,8 +4,8 @@ import { formatDateTime } from "@/lib/utils";
 import {
   formatDuration,
   describeActivityEvent,
-  aggregateSectionTime,
-  totalActiveSeconds,
+  sectionBreakdown,
+  displayActiveTime,
 } from "@/lib/analytics-format";
 
 export interface DetailEvent {
@@ -30,8 +30,8 @@ export function VisitorActivityDetail({
   events: DetailEvent[];
   includeRoom?: boolean;
 }) {
-  const sections = aggregateSectionTime(events, includeRoom);
-  const totalSeconds = totalActiveSeconds(events);
+  const sections = sectionBreakdown(events, includeRoom);
+  const { seconds: totalSeconds, isEstimate } = displayActiveTime(events);
   const maxSecs = sections[0]?.seconds ?? 0;
   const timeline = events.filter((e) => e.event_type !== "time_on_tab");
 
@@ -43,7 +43,15 @@ export function VisitorActivityDetail({
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
             Time by section
           </p>
-          <span className="text-xs font-semibold text-[#4d4bf7]">
+          <span
+            className="text-xs font-semibold text-[#4d4bf7]"
+            title={
+              isEstimate
+                ? "Approximate, estimated from pre-upgrade data"
+                : undefined
+            }
+          >
+            {isEstimate ? "~" : ""}
             {formatDuration(totalSeconds)} total
           </span>
         </div>
@@ -58,6 +66,7 @@ export function VisitorActivityDetail({
                 <div className="mb-0.5 flex items-center justify-between gap-2 text-xs">
                   <span className="truncate text-gray-700">{s.label}</span>
                   <span className="shrink-0 font-medium text-gray-900">
+                    {s.isEstimate ? "~" : ""}
                     {formatDuration(s.seconds)}
                   </span>
                 </div>

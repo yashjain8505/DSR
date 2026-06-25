@@ -84,8 +84,10 @@ export async function GET(request: NextRequest) {
     const roomVideoPlays = new Map<string, number>();
     const roomUniqueVisitors = new Map<string, Set<string>>();
     const roomDailyPageViews = new Map<string, Map<string, number>>();
-    // Active engaged seconds per visitor, summed from time_on_tab deltas.
+    // Active engaged seconds per visitor, summed from accurate time deltas.
     const visitorActiveSeconds = new Map<string, number>();
+    // Legacy fallback: longest single (capped) session per room, per visitor.
+    const visitorRoomLegacyMax = new Map<string, Map<string, number>>();
     const dailyBuckets = new Map<
       string,
       Record<string, number>
@@ -121,20 +123,28 @@ export async function GET(request: NextRequest) {
         roomUniqueVisitors.set(rid, visSet);
         allUniqueVisitors.add(ev.visitor_id);
 
-        // Engaged time (active, visible seconds) from the accurate tracker.
-        // v >= 2 marks reliable events; legacy wall-clock events are ignored.
-        if (
-          ev.event_type === "time_on_tab" &&
-          Number((ev.event_data as { v?: number } | null)?.v ?? 0) >= 2
-        ) {
+        // Engaged time. v >= 2 = accurate per-section tracker (summed). Legacy
+        // events feed a capped per-room-max estimate used only when there is no
+        // accurate data for the visitor.
+        if (ev.event_type === "time_on_tab") {
+          const v = Number((ev.event_data as { v?: number } | null)?.v ?? 0);
           const secs = Number(
             (ev.event_data as { seconds?: number } | null)?.seconds ?? 0
           );
-          if (secs > 0) {
-            visitorActiveSeconds.set(
-              ev.visitor_id,
-              (visitorActiveSeconds.get(ev.visitor_id) ?? 0) + secs
-            );
+          if (v >= 2) {
+            if (secs > 0) {
+              visitorActiveSeconds.set(
+                ev.visitor_id,
+                (visitorActiveSeconds.get(ev.visitor_id) ?? 0) + secs
+              );
+            }
+          } else if (secs > 0) {
+            const capped = Math.min(900, secs);
+            const rm =
+              visitorRoomLegacyMax.get(ev.visitor_id) ??
+              new Map<string, number>();
+            rm.set(rid, Math.max(rm.get(rid) ?? 0, capped));
+            visitorRoomLegacyMax.set(ev.visitor_id, rm);
           }
         }
       }
@@ -288,6 +298,23 @@ export async function GET(request: NextRequest) {
     for (const [vid, data] of visitorRoomMap) {
       const visitor = visitorMap.get(vid);
       if (!visitor) continue;
+
+      // Prefer accurate time; fall back to the capped legacy estimate.
+      const reliable = visitorActiveSeconds.get(vid) ?? 0;
+      let activeSeconds = reliable;
+      let activeIsEstimate = false;
+      if (reliable === 0) {
+        const rm = visitorRoomLegacyMax.get(vid);
+        if (rm) {
+          let s = 0;
+          for (const v of rm.values()) s += v;
+          if (s > 0) {
+            activeSeconds = s;
+            activeIsEstimate = true;
+          }
+        }
+      }
+
       recentVisitors.push({
         visitor_id: vid,
         email: visitor.email,
@@ -295,7 +322,8 @@ export async function GET(request: NextRequest) {
         company: visitor.company,
         rooms_visited: data.rooms,
         total_events: visitorEventCount.get(vid) ?? 0,
-        active_seconds: visitorActiveSeconds.get(vid) ?? 0,
+        active_seconds: activeSeconds,
+        active_is_estimate: activeIsEstimate,
         last_active: data.lastActive,
       });
     }

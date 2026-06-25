@@ -369,6 +369,8 @@ export interface CrossRoomVisitorEntry {
   total_events: number;
   /** Active, engaged seconds across all rooms (idle time excluded). */
   active_seconds: number;
+  /** True when active_seconds is a capped estimate from pre-upgrade data. */
+  active_is_estimate: boolean;
   last_active: string;
 }
 
