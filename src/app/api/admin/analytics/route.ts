@@ -121,8 +121,12 @@ export async function GET(request: NextRequest) {
         roomUniqueVisitors.set(rid, visSet);
         allUniqueVisitors.add(ev.visitor_id);
 
-        // Engaged time (active, visible seconds) from the tracker.
-        if (ev.event_type === "time_on_tab") {
+        // Engaged time (active, visible seconds) from the accurate tracker.
+        // v >= 2 marks reliable events; legacy wall-clock events are ignored.
+        if (
+          ev.event_type === "time_on_tab" &&
+          Number((ev.event_data as { v?: number } | null)?.v ?? 0) >= 2
+        ) {
           const secs = Number(
             (ev.event_data as { seconds?: number } | null)?.seconds ?? 0
           );

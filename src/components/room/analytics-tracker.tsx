@@ -15,6 +15,27 @@ const IDLE_MS = 30_000;
 const FLUSH_MS = 20_000;
 
 /**
+ * The room section currently at the centre of the viewport. Each stacked
+ * section is rendered as `<section id={tabKey}>`, so the id is the section key
+ * (e.g. "pricing", "features"). Active time is attributed to this section so an
+ * admin can see exactly where a visitor's minutes were spent.
+ */
+function currentSection(): string {
+  if (typeof document === "undefined") return "page";
+  const mid = window.innerHeight / 2;
+  const sections = document.querySelectorAll<HTMLElement>("section[id]");
+  let fallback = "page";
+  for (const el of sections) {
+    if (!el.id) continue;
+    const r = el.getBoundingClientRect();
+    if (r.height === 0) continue;
+    if (fallback === "page") fallback = el.id; // first real section
+    if (r.top <= mid && r.bottom >= mid) return el.id;
+  }
+  return fallback;
+}
+
+/**
  * Invisible component that tracks page views and ACTIVE time on the room.
  *
  * "Active" time only accrues while the tab is visible AND the visitor has
@@ -74,7 +95,9 @@ export function AnalyticsTracker({ roomId, visitorId }: AnalyticsTrackerProps) {
         room_id: roomId,
         visitor_id: visitorId,
         event_type: EVENT_TYPES.TIME_ON_TAB,
-        event_data: { seconds, tab: "page" },
+        // v: 2 marks accurate, idle-excluded, per-section time. Legacy events
+        // (no v) are from the old wall-clock tracker and are ignored everywhere.
+        event_data: { seconds, tab: currentSection(), v: 2 },
       });
 
       if (useBeacon && typeof navigator !== "undefined" && navigator.sendBeacon) {

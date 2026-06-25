@@ -13,44 +13,8 @@ import {
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatDateTime, getRelativeTime } from "@/lib/utils";
 import { MAIN_TAB_LABELS } from "@/lib/constants";
+import { VisitorActivityDetail } from "@/components/admin/analytics/visitor-activity-detail";
 import type { RoomAnalyticsSummary, VisitorEventEntry } from "@/lib/types";
-
-/** Human-readable label for a tab / sub-tab key in event data. */
-function tabLabel(key: unknown): string {
-  if (typeof key !== "string") return "unknown";
-  return (MAIN_TAB_LABELS as Record<string, string>)[key] ?? key;
-}
-
-/** One-line description of a tracked event for the activity timeline. */
-function describeEvent(e: VisitorEventEntry): string {
-  const d = (e.event_data ?? {}) as Record<string, unknown>;
-  switch (e.event_type) {
-    case "page_view":
-      return "Opened the room";
-    case "email_gate_submit":
-      return "Signed in through the email gate";
-    case "tab_click":
-      return `Viewed tab: ${tabLabel(d.tab)}`;
-    case "sub_tab_click":
-      return `Viewed section: ${tabLabel(d.sub_tab_key)}`;
-    case "video_play":
-      return "Played the demo video";
-    case "link_click":
-      return typeof d.url === "string"
-        ? `Clicked link: ${d.url}`
-        : "Clicked a link";
-    case "time_on_tab": {
-      const s = typeof d.seconds === "number" ? d.seconds : null;
-      if (s === null) return "Session ended";
-      const m = Math.floor(s / 60);
-      return m > 0
-        ? `Spent ${m}m ${s % 60}s in the room`
-        : `Spent ${s}s in the room`;
-    }
-    default:
-      return e.event_type;
-  }
-}
 
 export default function AnalyticsPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -310,27 +274,7 @@ export default function AnalyticsPage() {
                             No tracked activity for this visitor yet.
                           </p>
                         ) : (
-                          <ol className="space-y-2">
-                            {timeline.map((event) => (
-                              <li
-                                key={event.id}
-                                className="flex items-baseline justify-between gap-4 text-sm"
-                              >
-                                <span className="flex min-w-0 items-baseline gap-2">
-                                  <span
-                                    aria-hidden="true"
-                                    className="h-1.5 w-1.5 shrink-0 translate-y-[-1px] rounded-full bg-[#4d4bf7]"
-                                  />
-                                  <span className="truncate text-gray-700">
-                                    {describeEvent(event)}
-                                  </span>
-                                </span>
-                                <span className="shrink-0 whitespace-nowrap text-xs text-gray-400">
-                                  {formatDateTime(event.created_at)}
-                                </span>
-                              </li>
-                            ))}
-                          </ol>
+                          <VisitorActivityDetail events={timeline} />
                         )}
                       </div>
                     )}

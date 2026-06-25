@@ -13,48 +13,12 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getRelativeTime } from "@/lib/utils";
+import { formatDuration } from "@/lib/analytics-format";
+import { VisitorActivityDetail } from "@/components/admin/analytics/visitor-activity-detail";
 import type { CrossRoomVisitorEntry, VisitorTimeline } from "@/lib/types";
 
 interface VisitorTableProps {
   visitors: CrossRoomVisitorEntry[];
-}
-
-/** Seconds -> "1h 3m" / "5m 12s" / "42s". */
-function formatDuration(total: number): string {
-  const s = Math.max(0, Math.round(total));
-  if (s === 0) return "0s";
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  if (h) return `${h}h ${m}m`;
-  if (m) return `${m}m ${sec}s`;
-  return `${sec}s`;
-}
-
-/** Human-readable description for a timeline event. */
-function describeEvent(
-  type: string,
-  data: Record<string, unknown> | null
-): string {
-  const tab = typeof data?.tab === "string" ? data.tab : null;
-  switch (type) {
-    case "page_view":
-      return "Opened the room";
-    case "tab_click":
-      return tab ? `Viewed "${tab}"` : "Switched tab";
-    case "sub_tab_click":
-      return tab ? `Viewed "${tab}"` : "Opened a section";
-    case "email_gate_submit":
-      return "Entered their email";
-    case "video_play":
-      return "Played the product demo";
-    case "link_click":
-      return typeof data?.label === "string"
-        ? `Clicked "${data.label}"`
-        : "Clicked a link";
-    default:
-      return type.replace(/_/g, " ");
-  }
 }
 
 export function VisitorTable({ visitors }: VisitorTableProps) {
@@ -175,18 +139,6 @@ function FragmentRows({
   detail: VisitorTimeline | undefined;
   onToggle: () => void;
 }) {
-  // Per-room active time, computed from the loaded timeline.
-  const perRoom = new Map<string, number>();
-  const timeline = (detail?.events ?? []).filter(
-    (e) => e.event_type !== "time_on_tab"
-  );
-  for (const e of detail?.events ?? []) {
-    if (e.event_type === "time_on_tab") {
-      const secs = Number((e.event_data as { seconds?: number })?.seconds ?? 0);
-      perRoom.set(e.room_name, (perRoom.get(e.room_name) ?? 0) + secs);
-    }
-  }
-
   return (
     <>
       <tr
@@ -278,66 +230,12 @@ function FragmentRows({
               <div className="flex items-center gap-2 py-4 text-sm text-gray-400">
                 <Loader2 className="h-4 w-4 animate-spin" /> Loading activity...
               </div>
-            ) : !detail || timeline.length === 0 ? (
+            ) : !detail || detail.events.length === 0 ? (
               <p className="py-3 text-sm text-gray-400">
                 No detailed activity recorded yet.
               </p>
             ) : (
-              <div className="flex flex-col gap-4 lg:flex-row">
-                {/* Active time breakdown */}
-                <div className="shrink-0 lg:w-56">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                    Engaged time
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {formatDuration(detail.total_active_seconds)}
-                  </p>
-                  <p className="mb-3 text-[11px] text-gray-400">
-                    active time, idle excluded
-                  </p>
-                  <div className="space-y-1.5">
-                    {Array.from(perRoom.entries())
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([room, secs]) => (
-                        <div
-                          key={room}
-                          className="flex items-center justify-between gap-2 text-xs"
-                        >
-                          <span className="truncate text-gray-600">{room}</span>
-                          <span className="shrink-0 font-medium text-gray-900">
-                            {formatDuration(secs)}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Event timeline */}
-                <div className="min-w-0 flex-1">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                    Activity timeline
-                  </p>
-                  <div className="max-h-72 space-y-1 overflow-y-auto pr-2">
-                    {timeline.map((e) => (
-                      <div
-                        key={e.id}
-                        className="flex items-center gap-2 rounded-lg bg-white px-3 py-2"
-                      >
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#4d4bf7]" />
-                        <span className="text-sm text-gray-700">
-                          {describeEvent(e.event_type, e.event_data)}
-                        </span>
-                        <span className="ml-1 inline-flex items-center rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
-                          {e.room_name}
-                        </span>
-                        <span className="ml-auto shrink-0 text-[11px] text-gray-400">
-                          {getRelativeTime(e.created_at)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <VisitorActivityDetail events={detail.events} includeRoom />
             )}
           </td>
         </tr>
