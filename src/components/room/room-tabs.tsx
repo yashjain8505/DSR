@@ -64,19 +64,35 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleTabs.join("|")]);
 
+  // Log which sections the visitor actually views — by scroll OR nav click.
+  // Debounced so a quick scroll-through doesn't spam, and deduped so the same
+  // section in a row isn't logged twice. This powers the activity timeline
+  // ("Viewed Pricing", "Viewed Features", ...) on the analytics drilldown.
+  const lastTracked = useRef<MainTabKey | null>(null);
+  useEffect(() => {
+    if (!activeTab) return;
+    const t = setTimeout(() => {
+      if (lastTracked.current === activeTab) return;
+      lastTracked.current = activeTab;
+      fetch("/api/analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          room_id: data.room.id,
+          visitor_id: visitorId,
+          event_type: "tab_click",
+          event_data: { tab: activeTab },
+        }),
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [activeTab, data.room.id, visitorId]);
+
   function scrollTo(tab: MainTabKey) {
     sectionRefs.current[tab]?.scrollIntoView({ behavior: "smooth", block: "start" });
     setActiveTab(tab);
-    fetch("/api/analytics", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        room_id: data.room.id,
-        visitor_id: visitorId,
-        event_type: "tab_click",
-        event_data: { tab },
-      }),
-    }).catch(() => {});
+    // Emission is handled by the debounced activeTab effect above, so a click
+    // and the scroll it triggers don't double-log.
   }
 
   function scrollToId(id: string) {
