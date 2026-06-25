@@ -11,7 +11,6 @@ import {
   DollarSign,
   BookOpen,
   GitCompare,
-  Rocket,
   Users,
   BarChart3,
   ChevronLeft,
@@ -44,7 +43,6 @@ const roomLinks = [
   { segment: "/customer-references", label: "Customer References", icon: Users },
   { segment: "/case-studies", label: "Case Studies", icon: BookOpen },
   { segment: "/comparisons", label: "Comparisons", icon: GitCompare },
-  { segment: "/getting-started", label: "Getting Started", icon: Rocket },
   { segment: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 

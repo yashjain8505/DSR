@@ -338,7 +338,6 @@ function computeVisibleTabs(data: RoomWithContent): MainTabKey[] {
     "pricing",
     "customers_references",
     "comparison",
-    "getting_started",
     "integrations",
     "security_compliance",
     "how_it_works",

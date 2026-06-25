@@ -20,7 +20,6 @@ const PAGE_TOGGLES: { key: string; label: string }[] = [
   { key: "pricing", label: "Pricing" },
   { key: "customers_references", label: "Our Customers and Case Studies" },
   { key: "comparison", label: "How We Compare" },
-  { key: "getting_started", label: "Getting Started" },
   { key: "integrations", label: "Integrations" },
   { key: "security_compliance", label: "Security & Compliance" },
   { key: "how_it_works", label: "How It Works" },
