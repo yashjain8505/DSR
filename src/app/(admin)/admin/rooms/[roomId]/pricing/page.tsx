@@ -6,7 +6,6 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Toggle } from "@/components/ui/toggle";
 import type {
   Pricing,
   PricingQuote,
@@ -40,9 +39,6 @@ export default function PricingEditorPage() {
   const [quote, setQuote] = useState<PricingQuote>({ ...defaultQuote });
   const [rangeTiers, setRangeTiers] = useState<RangeTier[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorPricing[]>([]);
-  // Show the quote/free-tier block by default so the free-installs field (25k
-  // default, editable per customer) is visible without flipping a toggle.
-  const [showQuote, setShowQuote] = useState(true);
   const [mode, setMode] = useState<"markdown" | "structured">("markdown");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,7 +59,6 @@ export default function PricingEditorPage() {
 
         if (normalized.quote) {
           setQuote(normalized.quote);
-          setShowQuote(true);
         }
         if (normalized.range_tiers?.length) {
           setRangeTiers(normalized.range_tiers);
@@ -185,11 +180,10 @@ export default function PricingEditorPage() {
     try {
       const pricingData: PricingData = {};
 
-      // Persist the quote whenever the block is shown, so a free-installs
-      // change (free_threshold) sticks even without an estimated volume.
-      if (showQuote) {
-        pricingData.quote = quote;
-      }
+      // Always persist the quote so the free-installs value (free_threshold)
+      // sticks. Only free_threshold is editable now; other quote fields keep
+      // their defaults and the prospect tab falls back gracefully.
+      pricingData.quote = quote;
       const validRanges = rangeTiers.filter(
         (t) => t.max_volume > t.min_volume && t.per_install_price > 0,
       );
@@ -236,9 +230,6 @@ export default function PricingEditorPage() {
   /* ---- computed preview ---- */
 
   const monthlyCost = quote.estimated_volume * quote.per_install_price;
-  const fmtCost =
-    quote.currency +
-    monthlyCost.toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
   /* ---- render ---- */
 
@@ -293,118 +284,28 @@ export default function PricingEditorPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* ═══════════════ CUSTOMER QUOTE ═══════════════ */}
+          {/* ═══════════════ FREE INSTALLS ═══════════════ */}
           <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-gray-900">
-                  Customer Quote
-                </h2>
-                <p className="mt-0.5 text-xs text-gray-500">
-                  Estimated Volume sets where the room&apos;s pricing slider
-                  starts; currency, free threshold &amp; value props show on
-                  the pricing tab
-                </p>
-              </div>
-              <Toggle
-                checked={showQuote}
-                onChange={setShowQuote}
-                label="Show quote"
+            <div className="mb-4">
+              <h2 className="text-base font-semibold text-gray-900">
+                Free Installs
+              </h2>
+              <p className="mt-0.5 text-xs text-gray-500">
+                One-time free attributed installs before billing starts. Shown
+                on the prospect pricing tab. Defaults to 25,000.
+              </p>
+            </div>
+            <div className="max-w-xs">
+              <Input
+                label="Free installs"
+                type="number"
+                value={quote.free_threshold || ""}
+                onChange={(e) =>
+                  updateQuote("free_threshold", parseInt(e.target.value) || 0)
+                }
+                placeholder="25000"
               />
             </div>
-
-            {showQuote && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  <Input
-                    label="Estimated Volume"
-                    type="number"
-                    value={quote.estimated_volume || ""}
-                    onChange={(e) =>
-                      updateQuote(
-                        "estimated_volume",
-                        parseInt(e.target.value) || 0,
-                      )
-                    }
-                    placeholder="150000"
-                  />
-                  <Input
-                    label="Per-Install Price"
-                    type="number"
-                    step="0.01"
-                    value={quote.per_install_price || ""}
-                    onChange={(e) =>
-                      updateQuote(
-                        "per_install_price",
-                        parseFloat(e.target.value) || 0,
-                      )
-                    }
-                    placeholder="0.70"
-                  />
-                  <Input
-                    label="Currency"
-                    value={quote.currency}
-                    onChange={(e) => updateQuote("currency", e.target.value)}
-                    placeholder="₹"
-                  />
-                  <Input
-                    label="Free Threshold"
-                    type="number"
-                    value={quote.free_threshold || ""}
-                    onChange={(e) =>
-                      updateQuote(
-                        "free_threshold",
-                        parseInt(e.target.value) || 0,
-                      )
-                    }
-                    placeholder="25000"
-                  />
-                </div>
-
-                {/* Live preview */}
-                {quote.estimated_volume > 0 && (
-                  <div className="rounded-lg border border-indigo-100 bg-white p-4">
-                    <p className="text-xs font-medium text-gray-400">
-                      Preview
-                    </p>
-                    <p className="mt-1 text-lg font-bold text-gray-900">
-                      {fmtCost}
-                      <span className="text-sm font-normal text-gray-400">
-                        /mo
-                      </span>
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {quote.estimated_volume.toLocaleString("en-IN")} x{" "}
-                      {quote.currency}
-                      {quote.per_install_price}
-                      {quote.free_threshold > 0 && (
-                        <span>
-                          {" "}
-                          (first{" "}
-                          {quote.free_threshold.toLocaleString("en-IN")} free,
-                          one-time)
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                )}
-
-                <Input
-                  label="Value Propositions (comma-separated)"
-                  value={quote.value_props.join(", ")}
-                  onChange={(e) =>
-                    updateQuote(
-                      "value_props",
-                      e.target.value
-                        .split(",")
-                        .map((v) => v.trim())
-                        .filter(Boolean),
-                    )
-                  }
-                  placeholder="All core features included, Postpaid monthly billing, No annual lock-in"
-                />
-              </div>
-            )}
           </div>
 
           {/* ═══════════════ PRICING RANGES (SLIDER) ═══════════════ */}
