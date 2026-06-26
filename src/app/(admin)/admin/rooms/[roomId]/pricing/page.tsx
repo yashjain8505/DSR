@@ -38,9 +38,11 @@ export default function PricingEditorPage() {
 
   const [content, setContent] = useState("");
   const [quote, setQuote] = useState<PricingQuote>({ ...defaultQuote });
-  const [showQuote, setShowQuote] = useState(false);
   const [rangeTiers, setRangeTiers] = useState<RangeTier[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorPricing[]>([]);
+  // Show the quote/free-tier block by default so the free-installs field (25k
+  // default, editable per customer) is visible without flipping a toggle.
+  const [showQuote, setShowQuote] = useState(true);
   const [mode, setMode] = useState<"markdown" | "structured">("markdown");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -183,7 +185,9 @@ export default function PricingEditorPage() {
     try {
       const pricingData: PricingData = {};
 
-      if (showQuote && quote.estimated_volume > 0) {
+      // Persist the quote whenever the block is shown, so a free-installs
+      // change (free_threshold) sticks even without an estimated volume.
+      if (showQuote) {
         pricingData.quote = quote;
       }
       const validRanges = rangeTiers.filter(
