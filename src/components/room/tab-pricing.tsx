@@ -10,38 +10,15 @@ import type {
   CompetitorPricing,
 } from "@/lib/types";
 import { normalizePricingData } from "@/lib/types";
+import {
+  DEFAULT_RANGE_TIERS as DEFAULT_RANGES,
+  DEFAULT_COMPETITOR_PRICING as DEFAULT_COMPETITORS,
+} from "@/lib/pricing-defaults";
 
 /* ------------------------------------------------------------------ */
 /*  Defaults — shown when admin hasn't configured anything             */
-/*  Based on linkrunner.io/pricing INR tiers.                          */
+/*  (sourced from @/lib/pricing-defaults, shared with the admin editor) */
 /* ------------------------------------------------------------------ */
-
-const DEFAULT_RANGES: RangeTier[] = [
-  { min_volume: 0, max_volume: 50_000, per_install_price: 1 },
-  { min_volume: 50_000, max_volume: 100_000, per_install_price: 0.9 },
-  { min_volume: 100_000, max_volume: 500_000, per_install_price: 0.8 },
-];
-
-const DEFAULT_COMPETITORS: CompetitorPricing[] = [
-  {
-    name: "AppsFlyer",
-    per_install_price: 5.0,
-    pricing_model: "Per conversion",
-    notes: "Requires annual contract",
-  },
-  {
-    name: "Adjust",
-    per_install_price: 4.5,
-    pricing_model: "Per attribution",
-    notes: "Annual commitment required",
-  },
-  {
-    name: "Branch",
-    per_install_price: 4.0,
-    pricing_model: "Per MAU",
-    notes: "Enterprise plan only for full features",
-  },
-];
 
 /** Perk tiles shown when the admin hasn't customized value props. */
 const DEFAULT_PERKS: { title: string; sub: string }[] = [

@@ -15,6 +15,10 @@ import type {
   CompetitorPricing,
 } from "@/lib/types";
 import { normalizePricingData } from "@/lib/types";
+import {
+  DEFAULT_RANGE_TIERS,
+  DEFAULT_COMPETITOR_PRICING,
+} from "@/lib/pricing-defaults";
 
 const defaultQuote: PricingQuote = {
   estimated_volume: 0,
@@ -73,9 +77,16 @@ export default function PricingEditorPage() {
               per_install_price: pt.per_install_price,
             })),
           );
+        } else {
+          // No saved tiers: pre-fill the standard ranges so the admin only
+          // tweaks numbers per customer instead of building from scratch.
+          setRangeTiers(DEFAULT_RANGE_TIERS);
         }
-        if (normalized.competitor_pricing) {
+        if (normalized.competitor_pricing?.length) {
           setCompetitors(normalized.competitor_pricing);
+        } else {
+          // No saved competitors: pre-fill the standard comparison set.
+          setCompetitors(DEFAULT_COMPETITOR_PRICING);
         }
 
         setMode(
