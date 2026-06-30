@@ -69,18 +69,20 @@ export async function POST(request: Request) {
     const prospect = prospects[0] ?? null;
     const companyName = meeting.company_name || prospect?.company || "Unknown";
 
-    // Every external attendee's email, deduped. These are auto-granted access
-    // to the room below, so an admin never has to invite them by hand.
-    const attendeeEmails = Array.from(
-      new Set(
-        prospects
-          .map((p) => p.email?.trim().toLowerCase())
-          .filter(
-            (e): e is string =>
-              !!e && e.includes("@") && !e.endsWith("@linkrunner.io")
-          )
-      )
-    );
+    // Auto-grant access by the attendees' DOMAINS, so anyone from the same
+    // company can enter (not just the people who happened to be on the call).
+    // Personal-provider attendees (gmail, etc.) are added as individual emails
+    // instead, so we never open a room to an entire public email provider.
+    const accessSet = new Set<string>();
+    for (const p of prospects) {
+      const email = p.email?.trim().toLowerCase();
+      if (!email || !email.includes("@") || email.endsWith("@linkrunner.io")) {
+        continue;
+      }
+      const companyDomain = domainFromEmail(email); // null for gmail/yahoo/etc.
+      accessSet.add(companyDomain ? `@${companyDomain}` : email);
+    }
+    const accessEntries = Array.from(accessSet);
 
     // 3. Extract brand assets (logo + color) from prospect's website
     let brandColor: string | null = null;
@@ -133,10 +135,10 @@ export async function POST(request: Request) {
         logo_url: logoUrl,
         brand_primary_color: brandColor,
         brand_secondary_color: secondaryColor,
-        // Lock the room to its meeting attendees (seeded below). We only
-        // restrict when there is at least one attendee to admit, so a room
+        // Lock the room to its meeting attendees' domains (seeded below). We
+        // only restrict when there is at least one entry to admit, so a room
         // with no external attendees is never accidentally sealed shut.
-        restrict_access: attendeeEmails.length > 0,
+        restrict_access: accessEntries.length > 0,
       })
       .select()
       .single();
@@ -251,10 +253,10 @@ export async function POST(request: Request) {
     // 8. Auto-grant access to every meeting attendee. Best-effort: a failure
     // here must not fail room creation (the room already exists and the admin
     // can still invite emails manually). restrict_access was set above.
-    if (attendeeEmails.length > 0) {
+    if (accessEntries.length > 0) {
       const { error: accessError } = await admin
         .from("room_access")
-        .insert(attendeeEmails.map((email) => ({ room_id: roomId, email })));
+        .insert(accessEntries.map((email) => ({ room_id: roomId, email })));
       if (accessError) {
         console.warn(
           `[from-granola] failed to seed room_access for ${slug}: ${accessError.message}`
@@ -265,7 +267,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         room,
-        message: `Room created for ${companyName} with meeting brief populated from Granola. ${attendeeEmails.length} attendee(s) auto-granted access.`,
+        message: `Room created for ${companyName} with meeting brief populated from Granola. Access granted to: ${accessEntries.join(", ") || "none"}.`,
       },
       { status: 201 }
     );
