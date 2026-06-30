@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSlackNotification } from "@/lib/slack";
+import { isEmailAllowed } from "@/lib/room-access";
 import type { EmailGatePayload } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -29,15 +30,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
-    // Anyone on the Linkrunner team (@linkrunner.io) can always enter any room.
-    if (room.restrict_access === true && !email.endsWith("@linkrunner.io")) {
-      const { data: allowed } = await admin
-        .from("room_access")
-        .select("id")
-        .eq("room_id", body.room_id)
-        .eq("email", email)
-        .maybeSingle();
-
+    // Enforce the allowlist (exact email, domain entry, or @linkrunner.io).
+    if (room.restrict_access === true) {
+      const allowed = await isEmailAllowed(admin, body.room_id, email);
       if (!allowed) {
         return NextResponse.json(
           {

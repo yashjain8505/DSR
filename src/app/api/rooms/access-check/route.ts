@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isEmailAllowed } from "@/lib/room-access";
 
 /**
  * POST /api/rooms/access-check
@@ -37,19 +38,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ allowed: true });
     }
 
-    // Anyone on the Linkrunner team (@linkrunner.io) can always enter any room.
-    if (email.endsWith("@linkrunner.io")) {
-      return NextResponse.json({ allowed: true });
-    }
-
-    const { data: entry } = await admin
-      .from("room_access")
-      .select("id")
-      .eq("room_id", body.room_id)
-      .eq("email", email)
-      .maybeSingle();
-
-    return NextResponse.json({ allowed: Boolean(entry) });
+    // Allowed by @linkrunner.io, an exact allowlist entry, or a domain entry.
+    const allowed = await isEmailAllowed(admin, body.room_id, email);
+    return NextResponse.json({ allowed });
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
