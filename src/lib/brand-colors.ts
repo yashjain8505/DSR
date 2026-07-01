@@ -238,7 +238,12 @@ const CURATED_LOGOS: Record<string, string> = {
     "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/currently.png",
   "dailyrounds.org":
     "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/dailyrounds.png",
+  "incredipets.in":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/incredipets.png",
+  "tv9.com":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/tv9.png",
   // vama.app: pending the correct logo upload from the team.
+  // lamp.credit: no logo found (site unreachable); add when available.
 };
 
 async function extractLogo(
