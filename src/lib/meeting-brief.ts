@@ -223,8 +223,25 @@ export function parseBrief(content: string): BriefData {
     });
   }
 
+  // Merge sections that resolve to the same key (e.g. a "Background" block and a
+  // "Current Setup" block both map to "Your Situation") so the brief never shows
+  // the same heading twice. Items are concatenated in source order.
+  const mergedByKey = new Map<string, BriefSection>();
+  const mergedSections: BriefSection[] = [];
+  for (const s of sections) {
+    const existing = mergedByKey.get(s.key);
+    if (existing) {
+      existing.items.push(...s.items);
+      existing.ordered = existing.ordered || s.ordered;
+    } else {
+      const copy: BriefSection = { ...s, items: [...s.items] };
+      mergedByKey.set(s.key, copy);
+      mergedSections.push(copy);
+    }
+  }
+
   // Canonical sections first (in defined order), extras after in source order.
-  sections.sort((a, b) => {
+  mergedSections.sort((a, b) => {
     const ai = CANONICAL_ORDER.has(a.key)
       ? CANONICAL_ORDER.get(a.key)!
       : CANONICAL_SECTIONS.length;
@@ -236,7 +253,7 @@ export function parseBrief(content: string): BriefData {
 
   // Pricing has its own dedicated tab — strip it from the brief so it's never
   // shown twice and the prospect doesn't see raw numbers in the recap.
-  const withoutPricing = sections.filter((s) => !/\bpric/i.test(s.title));
+  const withoutPricing = mergedSections.filter((s) => !/\bpric/i.test(s.title));
 
   return { snapshot, sections: withoutPricing };
 }
