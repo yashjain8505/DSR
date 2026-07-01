@@ -236,6 +236,8 @@ const CURATED_LOGOS: Record<string, string> = {
     "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/savart.png",
   "currently.club":
     "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/currently.png",
+  "dailyrounds.org":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/dailyrounds.png",
   // vama.app: pending the correct logo upload from the team.
 };
 
