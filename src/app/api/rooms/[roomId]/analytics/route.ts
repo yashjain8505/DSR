@@ -30,10 +30,10 @@ export async function GET(
       recentVisitorsResult,
       internalResult,
     ] = await Promise.all([
-      // Total page views
+      // Page views (with visitor_id so internal testers can be excluded)
       admin
         .from("analytics_events")
-        .select("id", { count: "exact", head: true })
+        .select("visitor_id")
         .eq("room_id", roomId)
         .eq("event_type", "page_view")
         .gte("created_at", since),
@@ -46,10 +46,10 @@ export async function GET(
         .not("visitor_id", "is", null)
         .gte("created_at", since),
 
-      // Tab click breakdown
+      // Tab click breakdown (with visitor_id so internal testers can be excluded)
       admin
         .from("analytics_events")
-        .select("event_data")
+        .select("event_data, visitor_id")
         .eq("room_id", roomId)
         .eq("event_type", "tab_click")
         .gte("created_at", since),
@@ -72,6 +72,12 @@ export async function GET(
       (internalResult.data ?? []).map((v) => v.id)
     );
 
+    // Page views, excluding internal testers (anonymous null-visitor views are
+    // real prospect traffic and kept).
+    const totalViews = (pageViewsResult.data ?? []).filter(
+      (row) => !(row.visitor_id && internalIds.has(row.visitor_id))
+    ).length;
+
     // Compute unique visitor count (excluding internal testers)
     const uniqueVisitorIds = new Set(
       (uniqueVisitorsResult.data ?? [])
@@ -79,9 +85,10 @@ export async function GET(
         .filter((id) => id && !internalIds.has(id))
     );
 
-    // Compute tab click breakdown
+    // Compute tab click breakdown (excluding internal testers)
     const tabClicks: Record<string, number> = {};
     for (const row of tabClicksResult.data ?? []) {
+      if (row.visitor_id && internalIds.has(row.visitor_id)) continue;
       const tab =
         (row.event_data as Record<string, unknown> | null)?.tab as
           | string
@@ -135,7 +142,7 @@ export async function GET(
     });
 
     const summary: RoomAnalyticsSummary = {
-      total_views: pageViewsResult.count ?? 0,
+      total_views: totalViews,
       unique_visitors: uniqueVisitorIds.size,
       tab_clicks: tabClicks,
       recent_visitors: recentVisitors,
