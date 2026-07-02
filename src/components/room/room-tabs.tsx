@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   MAIN_TAB_LABELS,
@@ -41,6 +42,7 @@ const RECAP_SUBS = [
 export function RoomTabs({ data, visitorId }: RoomTabsProps) {
   const visibleTabs = computeVisibleTabs(data);
   const [activeTab, setActiveTab] = useState<MainTabKey>(visibleTabs[0]);
+  const [menuOpen, setMenuOpen] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const hidden = new Set(data.room.hidden_sections ?? []);
   const recapSubs = RECAP_SUBS.filter((s) => !hidden.has(s.id));
@@ -110,12 +112,12 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
       return (
         <div className="space-y-10">
           {!hidden.has("recap_discussed") && (
-            <div id="recap_discussed" className="scroll-mt-4">
+            <div id="recap_discussed" className="scroll-mt-16 lg:scroll-mt-4">
               <TabMeetingBrief meetingBrief={data.meeting_brief} />
             </div>
           )}
           {!hidden.has("recap_next_steps") && (
-            <div id="recap_next_steps" className="scroll-mt-4">
+            <div id="recap_next_steps" className="scroll-mt-16 lg:scroll-mt-4">
               <TabNextSteps
                 nextSteps={data.meeting_brief?.next_steps ?? ""}
                 customerLogoUrl={data.room.logo_url}
@@ -168,6 +170,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
   }
 
   const num = (i: number) => `p.${String(i + 1).padStart(2, "0")}`;
+  const activeIndex = Math.max(0, visibleTabs.indexOf(activeTab));
 
   return (
     <div className="flex flex-col lg:flex-row lg:gap-8">
@@ -256,31 +259,117 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
         </div>
       </nav>
 
-      {/* ---- Mobile: sticky horizontal page bar ---- */}
-      <div className="sticky top-0 z-20 -mx-4 mb-4 flex gap-1 overflow-x-auto border-b border-gray-200 bg-gray-100/95 px-4 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:hidden">
-        {visibleTabs.map((tab) => {
-          const active = activeTab === tab;
-          return (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => scrollTo(tab)}
-              className={cn(
-                "relative shrink-0 whitespace-nowrap px-3 py-3 text-sm transition-colors",
-                active ? "font-semibold text-gray-900" : "text-gray-500",
-              )}
-            >
-              {MAIN_TAB_LABELS[tab]}
-              {active && (
-                <span
-                  className="absolute inset-x-2 -bottom-px h-0.5 rounded-full"
-                  style={{ backgroundColor: "var(--brand-primary)" }}
-                />
-              )}
-            </button>
-          );
-        })}
+      {/* ---- Mobile: current-section bar + "Sections" menu trigger ---- */}
+      <div className="sticky top-0 z-30 -mx-4 mb-2 flex items-center justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 py-2.5 backdrop-blur-md sm:-mx-6 sm:px-6 lg:hidden">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className="shrink-0 font-mono text-[11px] font-bold"
+            style={{ color: "var(--brand-primary)" }}
+          >
+            {num(activeIndex)}
+          </span>
+          <span className="truncate text-sm font-semibold text-gray-900">
+            {MAIN_TAB_LABELS[activeTab]}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 active:scale-95"
+          aria-label="Open section menu"
+        >
+          <Menu className="h-3.5 w-3.5" />
+          Sections
+        </button>
       </div>
+
+      {/* ---- Mobile: full-screen section menu ---- */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="absolute inset-x-0 top-0 max-h-[88dvh] overflow-y-auto rounded-b-3xl bg-white p-4 pb-6 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                Jump to a section
+              </p>
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-full p-2 text-gray-500 active:bg-gray-100"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {visibleTabs.map((tab, i) => {
+                const active = activeTab === tab;
+                return (
+                  <div key={tab}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        scrollTo(tab);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left active:bg-black/[0.04]"
+                      style={
+                        active
+                          ? {
+                              backgroundColor:
+                                "var(--brand-primary-light, #eef2ff)",
+                            }
+                          : undefined
+                      }
+                    >
+                      <span
+                        className="font-mono text-xs"
+                        style={{
+                          color: active
+                            ? "var(--brand-primary)"
+                            : "#9ca3af",
+                        }}
+                      >
+                        {num(i)}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[15px]",
+                          active
+                            ? "font-bold text-gray-900"
+                            : "font-medium text-gray-700",
+                        )}
+                      >
+                        {MAIN_TAB_LABELS[tab]}
+                      </span>
+                    </button>
+                    {tab === "meeting_brief" && recapSubs.length > 0 && (
+                      <div className="ml-[26px] flex flex-col border-l border-gray-200 pl-3">
+                        {recapSubs.map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              scrollToId(s.id);
+                            }}
+                            className="rounded-md px-2 py-2 text-left text-sm text-gray-500 active:text-gray-800"
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ---- Stacked, scrollable sections ---- */}
       <div className="min-w-0 flex-1">
@@ -292,7 +381,7 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
               sectionRefs.current[tab] = el;
             }}
             className={cn(
-              "scroll-mt-4 py-10 lg:py-14",
+              "scroll-mt-16 py-8 lg:scroll-mt-4 lg:py-14",
               i > 0 && "border-t-2 border-gray-900",
             )}
           >

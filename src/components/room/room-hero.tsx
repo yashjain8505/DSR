@@ -104,15 +104,15 @@ export function RoomHero({
         <div className="flex max-w-2xl flex-col gap-5 text-center lg:text-left">
           {/* Both logos with × between them */}
           <div className="flex items-center gap-4 self-center lg:self-start">
-            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg sm:h-20 sm:w-20">
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg sm:h-20 sm:w-20">
               <img
                 src="/logos/linkrunner-icon.png"
                 alt="Linkrunner logo"
-                className="h-12 w-12 object-contain sm:h-16 sm:w-16"
+                className="h-10 w-10 object-contain sm:h-16 sm:w-16"
               />
             </div>
             <span
-              className="text-3xl sm:text-4xl"
+              className="text-2xl sm:text-4xl"
               style={{
                 filter:
                   "brightness(1.25) saturate(1.15) drop-shadow(0 1px 3px rgba(0,0,0,0.25))",
@@ -123,15 +123,15 @@ export function RoomHero({
               🤝
             </span>
             {logoUrl ? (
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg sm:h-20 sm:w-20">
+              <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg sm:h-20 sm:w-20">
                 <img
                   src={logoUrl}
                   alt={`${companyName} logo`}
-                  className="h-12 w-12 object-contain sm:h-16 sm:w-16"
+                  className="h-10 w-10 object-contain sm:h-16 sm:w-16"
                 />
               </div>
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 shadow-lg backdrop-blur-sm sm:h-20 sm:w-20">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 shadow-lg backdrop-blur-sm sm:h-20 sm:w-20">
                 <span className="text-lg font-bold text-white sm:text-xl">
                   {companyName.slice(0, 2).toUpperCase()}
                 </span>
@@ -140,12 +140,12 @@ export function RoomHero({
           </div>
 
           {/* Greeting line */}
-          <p className="text-lg font-light italic tracking-wide text-white/80 sm:text-xl">
+          <p className="text-base font-light italic tracking-wide text-white/80 sm:text-xl">
             {greeting}
           </p>
 
           {/* Main heading */}
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
             Welcome to your
             <br />
             <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
@@ -175,7 +175,7 @@ export function RoomHero({
         </div>
 
         {/* Right column: Linkrunner team — one card (tag) per person */}
-        <div className="w-full max-w-xs shrink-0">
+        <div className="w-full max-w-sm shrink-0 lg:max-w-xs">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/50">
             Linkrunner team
           </p>

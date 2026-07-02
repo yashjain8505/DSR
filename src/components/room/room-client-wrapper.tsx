@@ -129,7 +129,7 @@ export function RoomClientWrapper({ data }: RoomClientWrapperProps) {
         ref={contentRef}
         className="min-h-screen bg-gray-100"
       >
-        <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6">
+        <div className="mx-auto max-w-[1600px] px-4 pb-28 pt-6 sm:px-6 sm:py-10">
           <RoomTabs data={data} visitorId={visitorId} />
         </div>
       </div>

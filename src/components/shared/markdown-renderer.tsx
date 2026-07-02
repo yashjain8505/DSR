@@ -48,7 +48,9 @@ function renderTables(html: string): string {
       const tbody = `<tbody>${rows
         .map((cells) => `<tr>${cells.map((c) => `<td>${c}</td>`).join("")}</tr>`)
         .join("")}</tbody>`;
-      return `<table>${thead}${tbody}</table>`;
+      // Wrap in a horizontally scrollable div so wide tables don't overflow on
+      // mobile (the table itself keeps overflow-hidden for the rounded corners).
+      return `<div class="lr-table-scroll -mx-1 overflow-x-auto"><table>${thead}${tbody}</table></div>`;
     },
   );
 }
@@ -195,9 +197,10 @@ export function MarkdownRenderer({
         // Fenced code blocks (higher specificity overrides inline code styles)
         "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-gray-900 [&_pre]:p-4",
         "[&_pre_code]:block [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:font-mono [&_pre_code]:text-[13px] [&_pre_code]:leading-relaxed [&_pre_code]:text-gray-100",
-        // Tables — borderless, zebra rows for structure
-        "[&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-lg [&_table]:text-sm",
-        "[&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-gray-900",
+        // Tables — borderless, zebra rows; horizontally scrollable on mobile
+        "[&_.lr-table-scroll]:my-4 [&_.lr-table-scroll]:rounded-lg",
+        "[&_table]:w-full [&_table]:min-w-[34rem] [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:text-sm",
+        "[&_th]:whitespace-nowrap [&_th]:bg-gray-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:text-gray-900",
         "[&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:text-gray-700",
         "[&_tbody_tr:nth-child(even)]:bg-gray-50",
         className,

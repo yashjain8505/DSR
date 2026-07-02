@@ -322,7 +322,7 @@ export function IntegrationsPage() {
 
       {/* Tabs + Search */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1 rounded-lg bg-gray-200/70 p-1">
+        <div className="-mx-1 flex gap-1 overflow-x-auto rounded-lg bg-gray-200/70 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             { key: "all", label: "All" },
             { key: "Ad Networks", label: "Ad Networks" },
@@ -332,7 +332,7 @@ export function IntegrationsPage() {
             <button
               key={tab.key}
               onClick={() => setActiveCategory(tab.key)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeCategory === tab.key
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"

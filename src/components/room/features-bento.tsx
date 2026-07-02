@@ -295,11 +295,11 @@ function FeatureCard({ item }: { item: FeatureItem }) {
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0">
-        <p className="flex items-center gap-1 text-[12.5px] font-semibold text-gray-900">
+        <p className="flex items-center gap-1 text-[13px] font-semibold text-gray-900">
           {item.title}
           <ArrowUpRight className="h-3 w-3 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100" />
         </p>
-        <p className="mt-0.5 text-[11px] leading-4 text-gray-400">{item.sub}</p>
+        <p className="mt-0.5 text-xs leading-4 text-gray-400">{item.sub}</p>
       </div>
     </a>
   );
