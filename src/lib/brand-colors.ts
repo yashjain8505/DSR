@@ -244,6 +244,8 @@ const CURATED_LOGOS: Record<string, string> = {
     "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/tv9.png",
   "lamp.credit":
     "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/gocredit.png",
+  "univest.in":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/univest.png",
   // vama.app: pending the correct logo upload from the team.
 };
 
