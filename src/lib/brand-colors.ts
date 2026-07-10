@@ -252,6 +252,12 @@ const CURATED_LOGOS: Record<string, string> = {
     "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/pi42.png",
   "mintinvesting.in":
     "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/mint-investing.png",
+  "oneway.cab":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/oneway.png",
+  "z2adigital.com":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/z2a-digital.png",
+  "fino.bank.in":
+    "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/fino-pay.png",
   // vama.app: pending the correct logo upload from the team.
 };
 
