@@ -6,12 +6,26 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Sidebar } from "@/components/admin/sidebar";
 import { generateSlug } from "@/lib/utils";
+
+/** Strip a website URL down to a bare domain for the access field. */
+function bareDomain(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^@/, "")
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .split("/")[0]
+    .split("?")[0];
+}
 
 export default function CreateRoomPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
   const [companyName, setCompanyName] = useState("");
@@ -19,18 +33,31 @@ export default function CreateRoomPage() {
   const [slugEdited, setSlugEdited] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [accessDomain, setAccessDomain] = useState("");
+  const [domainEdited, setDomainEdited] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [transcript, setTranscript] = useState("");
 
   function handleCompanyNameChange(value: string) {
     setCompanyName(value);
-    if (!slugEdited) {
-      setSlug(generateSlug(value));
-    }
+    if (!slugEdited) setSlug(generateSlug(value));
   }
 
-  function handleSlugChange(value: string) {
-    setSlug(value);
-    setSlugEdited(true);
+  function handleWebsiteChange(value: string) {
+    setWebsiteUrl(value);
+    // Convenience: keep the access domain in sync with the website until the
+    // admin edits the domain field themselves.
+    if (!domainEdited) setAccessDomain(bareDomain(value));
+  }
+
+  async function uploadLogo(file: File): Promise<string> {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/assets/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Logo upload failed");
+    return data.url as string;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -43,8 +70,19 @@ export default function CreateRoomPage() {
     }
 
     setLoading(true);
-
     try {
+      let logoUrl: string | undefined;
+      if (logoFile) {
+        setStatus("Uploading logo…");
+        logoUrl = await uploadLogo(logoFile);
+      }
+
+      setStatus(
+        transcript.trim()
+          ? "Creating room & building the brief from your transcript… (this can take ~15s)"
+          : "Creating room…",
+      );
+
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,22 +91,25 @@ export default function CreateRoomPage() {
           slug: slug.trim(),
           contact_name: contactName.trim() || undefined,
           contact_email: contactEmail.trim() || undefined,
-          logo_url: logoUrl.trim() || undefined,
+          website_url: websiteUrl.trim() || undefined,
+          access_domain: accessDomain.trim() || undefined,
+          logo_url: logoUrl,
+          transcript: transcript.trim() || undefined,
         }),
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error || "Failed to create room");
         return;
       }
 
       router.push(`/admin/rooms/${data.room.id}`);
-    } catch {
-      setError("Something went wrong");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
+      setStatus("");
     }
   }
 
@@ -85,9 +126,14 @@ export default function CreateRoomPage() {
             Back to rooms
           </Link>
 
-          <h1 className="mb-8 text-2xl font-bold text-gray-900">
+          <h1 className="mb-1 text-2xl font-bold text-gray-900">
             Create New Room
           </h1>
+          <p className="mb-8 text-sm text-gray-500">
+            Paste the meeting transcript and we&apos;ll build the structured recap
+            automatically. Upload the logo, set the access domain, and you&apos;re
+            done.
+          </p>
 
           <form
             onSubmit={handleSubmit}
@@ -106,20 +152,24 @@ export default function CreateRoomPage() {
                 label="Slug"
                 placeholder="acme-corp"
                 value={slug}
-                onChange={(e) => handleSlugChange(e.target.value)}
-                helperText="URL path for the room: /acme-corp"
+                onChange={(e) => {
+                  setSlug(e.target.value);
+                  setSlugEdited(true);
+                }}
+                helperText={`URL path for the room: /${slug || "acme-corp"}`}
                 required
               />
 
               <Input
-                label="Contact Name"
+                label="Attendee Name (from their company)"
                 placeholder="Jane Smith"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
+                helperText="Shown in the room greeting. Do not add anyone from Linkrunner."
               />
 
               <Input
-                label="Contact Email"
+                label="Contact Email (optional)"
                 placeholder="jane@acme.com"
                 type="email"
                 value={contactEmail}
@@ -127,14 +177,60 @@ export default function CreateRoomPage() {
               />
 
               <Input
-                label="Logo URL"
-                placeholder="https://example.com/logo.png"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
+                label="Company Website"
+                placeholder="https://acme.com"
+                value={websiteUrl}
+                onChange={(e) => handleWebsiteChange(e.target.value)}
+                helperText="Used to auto-pull the brand color (and the logo, if you don't upload one)."
               />
 
-              {error && (
-                <p className="text-sm text-red-600">{error}</p>
+              <Input
+                label="Access Domain"
+                placeholder="acme.com"
+                value={accessDomain}
+                onChange={(e) => {
+                  setAccessDomain(e.target.value);
+                  setDomainEdited(true);
+                }}
+                helperText="Everyone with an email at this domain can open the room. Leave empty to keep the room open to anyone with the link."
+              />
+
+              {/* Logo image upload */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-gray-700">
+                  Company Logo
+                </label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+                  className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#4d4bf7] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#3d3bd6]"
+                />
+                <p className="text-xs text-gray-500">
+                  {logoFile
+                    ? `Selected: ${logoFile.name}`
+                    : "PNG, JPG, WebP or SVG. Leave empty to auto-pull the logo from the website."}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Textarea
+                  label="Meeting Transcript"
+                  placeholder="Paste the full meeting transcript here…"
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  rows={10}
+                />
+                <p className="text-xs text-gray-500">
+                  We convert this into the structured recap (Your Situation, Pain
+                  Points, What We Showed You, Next Steps). Leave empty to start
+                  with a blank brief.
+                </p>
+              </div>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              {loading && status && (
+                <p className="text-sm text-gray-500">{status}</p>
               )}
 
               <div className="flex justify-end gap-3 pt-2">

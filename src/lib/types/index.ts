@@ -408,6 +408,12 @@ export interface CreateRoomPayload {
   logo_url?: string;
   contact_name?: string;
   contact_email?: string;
+  /** Raw meeting transcript — converted server-side into the structured brief. */
+  transcript?: string;
+  /** Company website URL — used for brand-color/logo extraction. */
+  website_url?: string;
+  /** Company domain to grant room access to (everyone @domain can enter). */
+  access_domain?: string;
 }
 
 /**

@@ -11,7 +11,13 @@ import {
   DEFAULT_CASE_STUDIES,
 } from "@/lib/constants";
 import { extractBrandAssets, domainFromEmail, domainFromSlug } from "@/lib/brand-colors";
+import { generateBriefFromTranscript } from "@/lib/brief-from-transcript";
 import type { CreateRoomPayload, Room } from "@/lib/types";
+
+// This handler turns a raw transcript into a structured brief (an LLM call) and
+// fetches brand assets on top of several DB writes, so give it generous
+// execution headroom. Deploy platforms cap this to their plan limit — advisory.
+export const maxDuration = 60;
 
 export async function GET() {
   const unauthorized = await requireAdmin();
@@ -30,12 +36,28 @@ export async function GET() {
     }
 
     return NextResponse.json({ rooms: rooms as Room[] });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Normalize a website URL, bare domain, or "@domain" down to a bare host
+ * (no protocol, no "www.", no path, no leading "@"). Returns null if empty.
+ */
+function normalizeDomain(input?: string | null): string | null {
+  if (!input) return null;
+  let d = input.trim().toLowerCase();
+  if (!d) return null;
+  d = d
+    .replace(/^@/, "")
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "");
+  d = d.split("/")[0].split("?")[0].split("#")[0].trim();
+  return d || null;
 }
 
 export async function POST(request: Request) {
@@ -59,9 +81,14 @@ export async function POST(request: Request) {
     let brandColor: string | null = null;
     let secondaryColor: string | null = null;
 
-    // Try to get a domain: from contact_email first, then guess from slug
+    // Resolve a domain for brand extraction: explicit website first, then the
+    // access domain the admin entered, then the contact email, then the slug.
     const contactEmail = body.contact_email ?? null;
-    let domain = contactEmail ? domainFromEmail(contactEmail) : null;
+    const accessDomain = normalizeDomain(body.access_domain);
+    let domain =
+      normalizeDomain(body.website_url) ||
+      accessDomain ||
+      (contactEmail ? domainFromEmail(contactEmail) : null);
     if (!domain) {
       domain = await domainFromSlug(body.slug);
     }
@@ -81,6 +108,15 @@ export async function POST(request: Request) {
     // validated Google-favicon attempt; a null logo renders as a monogram,
     // which beats storing a URL that 404s.
 
+    // Turn the raw meeting transcript into the structured, customer-POV brief
+    // (empty content when no transcript is supplied).
+    const brief = body.transcript?.trim()
+      ? await generateBriefFromTranscript(body.transcript, {
+          companyName: body.company_name,
+          contactName: body.contact_name ?? null,
+        })
+      : { content: "", nextSteps: "" };
+
     // Create the room
     const { data: room, error: roomError } = await admin
       .from("rooms")
@@ -92,6 +128,9 @@ export async function POST(request: Request) {
         contact_email: contactEmail,
         brand_primary_color: brandColor,
         brand_secondary_color: secondaryColor,
+        // Lock the room to the entered company domain (seeded below). Left open
+        // when no access domain is provided.
+        restrict_access: !!accessDomain,
       })
       .select()
       .single();
@@ -108,10 +147,11 @@ export async function POST(request: Request) {
     // Create child rows in parallel
     const [briefResult, subTabsResult, pricingResult, gettingStartedResult, refsResult, caseStudiesResult] =
       await Promise.all([
-        // 1. Meeting brief (empty content)
+        // 1. Meeting brief (structured from the transcript, or empty)
         admin.from("meeting_briefs").insert({
           room_id: roomId,
-          content: "",
+          content: brief.content,
+          next_steps: brief.nextSteps,
         }),
 
         // 2. Overview sub-tabs (one per key)
@@ -189,8 +229,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // Domain-based access: everyone with the entered company domain can enter.
+    // Best-effort — the room already exists, so a failure here shouldn't fail
+    // creation (the admin can still add access manually).
+    if (accessDomain) {
+      const { error: accessError } = await admin
+        .from("room_access")
+        .insert({ room_id: roomId, email: `@${accessDomain}` });
+      if (accessError) {
+        console.warn(
+          `[rooms] failed to seed domain access for ${body.slug}: ${accessError.message}`
+        );
+      }
+    }
+
     return NextResponse.json({ room: room as Room }, { status: 201 });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
