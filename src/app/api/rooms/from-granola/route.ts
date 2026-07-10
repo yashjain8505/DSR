@@ -82,6 +82,17 @@ export async function POST(request: Request) {
       const companyDomain = domainFromEmail(email); // null for gmail/yahoo/etc.
       accessSet.add(companyDomain ? `@${companyDomain}` : email);
     }
+    // Fallback: if no participant carried a usable email (e.g. a meeting synced
+    // from a transcript, where only the cached contact is known), fetch the
+    // domain from the meeting's contact_email so the room still defaults to the
+    // attendee's company domain instead of being left open to everyone.
+    if (accessSet.size === 0 && meeting.contact_email) {
+      const email = meeting.contact_email.trim().toLowerCase();
+      if (email.includes("@") && !email.endsWith("@linkrunner.io")) {
+        const companyDomain = domainFromEmail(email);
+        accessSet.add(companyDomain ? `@${companyDomain}` : email);
+      }
+    }
     const accessEntries = Array.from(accessSet);
 
     // 3. Extract brand assets (logo + color) from prospect's website
