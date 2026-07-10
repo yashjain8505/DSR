@@ -12,13 +12,14 @@ import {
 } from "@/lib/constants";
 import { extractBrandAssets, domainFromEmail, domainFromSlug } from "@/lib/brand-colors";
 import { parseBrief, hasStructure, serializeBrief } from "@/lib/meeting-brief";
+import { generateBriefFromTranscript } from "@/lib/brief-from-transcript";
 import type { GranolaMeetingCache, GranolaMeetingParticipant } from "@/lib/types";
 
 // This route makes an external LLM call (customer-POV brief rewrite) on top of a
 // brand-asset fetch and several DB writes, so give it generous execution
 // headroom. Deployment platforms cap this to their plan limit — it's advisory.
 // (Next.js route segment config.)
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 /**
  * POST /api/rooms/from-granola
@@ -163,10 +164,23 @@ export async function POST(request: Request) {
 
     const roomId = room.id;
 
-    // 6. Build meeting brief content — prefer structured brief, fall back to raw summary
-    const rawBrief = meeting.meeting_brief
-      ? meeting.meeting_brief
-      : buildBriefContent(meeting, participants);
+    // 6. Build meeting brief content. Prefer a pre-built structured brief; else
+    // generate a structured one from the raw transcript/summary (so rooms made
+    // straight from a meeting are never a raw transcript dump); else wrap it.
+    let rawBrief: string;
+    if (meeting.meeting_brief) {
+      rawBrief = meeting.meeting_brief;
+    } else if (meeting.summary?.trim()) {
+      const gen = await generateBriefFromTranscript(meeting.summary, {
+        companyName,
+        contactName: prospect?.name ?? null,
+      });
+      rawBrief = gen.nextSteps
+        ? `${gen.content}\n\n## Next Steps\n${gen.nextSteps}`
+        : gen.content;
+    } else {
+      rawBrief = buildBriefContent(meeting, participants);
+    }
 
     // Split structured brief into recap content and next steps, then rewrite the
     // recap into the customer's POV. rewriteBriefForCustomer uses an LLM when
