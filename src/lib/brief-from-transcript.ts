@@ -3,9 +3,12 @@
  * brief the room renders ("What we discussed so far": Your Situation / Pain
  * Points / What We Showed You / Questions & Answers / Next Steps).
  *
- * Uses the Anthropic API directly with the Claude subscription auth token
- * (ANTHROPIC_AUTH_TOKEN) ONLY — never OpenRouter, never a metered API key.
- * Fallback (no token / empty / error): the transcript is kept verbatim
+ * Uses the Anthropic API directly (never OpenRouter). Auth resolves in order:
+ *   1. ANTHROPIC_API_KEY — a standard key (x-api-key header). Reliable.
+ *   2. ANTHROPIC_AUTH_TOKEN — a Claude subscription OAuth token. NOTE: subscription
+ *      tokens are restricted to Claude Code and 401 on direct API calls, so this
+ *      path does not work for custom requests — kept only for completeness.
+ * Fallback (no credential / empty / error): the transcript is kept verbatim
  * under a Notes heading so nothing is lost and room creation never fails.
  *
  * Output is normalized through the same parseBrief/serializeBrief the
@@ -48,25 +51,31 @@ export interface BriefFromTranscript {
 }
 
 function hasCredential(): boolean {
-  return !!process.env.ANTHROPIC_AUTH_TOKEN;
+  return !!(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
 }
 
 function pickModel(): string {
-  return process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5";
+  return process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
 }
 
 /** Call the Anthropic API for a (system, user) pair; returns raw text. Throws on failure. */
 async function callLLM(system: string, user: string, signal: AbortSignal): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
-  if (!authToken) throw new Error("no Anthropic auth token (set ANTHROPIC_AUTH_TOKEN)");
 
   const headers: Record<string, string> = {
     "content-type": "application/json",
     "anthropic-version": "2023-06-01",
-    // Claude subscription auth token (OAuth).
-    authorization: `Bearer ${authToken}`,
-    "anthropic-beta": "oauth-2025-04-20",
   };
+  if (apiKey) {
+    headers["x-api-key"] = apiKey;
+  } else if (authToken) {
+    // Claude subscription OAuth token (generally restricted to Claude Code).
+    headers["authorization"] = `Bearer ${authToken}`;
+    headers["anthropic-beta"] = "oauth-2025-04-20";
+  } else {
+    throw new Error("no Anthropic credential (set ANTHROPIC_API_KEY)");
+  }
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
