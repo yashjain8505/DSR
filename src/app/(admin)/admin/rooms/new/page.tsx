@@ -22,6 +22,12 @@ function bareDomain(value: string): string {
     .split("?")[0];
 }
 
+/** Personal email providers — never used as a room access domain. */
+const GENERIC_EMAIL_DOMAINS = new Set([
+  "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com",
+  "proton.me", "protonmail.com", "live.com", "aol.com", "rediffmail.com",
+]);
+
 export default function CreateRoomPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -38,6 +44,7 @@ export default function CreateRoomPage() {
   const [domainEdited, setDomainEdited] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [transcript, setTranscript] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
 
   function handleCompanyNameChange(value: string) {
     setCompanyName(value);
@@ -49,6 +56,16 @@ export default function CreateRoomPage() {
     // Convenience: keep the access domain in sync with the website until the
     // admin edits the domain field themselves.
     if (!domainEdited) setAccessDomain(bareDomain(value));
+  }
+
+  function handleContactEmailChange(value: string) {
+    setContactEmail(value);
+    // Auto-fill the access domain from the attendee's email, skipping personal
+    // providers so we never open the room to an entire public email domain.
+    if (!domainEdited) {
+      const d = bareDomain(value.split("@")[1] ?? "");
+      if (d && !GENERIC_EMAIL_DOMAINS.has(d)) setAccessDomain(d);
+    }
   }
 
   async function uploadLogo(file: File): Promise<string> {
@@ -93,6 +110,7 @@ export default function CreateRoomPage() {
           contact_email: contactEmail.trim() || undefined,
           website_url: websiteUrl.trim() || undefined,
           access_domain: accessDomain.trim() || undefined,
+          public: isPublic,
           logo_url: logoUrl,
           transcript: transcript.trim() || undefined,
         }),
@@ -169,11 +187,12 @@ export default function CreateRoomPage() {
               />
 
               <Input
-                label="Contact Email (optional)"
+                label="Attendee Email"
                 placeholder="jane@acme.com"
                 type="email"
                 value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
+                onChange={(e) => handleContactEmailChange(e.target.value)}
+                helperText="Their email domain decides who can open the room (private by default)."
               />
 
               <Input
@@ -192,8 +211,25 @@ export default function CreateRoomPage() {
                   setAccessDomain(e.target.value);
                   setDomainEdited(true);
                 }}
-                helperText="Everyone with an email at this domain can open the room. Leave empty to keep the room open to anyone with the link."
+                disabled={isPublic}
+                helperText="Private by default: only people with an email at this domain can open the room. Auto-filled from the attendee's email/website."
               />
+
+              <label className="flex items-start gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#4d4bf7] focus:ring-[#4d4bf7]"
+                />
+                <span>
+                  Make this room public
+                  <span className="block text-xs text-gray-500">
+                    Anyone with the link can open it. Off by default - rooms are
+                    private to the attendee&apos;s domain.
+                  </span>
+                </span>
+              </label>
 
               {/* Logo image upload */}
               <div className="flex flex-col gap-1.5">

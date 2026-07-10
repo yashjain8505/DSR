@@ -414,6 +414,8 @@ export interface CreateRoomPayload {
   website_url?: string;
   /** Company domain to grant room access to (everyone @domain can enter). */
   access_domain?: string;
+  /** When true, the room is public (no access restriction). Default is private. */
+  public?: boolean;
 }
 
 /**

@@ -81,14 +81,25 @@ export async function POST(request: Request) {
     let brandColor: string | null = null;
     let secondaryColor: string | null = null;
 
-    // Resolve a domain for brand extraction: explicit website first, then the
-    // access domain the admin entered, then the contact email, then the slug.
-    const contactEmail = body.contact_email ?? null;
-    const accessDomain = normalizeDomain(body.access_domain);
-    let domain =
-      normalizeDomain(body.website_url) ||
-      accessDomain ||
-      (contactEmail ? domainFromEmail(contactEmail) : null);
+    // Access is PRIVATE by default: restrict to the meeting attendee's company
+    // domain (or, for a personal-email attendee with no company domain, their
+    // exact email). Domain priority: the explicit access-domain field, then the
+    // contact email's domain, then the website. The admin can opt into public.
+    const contactEmail = body.contact_email?.trim().toLowerCase() || null;
+    const emailDomain = contactEmail ? domainFromEmail(contactEmail) : null;
+    const accessDomain =
+      normalizeDomain(body.access_domain) ||
+      emailDomain ||
+      normalizeDomain(body.website_url);
+
+    const accessEntries: string[] = [];
+    if (accessDomain) accessEntries.push(`@${accessDomain}`);
+    else if (contactEmail) accessEntries.push(contactEmail);
+
+    const restrict = body.public !== true && accessEntries.length > 0;
+
+    // Domain used for brand-asset extraction (website first, then access domain).
+    let domain = normalizeDomain(body.website_url) || accessDomain;
     if (!domain) {
       domain = await domainFromSlug(body.slug);
     }
@@ -128,9 +139,9 @@ export async function POST(request: Request) {
         contact_email: contactEmail,
         brand_primary_color: brandColor,
         brand_secondary_color: secondaryColor,
-        // Lock the room to the entered company domain (seeded below). Left open
-        // when no access domain is provided.
-        restrict_access: !!accessDomain,
+        // Private by default: locked to the attendee's domain/email (seeded
+        // below). Only a room the admin explicitly marks public is left open.
+        restrict_access: restrict,
       })
       .select()
       .single();
@@ -229,16 +240,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Domain-based access: everyone with the entered company domain can enter.
-    // Best-effort — the room already exists, so a failure here shouldn't fail
-    // creation (the admin can still add access manually).
-    if (accessDomain) {
+    // Seed access for a private room: the attendee's company domain (or their
+    // exact email for a personal-provider attendee). Public rooms get no
+    // allowlist. Best-effort — never fail creation over this.
+    if (restrict && accessEntries.length > 0) {
       const { error: accessError } = await admin
         .from("room_access")
-        .insert({ room_id: roomId, email: `@${accessDomain}` });
+        .insert(accessEntries.map((email) => ({ room_id: roomId, email })));
       if (accessError) {
         console.warn(
-          `[rooms] failed to seed domain access for ${body.slug}: ${accessError.message}`
+          `[rooms] failed to seed room access for ${body.slug}: ${accessError.message}`
         );
       }
     }
