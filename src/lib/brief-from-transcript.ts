@@ -3,17 +3,16 @@
  * brief the room renders ("What we discussed so far": Your Situation / Pain
  * Points / What We Showed You / Questions & Answers / Next Steps).
  *
- * Uses the Anthropic API directly (never OpenRouter). Auth resolves in order:
- *   1. ANTHROPIC_API_KEY — a standard key (x-api-key header). Reliable.
- *   2. ANTHROPIC_AUTH_TOKEN — a Claude subscription OAuth token. NOTE: subscription
- *      tokens are restricted to Claude Code and 401 on direct API calls, so this
- *      path does not work for custom requests — kept only for completeness.
- * Fallback (no credential / empty / error): the transcript is kept verbatim
- * under a Notes heading so nothing is lost and room creation never fails.
+ * Provider is chosen by which key is set:
+ *   1. GROQ_API_KEY — Groq (free, OpenAI-compatible). Preferred.
+ *   2. ANTHROPIC_API_KEY — Anthropic Messages API (x-api-key). Fallback.
+ * Never OpenRouter; never a Claude subscription OAuth token (those 401 on direct
+ * API calls — they only work inside Claude Code).
  *
- * Output is normalized through the same parseBrief/serializeBrief the
- * from-granola flow uses, so it renders identically. Server-only — never import
- * into client code.
+ * Fallback (no key / empty / error): the transcript is kept verbatim under a
+ * Notes heading so nothing is lost and room creation never fails. Output is
+ * normalized through the same parseBrief/serializeBrief the from-granola flow
+ * uses, so it renders identically. Server-only — never import into client code.
  */
 import { parseBrief, hasStructure, serializeBrief } from "./meeting-brief";
 
@@ -51,51 +50,76 @@ export interface BriefFromTranscript {
 }
 
 function hasCredential(): boolean {
-  return !!(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
+  return !!(process.env.GROQ_API_KEY || process.env.ANTHROPIC_API_KEY);
 }
 
 function pickModel(): string {
+  if (process.env.GROQ_API_KEY) return process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
   return process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
 }
 
-/** Call the Anthropic API for a (system, user) pair; returns raw text. Throws on failure. */
+/** Call the configured LLM for a (system, user) pair; returns raw text. Throws on failure. */
 async function callLLM(system: string, user: string, signal: AbortSignal): Promise<string> {
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey) {
+    // Groq is OpenAI-compatible: system + user in one messages array.
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      cache: "no-store",
+      signal,
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${groqKey}`,
+      },
+      body: JSON.stringify({
+        model: pickModel(),
+        max_tokens: 4096,
+        temperature: 0.3,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`Groq ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+    }
+    const json = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const text = json.choices?.[0]?.message?.content;
+    if (typeof text !== "string" || !text.trim()) throw new Error("Groq: empty response");
+    return text;
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
-
-  const headers: Record<string, string> = {
-    "content-type": "application/json",
-    "anthropic-version": "2023-06-01",
-  };
   if (apiKey) {
-    headers["x-api-key"] = apiKey;
-  } else if (authToken) {
-    // Claude subscription OAuth token (generally restricted to Claude Code).
-    headers["authorization"] = `Bearer ${authToken}`;
-    headers["anthropic-beta"] = "oauth-2025-04-20";
-  } else {
-    throw new Error("no Anthropic credential (set ANTHROPIC_API_KEY)");
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      cache: "no-store",
+      signal,
+      headers: {
+        "content-type": "application/json",
+        "anthropic-version": "2023-06-01",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        model: pickModel(),
+        max_tokens: 4096,
+        system,
+        messages: [{ role: "user", content: user }],
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`Anthropic ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+    }
+    const data = (await res.json()) as { content?: Array<{ type?: string; text?: string }> };
+    const text = (data.content ?? []).map((b) => (b.type === "text" ? b.text ?? "" : "")).join("").trim();
+    if (!text) throw new Error("Anthropic: empty response");
+    return text;
   }
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    cache: "no-store",
-    signal,
-    headers,
-    body: JSON.stringify({
-      model: pickModel(),
-      max_tokens: 4096,
-      system,
-      messages: [{ role: "user", content: user }],
-    }),
-  });
-  if (!res.ok) {
-    throw new Error(`Anthropic ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
-  }
-  const data = (await res.json()) as { content?: Array<{ type?: string; text?: string }> };
-  const text = (data.content ?? []).map((b) => (b.type === "text" ? b.text ?? "" : "")).join("").trim();
-  if (!text) throw new Error("Anthropic: empty response");
-  return text;
+  throw new Error("no LLM credential (set GROQ_API_KEY)");
 }
 
 /** Split a structured brief markdown into recap content + the next-steps block. */
