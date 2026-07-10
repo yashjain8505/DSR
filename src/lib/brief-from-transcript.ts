@@ -3,10 +3,9 @@
  * brief the room renders ("What we discussed so far": Your Situation / Pain
  * Points / What We Showed You / Questions & Answers / Next Steps).
  *
- * Provider is picked by which credential is set, matching the ideation engine:
- *   1. OpenRouter (OPENROUTER_API_KEY) — the path configured in this project.
- *   2. Anthropic direct (ANTHROPIC_API_KEY) — for envs that use it instead.
- * Fallback (no credential / empty / error): the transcript is kept verbatim
+ * Uses the Anthropic API directly with the Claude subscription auth token
+ * (ANTHROPIC_AUTH_TOKEN) ONLY — never OpenRouter, never a metered API key.
+ * Fallback (no token / empty / error): the transcript is kept verbatim
  * under a Notes heading so nothing is lost and room creation never fails.
  *
  * Output is normalized through the same parseBrief/serializeBrief the
@@ -14,8 +13,6 @@
  * into client code.
  */
 import { parseBrief, hasStructure, serializeBrief } from "./meeting-brief";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const SYSTEM_PROMPT = `You are turning a raw sales-call transcript into a structured recap that the CUSTOMER will read inside their sales room, under a heading "What we discussed so far". Write it as if the customer is reading it.
 
@@ -50,54 +47,32 @@ export interface BriefFromTranscript {
   nextSteps: string;
 }
 
-/** The model id, provider-specific (OpenRouter uses namespaced slugs). */
-function pickModel(): string {
-  if (process.env.OPENROUTER_API_KEY) return process.env.ENGINE_MODEL ?? "anthropic/claude-haiku-4.5";
-  return process.env.ANTHROPIC_MODEL ?? "claude-3-5-haiku-latest";
+function hasCredential(): boolean {
+  return !!process.env.ANTHROPIC_AUTH_TOKEN;
 }
 
-/** Call the configured LLM for a (system, user) pair; returns raw text. Throws on failure. */
-async function callLLM(system: string, user: string, signal: AbortSignal): Promise<string> {
-  const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
-  if (OPENROUTER_KEY) {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      cache: "no-store",
-      signal,
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${OPENROUTER_KEY}`,
-        "X-Title": "Linkrunner Brief",
-      },
-      body: JSON.stringify({
-        model: pickModel(),
-        max_tokens: 4096,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      throw new Error(`OpenRouter ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
-    }
-    const json = await res.json();
-    const text = json?.choices?.[0]?.message?.content;
-    if (typeof text !== "string" || !text.trim()) throw new Error("OpenRouter: empty response");
-    return text;
-  }
+function pickModel(): string {
+  return process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5";
+}
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("no LLM credential configured");
+/** Call the Anthropic API for a (system, user) pair; returns raw text. Throws on failure. */
+async function callLLM(system: string, user: string, signal: AbortSignal): Promise<string> {
+  const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
+  if (!authToken) throw new Error("no Anthropic auth token (set ANTHROPIC_AUTH_TOKEN)");
+
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    "anthropic-version": "2023-06-01",
+    // Claude subscription auth token (OAuth).
+    authorization: `Bearer ${authToken}`,
+    "anthropic-beta": "oauth-2025-04-20",
+  };
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     cache: "no-store",
     signal,
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
+    headers,
     body: JSON.stringify({
       model: pickModel(),
       max_tokens: 4096,
@@ -162,9 +137,7 @@ export async function generateBriefFromTranscript(
   const text = (transcript ?? "").trim();
   if (!text) return { content: "", nextSteps: "" };
 
-  if (!process.env.OPENROUTER_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-    return fallbackBrief(text, opts);
-  }
+  if (!hasCredential()) return fallbackBrief(text, opts);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 45_000);
