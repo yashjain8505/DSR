@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Features — Option 4 (final)</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root{--brand-primary:#4d4bf7}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Geist',-apple-system,sans-serif;background:#f7f7f7;color:#0f172a;-webkit-font-smoothing:antialiased}
+  .page{max-width:880px;margin:0 auto;padding:26px 20px 60px}
+  .note{font-size:12px;color:#9499a3;margin:0 0 16px}
+  a{text-decoration:none;color:inherit}
+  .space>*+*{margin-top:12px}
+  .tile-bg{background:color-mix(in srgb,var(--brand-primary) 12%,white);color:var(--brand-primary)}
+  /* highlights */
+  .hi{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px}
+  .htile{display:flex;flex-direction:column;border-radius:16px;padding:20px;border:1px solid #e5e7eb;background:#fff;transition:.15s}
+  .htile:hover{border-color:#d1d5db}
+  .htile.feature{background:var(--brand-primary);border:none;color:#fff}
+  .htile.feature:hover{transform:translateY(-2px)}
+  .htop{display:flex;align-items:flex-start;justify-content:space-between}
+  .hicon{display:flex;width:40px;height:40px;align-items:center;justify-content:center;border-radius:12px}
+  .htile.feature .hicon{background:rgba(255,255,255,.2);color:#fff}
+  .hicon svg{width:20px;height:20px}
+  .harrow{width:16px;height:16px;color:#d1d5db}
+  .htile.feature .harrow{color:rgba(255,255,255,.6)}
+  .htile h3{margin:28px 0 0;font-size:16px;font-weight:700}
+  .htile p{margin:4px 0 0;font-size:12.5px;line-height:1.45;color:#6b7280}
+  .htile.feature p{color:rgba(255,255,255,.85)}
+  /* strips */
+  .strip{border:1px solid #e5e7eb;background:#fff;border-radius:16px;padding:20px}
+  .sbar{display:flex;align-items:baseline;gap:10px}
+  .sbar .t{font-size:14px;font-weight:700}
+  .sbar .s{font-size:12px;color:#9ca3af}
+  .pill{margin-left:auto;border:1px solid #e5e7eb;border-radius:999px;padding:1px 9px;font-size:11px;font-weight:600;color:#6b7280}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 20px;margin-top:16px}
+  .card{display:flex;align-items:flex-start;gap:10px}
+  .cicon{display:flex;width:32px;height:32px;flex:0 0 auto;align-items:center;justify-content:center;border-radius:8px}
+  .cicon svg{width:16px;height:16px}
+  .card .ti{display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:600;color:#111827;margin:0}
+  .card .ti .ar{width:12px;height:12px;color:#cbd0d8;opacity:0;transition:.15s}
+  .card:hover .ti .ar{opacity:1}
+  .card .d{margin:2px 0 0;font-size:11px;line-height:1.35;color:#9ca3af}
+  .docs{display:flex;align-items:center;justify-content:center;gap:6px;border:1px dashed #d1d5db;background:#fff;border-radius:16px;padding:13px;font-size:12.5px;font-weight:600;color:var(--brand-primary)}
+  .docs:hover{border-color:#9ca3af}
+  .docs svg{width:14px;height:14px}
+  .swatch{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
+  .swatch button{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.1);cursor:pointer}
+  @media(max-width:720px){.hi{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}}
+</style></head>
+<body>
+<div class="page">
+  <p class="note">Option 4 (final) — exact mirror of the component. Every tile and card deep-links to its docs.linkrunner.io page. Icon colour follows the room's brand.
+    <span class="swatch">
+      <button style="background:#4d4bf7" onclick="document.documentElement.style.setProperty('--brand-primary','#4d4bf7')" title="Linkrunner"></button>
+      <button style="background:#4d6cd9" onclick="document.documentElement.style.setProperty('--brand-primary','#4d6cd9')" title="Prefr"></button>
+      <button style="background:#f07050" onclick="document.documentElement.style.setProperty('--brand-primary','#f07050')" title="Giottus"></button>
+      <button style="background:#20b0b0" onclick="document.documentElement.style.setProperty('--brand-primary','#20b0b0')" title="Zuno"></button>
+    </span>
+  </p>
+  <div class="space">
+    <div class="hi" id="hi"></div>
+    <div id="strips"></div>
+    <a class="docs" href="https://docs.linkrunner.io/introduction" target="_blank" rel="noopener">Explore the full documentation <i data-lucide="arrow-up-right"></i></a>
+  </div>
+</div>
+<script>
+const DOCS="https://docs.linkrunner.io";
+const HI=[
+ {icon:"corner-down-right",t:"Deferred deep linking",d:"Preserve the destination through install, every time",h:DOCS+"/features/deferred-deep-linking",feature:true},
+ {icon:"shield-check",t:"iOS SKAdNetwork",d:"Apple-certified iOS install measurement",h:DOCS+"/features/skadnetwork-integration"},
+ {icon:"sparkles",t:"MCP for Claude",d:"Ask your attribution data in plain language",h:DOCS+"/features/mcp"},
+];
+const CATS=[
+ {t:"Core Features",s:"The attribution and growth toolkit",items:[
+  {icon:"globe",t:"Subdomain Setup",d:"White-label every link on your own domain",h:DOCS+"/features/subdomain-setup"},
+  {icon:"link-2",t:"Deep Linking Setup",d:"Route users to the exact in-app screen",h:DOCS+"/features/deep-linking-setup"},
+  {icon:"route",t:"Web to App Journeys",d:"Carry web context into the app seamlessly",h:DOCS+"/features/web-to-app-journeys"},
+  {icon:"smartphone",t:"Link Redirection",d:"Smart routing by platform and locale",h:DOCS+"/features/link-redirection"},
+  {icon:"users",t:"Referral Code Tracking",d:"Unique referral links per user, no limits",h:DOCS+"/features/referral-codes"},
+  {icon:"store",t:"Custom Store Listings",d:"Tie creatives to custom product pages",h:DOCS+"/features/custom-store-listing"},
+  {icon:"trending-down",t:"Uninstall Tracking",d:"See churn cohorts across campaigns",h:DOCS+"/features/uninstall-tracking"},
+  {icon:"infinity",t:"Meta Install Referrer",d:"Higher Android attribution accuracy",h:DOCS+"/features/meta-install-referrer"},
+  {icon:"apple",t:"iOS Campaign Data",d:"Aggregate iOS insight within Apple limits",h:DOCS+"/features/ios-campaign-data-limitations"},
+  {icon:"webhook",t:"Webhooks",d:"Stream attribution events to your stack",h:DOCS+"/features/webhooks"},
+  {icon:"share-2",t:"Social Intermediary Page",d:"Reliable deep links from social apps",h:DOCS+"/features/social-media-intermediary-page"},
+  {icon:"target",t:"Remarketing",d:"Export cohorts to Google and Meta",h:DOCS+"/features/remarketing"},
+ ]},
+ {t:"SDK-less Integration",s:"Attribute without shipping an SDK",items:[
+  {icon:"plug-zap",t:"SDK-less Overview",d:"Measure installs with zero app changes",h:DOCS+"/sdk-less/introduction"},
+  {icon:"smartphone",t:"Android (S2S)",d:"Server-to-server install attribution",h:DOCS+"/sdk-less/android-quickstart"},
+  {icon:"apple",t:"iOS (S2S)",d:"Server-to-server iOS measurement",h:DOCS+"/sdk-less/ios-quickstart"},
+  {icon:"code-2",t:"API-only Setup",d:"Integrate entirely over REST",h:DOCS+"/sdk-less/api-reference"},
+ ]},
+ {t:"API Reference",s:"Build directly on the platform",items:[
+  {icon:"database",t:"Data APIs",d:"Pull clicks, installs and revenue on demand",h:DOCS+"/api-reference/data-apis"},
+  {icon:"indian-rupee",t:"Revenue Tracking",d:"Post purchase and subscription events",h:DOCS+"/api-reference/revenue-tracking"},
+  {icon:"activity",t:"Event Capture",d:"Send custom events at scale",h:DOCS+"/api-reference/event-capture"},
+  {icon:"megaphone",t:"Campaign APIs",d:"Create, edit and bulk-manage campaigns",h:DOCS+"/api-reference/campaign-apis"},
+  {icon:"bar-chart-3",t:"Reporting API",d:"Automated performance reporting",h:DOCS+"/api-reference/reporting-campaigns"},
+ ]},
+];
+document.getElementById("hi").innerHTML=HI.map(h=>`
+ <a class="htile ${h.feature?'feature':''}" href="${h.h}" target="_blank" rel="noopener">
+   <div class="htop"><span class="hicon ${h.feature?'':'tile-bg'}"><i data-lucide="${h.icon}"></i></span><i data-lucide="arrow-up-right" class="harrow"></i></div>
+   <h3>${h.t}</h3><p>${h.d}</p></a>`).join("");
+document.getElementById("strips").innerHTML=CATS.map(c=>`
+ <div class="strip" style="margin-top:12px">
+   <div class="sbar"><span class="t">${c.t}</span><span class="s">${c.s}</span><span class="pill">${c.items.length}</span></div>
+   <div class="grid">${c.items.map(i=>`
+     <a class="card" href="${i.h}" target="_blank" rel="noopener">
+       <span class="cicon tile-bg"><i data-lucide="${i.icon}"></i></span>
+       <div><p class="ti">${i.t}<i data-lucide="arrow-up-right" class="ar"></i></p><p class="d">${i.d}</p></div></a>`).join("")}</div>
+ </div>`).join("");
+lucide.createIcons();
+</script>
+</body></html>
