@@ -36,8 +36,11 @@ Digital Sales Room: per-prospect microsites ("rooms") + an admin CMS. Next.js + 
 ## Env vars (names only — never read or commit `.env.local`)
 All declared in `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 `SUPABASE_SERVICE_ROLE_KEY`, `SLACK_WEBHOOK_URL`, `ADMIN_PASSWORD`, `SESSION_SECRET`,
-`GRANOLA_API_KEY`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_AUTH_TOKEN`,
-`OPENROUTER_API_KEY`, `ENGINE_MODEL`, `DIGEST_WEBHOOK_URL`.
+`GRANOLA_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`,
+`ANTHROPIC_AUTH_TOKEN`, `OPENROUTER_API_KEY`, `ENGINE_MODEL`, `DIGEST_WEBHOOK_URL`.
+`GROQ_API_KEY` is the **only** provider for transcript → meeting-brief generation (`api/rooms*`);
+the `ANTHROPIC_*` / `OPENROUTER_*` / `ENGINE_MODEL` vars belong to the from-granola brief scrub and
+the ideation engine (`lib/ideation`), not the brief generator.
 New vars must also be set in the Vercel project settings or production breaks.
 
 ## Hard rules
