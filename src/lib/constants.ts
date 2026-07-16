@@ -151,7 +151,7 @@ export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] =
   { name: "August AI", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/august-ai.png" },
   { name: "Grapevine", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/grapevine.png" },
   { name: "Lakmé", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/lakme.png" },
-  { name: "Ferry Scanners", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/ferryscanner.png" },
+  { name: "Ferryscanner", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/ferryscanner.png" },
 ];
 
 /**
@@ -165,7 +165,7 @@ export const CUSTOMER_PLAY_STORE_LINKS: Record<string, string> = {
   "August AI": "https://play.google.com/store/apps/details?id=com.augustai.mobileapp",
   Grapevine: "https://play.google.com/store/apps/details?id=com.app.gvine",
   Lakmé: "https://play.google.com/store/apps/details?id=com.lakme.lakmesalon",
-  "Ferry Scanners": "https://play.google.com/store/apps/details?id=com.ferryscanner.mobile",
+  Ferryscanner: "https://play.google.com/store/apps/details?id=com.ferryscanner.mobile",
   "Sid's Farm": "https://play.google.com/store/apps/details?id=com.sidsfarm.customer",
   abcoffee: "https://play.google.com/store/apps/details?id=com.abcoffee",
   CashBook: "https://play.google.com/store/apps/details?id=com.cashbooknew",
