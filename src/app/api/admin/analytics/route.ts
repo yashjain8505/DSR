@@ -45,6 +45,31 @@ async function fetchAllEvents(
   return { data: all, error: null };
 }
 
+// Personal/free providers — their domain is not a company, so derive nothing.
+const FREE_EMAIL_DOMAINS = new Set([
+  "gmail.com", "yahoo.com", "yahoo.in", "outlook.com", "hotmail.com",
+  "icloud.com", "proton.me", "protonmail.com", "rediffmail.com",
+  "live.com", "aol.com",
+]);
+
+/**
+ * Best-effort company label from a visitor's work-email domain. The email gate
+ * only collects an email, so visitors.company is always null; this fills the
+ * dashboard's COMPANY column read-side (e.g. komal@growth.zingroll.com →
+ * "Zingroll", lavinia@z2adigital.com → "Z2adigital"). Returns null for
+ * personal-provider domains.
+ */
+function companyFromEmail(email: string | null): string | null {
+  if (!email || !email.includes("@")) return null;
+  const domain = email.split("@")[1]?.toLowerCase();
+  if (!domain || FREE_EMAIL_DOMAINS.has(domain)) return null;
+  const parts = domain.split(".");
+  // Second-to-last label is the registrable name (growth.zingroll.com → zingroll).
+  const label = parts.length >= 2 ? parts[parts.length - 2] : parts[0];
+  if (!label) return null;
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 /**
  * GET /api/admin/analytics?days=30
  *
@@ -381,7 +406,7 @@ export async function GET(request: NextRequest) {
         visitor_id: vid,
         email: visitor.email,
         name: visitor.name,
-        company: visitor.company,
+        company: visitor.company ?? companyFromEmail(visitor.email),
         rooms_visited: data.rooms,
         total_events: visitorEventCount.get(vid) ?? 0,
         active_seconds: activeSeconds,
