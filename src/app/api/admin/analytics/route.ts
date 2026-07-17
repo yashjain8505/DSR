@@ -8,6 +8,43 @@ import type {
   CrossRoomVisitorEntry,
 } from "@/lib/types";
 
+type AnalyticsEventRow = {
+  room_id: string;
+  visitor_id: string | null;
+  event_type: string;
+  event_data: unknown;
+  created_at: string;
+};
+
+/**
+ * Fetch every analytics_events row in the window. PostgREST caps a single
+ * response at 1000 rows; a 30-day window routinely exceeds that, so page
+ * through the full set — otherwise every aggregate below silently undercounts
+ * (e.g. 1000 of 1699 rows → ~40% low on page views, unique visitors, etc.).
+ */
+async function fetchAllEvents(
+  admin: ReturnType<typeof createAdminClient>,
+  since: string
+): Promise<{ data: AnalyticsEventRow[] | null; error: { message: string } | null }> {
+  const PAGE = 1000;
+  const all: AnalyticsEventRow[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await admin
+      .from("analytics_events")
+      .select("room_id, visitor_id, event_type, event_data, created_at")
+      .gte("created_at", since)
+      .order("created_at", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) return { data: null, error };
+    if (!data || data.length === 0) break;
+    all.push(...(data as AnalyticsEventRow[]));
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return { data: all, error: null };
+}
+
 /**
  * GET /api/admin/analytics?days=30
  *
@@ -42,10 +79,7 @@ export async function GET(request: NextRequest) {
         .select("id, slug, company_name, logo_url, created_at")
         .order("created_at", { ascending: false }),
 
-      admin
-        .from("analytics_events")
-        .select("room_id, visitor_id, event_type, event_data, created_at")
-        .gte("created_at", since),
+      fetchAllEvents(admin, since),
 
       admin
         .from("room_visits")
