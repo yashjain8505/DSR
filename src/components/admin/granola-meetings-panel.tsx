@@ -11,6 +11,7 @@ import {
   Loader2,
   Search,
   Trash2,
+  Mail,
   RefreshCw,
   ChevronDown,
   ChevronUp,
@@ -24,7 +25,7 @@ import {
   Snowflake,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/utils";
+import { formatDate, generateSlug } from "@/lib/utils";
 import type { GranolaMeetingCache } from "@/lib/types";
 
 interface GranolaMeetingsPanelProps {
@@ -116,6 +117,68 @@ export function GranolaMeetingsPanel({
     } finally {
       setDeletingId(null);
     }
+  }
+
+  function handleGenerateEmail(meeting: GranolaMeetingCache) {
+    const company = meeting.company_name ?? "your team";
+
+    // Prospect participants — mirror the filter used elsewhere in this file.
+    const prospects = meeting.participants.filter(
+      (p) =>
+        !p.is_creator &&
+        !p.email?.endsWith("@linkrunner.io") &&
+        p.name !== "Shreyans" &&
+        p.name !== "Lakshith"
+    );
+
+    // First names, joined naturally: "A", "A and B", "A, B and C".
+    const firstNames = prospects.map((p) => p.name.split(" ")[0]);
+    let names: string;
+    if (firstNames.length === 0) {
+      names = "there";
+    } else if (firstNames.length === 1) {
+      names = firstNames[0];
+    } else {
+      names = `${firstNames.slice(0, -1).join(", ")} and ${
+        firstNames[firstNames.length - 1]
+      }`;
+    }
+
+    // Recipients: prospect emails, else fall back to the meeting contact.
+    const prospectEmails = prospects.map((p) => p.email).filter(Boolean);
+    let to = prospectEmails.join(",");
+    if (!to && meeting.contact_email) {
+      to = meeting.contact_email;
+    }
+
+    const dsrUrl = `${window.location.origin}/room/${generateSlug(
+      meeting.company_name ?? ""
+    )}`;
+    const calUrl =
+      "https://cal.linkrunner.io/team/demos/quick-demo?overlayCalendar=true";
+
+    const subject = `Linkrunner <> ${company} | App Analytics & Attribution`;
+    const body = `Hi ${names},
+
+It was a pleasure speaking with you !!
+
+As discussed, I'm sharing a quick overview of Linkrunner below:
+
+We've created a dedicated digital room containing all relevant information about Linkrunner for you. Everyone with your domain has been granted access.
+
+Linkrunner x ${company}: ${dsrUrl}
+
+Feel free to reach out or reply with any questions, and happy to jump on a follow-up call to discuss further: ${calUrl}
+
+--
+Happy Marketing,
+Yash Jain
+App Growth, Linkrunner`;
+
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      to
+    )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   async function handleSync() {
@@ -335,6 +398,16 @@ export function GranolaMeetingsPanel({
                     className="flex items-center gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
+                    {alreadyExists && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleGenerateEmail(meeting)}
+                      >
+                        <Mail className="h-3.5 w-3.5" />
+                        Generate Email
+                      </Button>
+                    )}
                     {alreadyExists ? (
                       <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600">
                         <CheckCircle2 className="h-3.5 w-3.5" />
