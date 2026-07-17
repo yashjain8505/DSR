@@ -12,6 +12,7 @@ import {
   Search,
   Trash2,
   Mail,
+  Check,
   RefreshCw,
   ChevronDown,
   ChevronUp,
@@ -46,6 +47,7 @@ export function GranolaMeetingsPanel({
   const [search, setSearch] = useState("");
   const [createdCompanies, setCreatedCompanies] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [emailCopiedId, setEmailCopiedId] = useState<string | null>(null);
 
   const existingSet = new Set(
     [...existingCompanies, ...createdCompanies].map((c) =>
@@ -154,11 +156,18 @@ export function GranolaMeetingsPanel({
     const dsrUrl = `${window.location.origin}/room/${generateSlug(
       meeting.company_name ?? ""
     )}`;
-    const calUrl =
-      "https://cal.linkrunner.io/team/demos/quick-demo?overlayCalendar=true";
-
     const subject = `Linkrunner <> ${company} | App Analytics & Attribution`;
-    const body = `Hi ${names},
+
+    // Rich body: the room link hides behind "Linkrunner x {company}" anchor text.
+    // Gmail preserves this on paste; a plain-text alternative is copied alongside
+    // as a fallback for clients that ignore text/html.
+    const escapeHtml = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const c = escapeHtml(company);
+    const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#000000;">Hi ${escapeHtml(
+      names
+    )},<br><br>It was a pleasure speaking with you !!<br><br>As discussed, I'm sharing a quick overview of Linkrunner below:<br><br>We've created a dedicated digital room containing all relevant information about Linkrunner for you. Everyone with your domain has been granted access.<br><br><a href="${dsrUrl}">Linkrunner x ${c}</a><br><br>Feel free to reach out or reply with any questions, and happy to jump on a follow-up call to discuss further.<br><br>--<br>Happy Marketing,<br>Yash Jain<br><i>App Growth, Linkrunner</i></div>`;
+    const plain = `Hi ${names},
 
 It was a pleasure speaking with you !!
 
@@ -168,17 +177,38 @@ We've created a dedicated digital room containing all relevant information about
 
 Linkrunner x ${company}: ${dsrUrl}
 
-Feel free to reach out or reply with any questions, and happy to jump on a follow-up call to discuss further: ${calUrl}
+Feel free to reach out or reply with any questions, and happy to jump on a follow-up call to discuss further.
 
 --
 Happy Marketing,
 Yash Jain
 App Growth, Linkrunner`;
 
-    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+    // Open Gmail synchronously (in the click gesture) so it isn't popup-blocked,
+    // with recipients + subject prefilled; the operator pastes the copied body.
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
       to
-    )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    )}&su=${encodeURIComponent(subject)}`;
+    window.open(gmailUrl, "_blank", "noopener,noreferrer");
+
+    // Copy the formatted email; on success flag the row so the button confirms.
+    const done = () => {
+      setEmailCopiedId(meeting.id);
+      setTimeout(() => setEmailCopiedId(null), 8000);
+    };
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+      navigator.clipboard
+        .write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([plain], { type: "text/plain" }),
+          }),
+        ])
+        .then(done)
+        .catch(() => navigator.clipboard?.writeText(plain).then(done).catch(() => {}));
+    } else {
+      navigator.clipboard?.writeText(plain).then(done).catch(() => {});
+    }
   }
 
   async function handleSync() {
@@ -404,8 +434,17 @@ App Growth, Linkrunner`;
                         variant="secondary"
                         onClick={() => handleGenerateEmail(meeting)}
                       >
-                        <Mail className="h-3.5 w-3.5" />
-                        Generate Email
+                        {emailCopiedId === meeting.id ? (
+                          <>
+                            <Check className="h-3.5 w-3.5" />
+                            Copied — paste in Gmail
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="h-3.5 w-3.5" />
+                            Generate Email
+                          </>
+                        )}
                       </Button>
                     )}
                     {alreadyExists ? (
