@@ -334,6 +334,13 @@ export interface CrossRoomAnalytics {
   rooms: RoomAnalyticsCard[];
   daily_activity: DailyActivity[];
   recent_visitors: CrossRoomVisitorEntry[];
+  /**
+   * Set when the analytics_events query (the sole source of every aggregate:
+   * KPIs, funnels, daily activity) failed. When present, the aggregate numbers
+   * are unreliable zeros — the client should surface this instead of showing
+   * them as real "no traffic" data.
+   */
+  aggregate_error: string | null;
 }
 
 export interface RoomAnalyticsCard {

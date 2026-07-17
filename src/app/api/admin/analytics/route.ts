@@ -64,6 +64,34 @@ export async function GET(request: NextRequest) {
       admin.from("visitors").select("id").ilike("email", "%@linkrunner.io"),
     ]);
 
+    // Surface query failures instead of silently masking them with `?? []`.
+    // The events query is the *sole* source of every aggregate (KPIs, funnels,
+    // daily activity). When it fails, a blanket `?? []` renders an all-zero
+    // dashboard that looks like "no traffic" — even though the visitor table,
+    // fed by the separate (and much smaller) room_visits/visitors queries,
+    // stays full of real activity. Log every failure so the real cause (e.g. a
+    // statement timeout on the unbounded analytics_events scan) is diagnosable.
+    for (const [label, result] of [
+      ["rooms", roomsResult],
+      ["events", eventsResult],
+      ["room_visits", visitsResult],
+      ["visitors", visitorsResult],
+      ["internal-visitors", internalResult],
+    ] as const) {
+      if (result.error) {
+        console.error(
+          `[admin/analytics] ${label} query failed:`,
+          result.error.message
+        );
+      }
+    }
+
+    // The aggregate source failed — flag it so the client can show an explicit
+    // error instead of presenting the resulting zeros as genuine "no traffic".
+    const aggregateError = eventsResult.error
+      ? `Failed to load analytics events: ${eventsResult.error.message}`
+      : null;
+
     const rooms = roomsResult.data ?? [];
     const visits = visitsResult.data ?? [];
     const visitors = visitorsResult.data ?? [];
@@ -347,6 +375,7 @@ export async function GET(request: NextRequest) {
       rooms: roomCards,
       daily_activity: dailyActivity,
       recent_visitors: recentVisitors,
+      aggregate_error: aggregateError,
     };
 
     return NextResponse.json(response);

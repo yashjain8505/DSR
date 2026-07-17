@@ -102,6 +102,18 @@ export default function AnalyticsDashboardPage() {
                 </div>
               </div>
 
+              {/* Aggregate load failure — the KPIs/funnels/daily chart below
+                  are unreliable zeros when this is set. The visitor table is
+                  fed by separate queries and stays valid. */}
+              {analytics.aggregate_error && (
+                <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Aggregate metrics (KPIs, room engagement, and daily activity)
+                  failed to load, so the numbers below may show as zero. Visitor
+                  activity is unaffected. Please retry; if it persists, check the
+                  server logs.
+                </div>
+              )}
+
               {/* KPI Cards */}
               <div className="mb-8">
                 <KpiCards
