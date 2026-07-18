@@ -110,6 +110,18 @@ export async function POST(request: Request) {
     if (!domain) {
       domain = await domainFromSlug(companyName);
     }
+
+    // Fall back to the company's resolved domain for access when no attendee
+    // email carried one (e.g. a meeting synced from a shared note), so the
+    // prospect's own team is allow-listed instead of the room being sealed to
+    // the Linkrunner team only. Linkrunner (@linkrunner.io) is always allowed.
+    if (
+      accessEntries.length === 0 &&
+      domain &&
+      !domain.endsWith("linkrunner.io")
+    ) {
+      accessEntries.push(`@${domain}`);
+    }
     if (domain) {
       try {
         const assets = await extractBrandAssets(domain);
@@ -147,10 +159,11 @@ export async function POST(request: Request) {
         logo_url: logoUrl,
         brand_primary_color: brandColor,
         brand_secondary_color: secondaryColor,
-        // Lock the room to its meeting attendees' domains (seeded below). We
-        // only restrict when there is at least one entry to admit, so a room
-        // with no external attendees is never accidentally sealed shut.
-        restrict_access: accessEntries.length > 0,
+        // Private by default: the room is locked to its attendees' domains
+        // (seeded below) plus the Linkrunner team, who are always allowed. In
+        // the rare case no prospect domain could be determined, the room is
+        // private to Linkrunner until a domain/email is added in the admin.
+        restrict_access: true,
       })
       .select()
       .single();

@@ -96,13 +96,25 @@ export async function POST(request: Request) {
     if (accessDomain) accessEntries.push(`@${accessDomain}`);
     else if (contactEmail) accessEntries.push(contactEmail);
 
-    const restrict = body.public !== true && accessEntries.length > 0;
-
     // Domain used for brand-asset extraction (website first, then access domain).
     let domain = normalizeDomain(body.website_url) || accessDomain;
     if (!domain) {
       domain = await domainFromSlug(body.slug);
     }
+
+    // Fall back to the resolved company domain for access when no explicit
+    // domain/email was given, so a private room still admits the prospect's own
+    // team (linkrunner is always allowed regardless).
+    if (
+      accessEntries.length === 0 &&
+      domain &&
+      !domain.endsWith("linkrunner.io")
+    ) {
+      accessEntries.push(`@${domain}`);
+    }
+
+    // Private by default: on unless the admin explicitly marks the room public.
+    const restrict = body.public !== true;
 
     if (domain) {
       try {
