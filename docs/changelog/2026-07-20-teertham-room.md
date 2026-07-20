@@ -24,7 +24,12 @@
 - **No inline markdown in brief bullets.** `tab-meeting-brief.tsx:120` renders section items as `<span>{item}</span>`, not through `MarkdownRenderer`, so `**bold**` would surface as literal asterisks. Q&A entries therefore lead with a plain-text question and let the question mark do the visual work. Only the raw-markdown fallback path (when `hasStructure()` fails) runs items through the markdown renderer.
 - Re-verified after the rewrite: `GET /room/teertham` 200 (63 KB), all five sections still render structured, leak check still clean.
 
+### Follow-up — real logo and corrected palette (same day)
+- The first pass used whatever `extractBrandAssets` returned, which was the site favicon (`favicon.ico?favicon.3063ip624pa31.ico`, actually a 75x71 PNG) with `#50c0d0` primary and `#790c08` secondary derived from it.
+- teertham.org does publish a proper **600x200** logo at `images/teertham-logo.png`. The extractor missed it because the page references it by **relative** path — the same failure seen on freshyzo.com the same day. The script now mirrors it into our `assets` bucket at `logos/teertham.png` rather than hotlinking the prospect's site.
+- Palette re-derived by sampling the real logo: `#b13e49` (the TEERTHAM wordmark red, 54.7% of saturated pixels) as primary, `#53bbbb` (the mandala teal, the one accent in a distinct hue band — 180-210deg against 330-360deg) as secondary. **The favicon-derived values had this inverted**, promoting a 5% accent teal to primary and demoting the brand red to secondary.
+- Verified: `GET /room/teertham` 200, hosted logo URL and `#b13e49` both present, zero references to the old favicon URL.
+
 ### Notes
-- **The logo is weak.** `extractBrandAssets` fell back to the site favicon: `https://teertham.org/favicon.ico?favicon.3063ip624pa31.ico`, which is actually a 75x71 PNG. It will look soft wherever the room scales it up. Brand colors (`#50c0d0` primary, `#790c08` secondary) were derived from that same 75px image, so they may not match the real brand. Worth supplying a proper logo and re-running — the update branch will pick it up.
 - The brief deliberately keeps the disclosed gaps in (no CTV, ~150 vs 10,000 integrations, multi-touch attribution being last-click today, Apple ad affiliate unconnected). Raghav explicitly asked whether multi-touch was "properly working or still needs ironing out" and named it his core reason for wanting an MMP, so burying it would be the wrong trade.
 - Pricing is intentionally absent as a *section* — `parseBrief` strips any section whose title matches `/\bpric/i` since pricing has its own tab. The "why is the cost so different" answer survives as a bullet inside Questions & Answers, which the filter does not touch.

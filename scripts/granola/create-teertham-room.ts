@@ -29,7 +29,6 @@ import {
   DEFAULT_CUSTOMER_REFERENCES,
   DEFAULT_CASE_STUDIES,
 } from "../../src/lib/constants";
-import { extractBrandAssets } from "../../src/lib/brand-colors";
 
 // Load .env.local from the current working directory (run from repo root).
 for (const line of readFileSync(resolve(process.cwd(), ".env.local"), "utf-8").split("\n")) {
@@ -50,9 +49,24 @@ const SLUG = "teertham";
 const COMPANY = "Teertham";
 const CONTACT = "Raghav Sehgal";
 const CONTACT_EMAIL = "admin@teertham.org";
-const WEBSITE = "teertham.org";
 /** Domain entry covers Raghav; Tushar is on gmail so he needs an exact row. */
 const ACCESS_ENTRIES = ["@teertham.org", "tushargaudara@gmail.com"];
+
+/**
+ * extractBrandAssets() fell back to the site favicon — a 75x71 image — and
+ * derived the palette from that, picking the mandala's teal as primary and a
+ * dark red as accent, which inverts the real brand. The site publishes a proper
+ * 600x200 logo by relative path, which the extractor doesn't resolve, so it is
+ * mirrored into our own `assets` bucket instead of hotlinked.
+ *
+ * Colors sampled from that logo: the TEERTHAM wordmark red is 54.7% of
+ * saturated pixels, and the mandala's teal is the one accent in a genuinely
+ * distinct hue band (180-210deg against 330-360deg).
+ */
+const LOGO_SRC_URL = "https://teertham.org/images/teertham-logo.png";
+const LOGO_PATH = "logos/teertham.png";
+const PRIMARY = "#b13e49";
+const SECONDARY: string | null = "#53bbbb";
 
 const BRIEF = `## Meeting Summary
 Date: 20 July 2026
@@ -121,19 +135,20 @@ async function main() {
   const { content, nextSteps } = splitBrief(BRIEF);
   console.log(`brief: ${content.length} chars, ${nextSteps.split("\n").filter(Boolean).length} next steps`);
 
-  // 1. Pull logo + brand colors from the live site (best effort).
-  let logoUrl: string | null = null;
-  let primary: string | null = null;
-  let secondary: string | null = null;
-  try {
-    const assets = await extractBrandAssets(WEBSITE);
-    logoUrl = assets.logoUrl;
-    primary = assets.brandColor;
-    secondary = assets.secondaryColor;
-    console.log(`brand: logo=${logoUrl ?? "(none)"} primary=${primary ?? "(none)"} secondary=${secondary ?? "(none)"}`);
-  } catch (e) {
-    console.warn(`brand extraction failed, continuing without: ${(e as Error).message}`);
-  }
+  // 1. Mirror the source logo into our assets bucket (idempotent: upsert).
+  const res = await fetch(LOGO_SRC_URL);
+  if (!res.ok) throw new Error(`logo fetch: ${res.status} ${res.statusText}`);
+  const bytes = Buffer.from(await res.arrayBuffer());
+  const { error: upErr } = await sb.storage
+    .from("assets")
+    .upload(LOGO_PATH, bytes, { contentType: "image/png", upsert: true });
+  if (upErr) throw new Error(`logo upload: ${upErr.message}`);
+  const {
+    data: { publicUrl: logoUrl },
+  } = sb.storage.from("assets").getPublicUrl(LOGO_PATH);
+  const primary = PRIMARY;
+  const secondary = SECONDARY;
+  console.log(`logo mirrored (${bytes.length} bytes) -> ${logoUrl}`);
 
   // 2. Create or update the room.
   const { data: existing } = await sb

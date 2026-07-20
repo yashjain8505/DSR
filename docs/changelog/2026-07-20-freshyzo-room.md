@@ -13,7 +13,8 @@
 ### Brand assets — extraction failed, mirrored by hand
 - `extractBrandAssets("freshyzo.com")` returned all nulls. The site has **no favicon** (`/favicon.ico` → 404) and references its logo by **relative** path (`assets/images/hero/logo.png`), which the extractor doesn't resolve.
 - The script now fetches `https://freshyzo.com/assets/images/hero/logo.png` (631x204 RGBA, transparent) and mirrors it into our own `assets` bucket at `logos/freshyzo.png`, so the room doesn't hotlink the prospect's site.
-- Colors read off the logo by hand: `#2fa84f` primary (green gradient wordmark). Secondary left `null` — the only non-green is neutral charcoal, not a distinct hue, which is the same call `extractBrandAssets` makes for single-hue logos.
+- Primary is `#369845`, sampled from the logo's pixels (93.9% of saturated pixels fall in that green) rather than eyeballed — an initial hand-picked `#2fa84f` was measurably off. Secondary left `null`: the only non-green is neutral charcoal, not a distinct hue, which is the same call `extractBrandAssets` makes for single-hue logos.
+- The relative-path blind spot in `extractBrandAssets` is not Freshyzo-specific — it also cost the Teertham room its real logo (see `2026-07-20-teertham-room.md`). Worth fixing in the extractor itself if a third prospect hits it.
 
 ### Files touched
 - `scripts/granola/create-freshyzo-room.ts` (new)

@@ -63,7 +63,8 @@ const HIDDEN_SECTIONS = ["recap_discussed", "recap_next_steps"];
  */
 const LOGO_SRC_URL = "https://freshyzo.com/assets/images/hero/logo.png";
 const LOGO_PATH = "logos/freshyzo.png";
-const PRIMARY = "#2fa84f";
+/** Sampled from the logo: 93.9% of saturated pixels sit in this green. */
+const PRIMARY = "#369845";
 const SECONDARY: string | null = null;
 
 async function main() {
