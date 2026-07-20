@@ -60,14 +60,87 @@ interface GranolaParticipant {
   company?: string;
 }
 
-interface GranolaMeeting {
+/**
+ * Shape of GET /v1/notes (the list endpoint).
+ *
+ * Deliberately minimal: the list returns ONLY id, object, title, owner,
+ * created_at and updated_at. It carries no attendees, summary or transcript,
+ * so a note cannot be classified from list data alone — every note has to be
+ * fetched individually first. Assuming otherwise silently classified every
+ * meeting as having no participants.
+ */
+interface GranolaNoteStub {
   id: string;
   title: string;
   created_at: string;
-  people?: GranolaParticipant[];
-  transcript?: string;
-  summary?: string;
-  notes?: string;
+}
+
+/** Shape of GET /v1/notes/{id}?include=transcript. */
+interface GranolaNoteDetail extends GranolaNoteStub {
+  owner?: { name?: string; email?: string } | null;
+  /** {name, email} only — there is no is_creator or company field. */
+  attendees?: { name?: string; email?: string }[] | null;
+  calendar_event?: {
+    event_title?: string;
+    organiser?: string;
+    invitees?: { email?: string }[];
+  } | null;
+  /** Timed segments, not a string. */
+  transcript?: { text?: string; speaker?: unknown }[] | null;
+  summary_markdown?: string | null;
+  summary_text?: string | null;
+}
+
+/**
+ * Normalize a note's attendees into our participant shape.
+ *
+ * Attendees arrive as {name, email} with no is_creator flag, so the creator is
+ * derived by matching the note owner's email. calendar_event.invitees is merged
+ * in as a fallback because the two lists can differ — on the Aliceblue call the
+ * invitee list carried the organiser's own address while attendees carried the
+ * recording account instead.
+ */
+function buildParticipants(note: GranolaNoteDetail): GranolaParticipant[] {
+  const ownerEmail = (note.owner?.email ?? "").toLowerCase();
+  const byEmail = new Map<string, GranolaParticipant>();
+
+  for (const a of note.attendees ?? []) {
+    const email = (a.email ?? "").trim();
+    if (!email) continue;
+    byEmail.set(email.toLowerCase(), {
+      name: a.name ?? undefined,
+      email,
+      is_creator: email.toLowerCase() === ownerEmail,
+    });
+  }
+
+  for (const invitee of note.calendar_event?.invitees ?? []) {
+    const email = (invitee.email ?? "").trim();
+    if (!email || byEmail.has(email.toLowerCase())) continue;
+    byEmail.set(email.toLowerCase(), {
+      email,
+      is_creator: email.toLowerCase() === ownerEmail,
+    });
+  }
+
+  return [...byEmail.values()];
+}
+
+/** Collapse the timed transcript segments into speaker-labelled text. */
+function flattenTranscript(segments: GranolaNoteDetail["transcript"]): string {
+  if (!Array.isArray(segments)) return "";
+  return segments
+    .map((s) => {
+      const text = (s.text ?? "").trim();
+      if (!text) return "";
+      const speaker =
+        typeof s.speaker === "string"
+          ? s.speaker
+          : (s.speaker as { name?: string } | null)?.name;
+      return speaker ? `${speaker}: ${text}` : text;
+    })
+    .filter(Boolean)
+    .join("\n");
 }
 
 /** Free/personal email domains that don't indicate a company. */
@@ -169,27 +242,28 @@ function classifyMeeting(participants: GranolaParticipant[]): MeetingClass {
 }
 
 /**
- * Fetch the full verbatim transcript for a single meeting from the Granola API.
- * Returns null if the transcript is not available.
+ * Fetch a single note in full — attendees, summary and transcript.
+ *
+ * This is the only endpoint that returns attendees, so it runs for every note,
+ * not just the ones we intend to keep. Classification depends on its result.
  */
-async function fetchTranscript(
-  meetingId: string,
+async function fetchNoteDetail(
+  noteId: string,
   apiKey: string
-): Promise<string | null> {
+): Promise<GranolaNoteDetail | null> {
   try {
     const res = await fetch(
-      `${GRANOLA_API}/notes/${meetingId}?include=transcript`,
+      `${GRANOLA_API}/notes/${noteId}?include=transcript`,
       {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(20000),
       }
     );
     if (!res.ok) return null;
-    const data = await res.json();
-    return data.transcript ?? null;
+    return (await res.json()) as GranolaNoteDetail;
   } catch {
     return null;
   }
@@ -201,8 +275,8 @@ async function fetchTranscript(
 async function listNotes(
   sinceIso: string,
   apiKey: string
-): Promise<{ meetings: GranolaMeeting[] } | { error: string; status: number }> {
-  const meetings: GranolaMeeting[] = [];
+): Promise<{ meetings: GranolaNoteStub[] } | { error: string; status: number }> {
+  const meetings: GranolaNoteStub[] = [];
   let cursor: string | null = null;
 
   do {
@@ -236,7 +310,7 @@ async function listNotes(
     }
 
     const data = await res.json();
-    const notes: GranolaMeeting[] = data.notes ?? data.data ?? [];
+    const notes: GranolaNoteStub[] = data.notes ?? data.data ?? [];
     meetings.push(...notes);
     cursor = data.next_cursor ?? data.cursor ?? null;
   } while (cursor);
@@ -268,8 +342,8 @@ async function runSync({ dryRun = false }: { dryRun?: boolean } = {}) {
     const sinceIso = since.toISOString();
 
     // Dedupe across keys: two reps in the same call may both see the note.
-    // First key to return it also owns fetching its transcript.
-    const found = new Map<string, { meeting: GranolaMeeting; apiKey: string }>();
+    // First key to return it also owns fetching its detail.
+    const found = new Map<string, { stub: GranolaNoteStub; apiKey: string }>();
     const keyResults: { label: string; found: number; error?: string }[] = [];
 
     for (const { label, key } of keys) {
@@ -280,8 +354,8 @@ async function runSync({ dryRun = false }: { dryRun?: boolean } = {}) {
         continue;
       }
 
-      for (const meeting of listed.meetings) {
-        if (!found.has(meeting.id)) found.set(meeting.id, { meeting, apiKey: key });
+      for (const stub of listed.meetings) {
+        if (!found.has(stub.id)) found.set(stub.id, { stub, apiKey: key });
       }
       keyResults.push({ label, found: listed.meetings.length });
       await sleep(BATCH_PAUSE_MS);
@@ -298,52 +372,56 @@ async function runSync({ dryRun = false }: { dryRun?: boolean } = {}) {
       );
     }
 
-    // Drop internal notes before anything touches the database.
-    const candidates = [...found.values()].map((c) => ({
-      ...c,
-      klass: classifyMeeting(c.meeting.people ?? []),
-    }));
-    const prospectMeetings = candidates.filter((c) => c.klass === "prospect");
-    const skippedInternal = candidates.filter(
-      (c) => c.klass === "internal_only"
-    ).length;
-    const skippedNoParticipants = candidates.filter(
-      (c) => c.klass === "no_participants"
-    ).length;
-    const skipped = candidates
-      .filter((c) => c.klass !== "prospect")
-      .map((c) => ({ title: c.meeting.title, reason: c.klass }));
+    // The list endpoint carries no attendees, so every note has to be fetched in
+    // full before it can be classified. This runs for all notes, not just the
+    // ones that survive the filter.
+    const stubs = [...found.values()];
+    const details: {
+      note: GranolaNoteDetail;
+      participants: GranolaParticipant[];
+      klass: MeetingClass;
+    }[] = [];
+    const unreadable: string[] = [];
 
-    if (prospectMeetings.length === 0) {
+    for (let i = 0; i < stubs.length; i += TRANSCRIPT_BATCH_SIZE) {
+      const batch = stubs.slice(i, i + TRANSCRIPT_BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(({ stub, apiKey }) => fetchNoteDetail(stub.id, apiKey))
+      );
+      results.forEach((result, idx) => {
+        const note = result.status === "fulfilled" ? result.value : null;
+        if (!note) {
+          unreadable.push(batch[idx].stub.title);
+          return;
+        }
+        const participants = buildParticipants(note);
+        details.push({ note, participants, klass: classifyMeeting(participants) });
+      });
+      await sleep(BATCH_PAUSE_MS);
+    }
+
+    // Drop internal notes before anything touches the database.
+    const prospects = details.filter((d) => d.klass === "prospect");
+    const skippedInternal = details.filter(
+      (d) => d.klass === "internal_only"
+    ).length;
+    const skippedNoParticipants = details.filter(
+      (d) => d.klass === "no_participants"
+    ).length;
+    const skipped = details
+      .filter((d) => d.klass !== "prospect")
+      .map((d) => ({ title: d.note.title, reason: d.klass }));
+
+    if (prospects.length === 0) {
       return NextResponse.json({
         synced: 0,
         message: "No prospect meetings found",
         skipped_internal: skippedInternal,
         skipped_no_participants: skippedNoParticipants,
         skipped,
+        unreadable,
         keys: keyResults,
       });
-    }
-
-    const meetings = prospectMeetings.map((c) => c.meeting);
-
-    // Fetch full transcripts for each meeting (in parallel, batches of 5)
-    const transcripts = new Map<string, string>();
-    for (let i = 0; i < prospectMeetings.length; i += TRANSCRIPT_BATCH_SIZE) {
-      const batch = prospectMeetings.slice(i, i + TRANSCRIPT_BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map(({ meeting, apiKey }) =>
-          meeting.transcript
-            ? Promise.resolve(meeting.transcript)
-            : fetchTranscript(meeting.id, apiKey)
-        )
-      );
-      results.forEach((result, idx) => {
-        if (result.status === "fulfilled" && result.value) {
-          transcripts.set(batch[idx].meeting.id, result.value);
-        }
-      });
-      await sleep(BATCH_PAUSE_MS);
     }
 
     const admin = createAdminClient();
@@ -356,34 +434,41 @@ async function runSync({ dryRun = false }: { dryRun?: boolean } = {}) {
       .select("granola_meeting_id, company_name")
       .in(
         "granola_meeting_id",
-        meetings.map((m) => m.id)
+        prospects.map((p) => p.note.id)
       );
     const existingCompany = new Map(
       (existingRows ?? []).map((r) => [r.granola_meeting_id, r.company_name])
     );
 
-    // Transform to our cache format — use transcript as primary content
-    const rows = meetings.map((m) => {
-      const participants = (m.people ?? []).map((p) => ({
+    // Transform to our cache format — verbatim transcript as primary content,
+    // Granola's own AI summary as the fallback when transcription is absent.
+    const withTranscript = new Set(
+      prospects
+        .filter((p) => flattenTranscript(p.note.transcript).length > 0)
+        .map((p) => p.note.id)
+    );
+
+    const rows = prospects.map(({ note, participants }) => {
+      const shaped = participants.map((p) => ({
         name: p.name ?? "Unknown",
         email: p.email ?? "",
         company: p.company,
         is_creator: p.is_creator,
       }));
 
-      // Prefer transcript, fall back to summary/notes
-      const transcript = transcripts.get(m.id);
-      const summary = transcript || m.summary || m.notes || "";
+      const transcript = flattenTranscript(note.transcript);
+      const summary =
+        transcript || note.summary_markdown || note.summary_text || "";
 
       return {
-        granola_meeting_id: m.id,
-        title: m.title,
-        meeting_date: m.created_at,
-        participants,
+        granola_meeting_id: note.id,
+        title: note.title,
+        meeting_date: note.created_at,
+        participants: shaped,
         summary,
         company_name:
-          existingCompany.get(m.id) ??
-          extractCompanyName(m.title, participants),
+          existingCompany.get(note.id) ??
+          extractCompanyName(note.title, participants),
         contact_email: extractContactEmail(participants),
         synced_at: new Date().toISOString(),
       };
@@ -396,11 +481,12 @@ async function runSync({ dryRun = false }: { dryRun?: boolean } = {}) {
       return NextResponse.json({
         dry_run: true,
         would_sync: rows.length,
-        total_from_granola: candidates.length,
-        transcripts_fetched: transcripts.size,
+        total_from_granola: details.length,
+        transcripts_fetched: withTranscript.size,
         skipped_internal: skippedInternal,
         skipped_no_participants: skippedNoParticipants,
         skipped,
+        unreadable,
         keys: keyResults,
         preview: rows.map((r) => ({
           title: r.title,
@@ -408,7 +494,7 @@ async function runSync({ dryRun = false }: { dryRun?: boolean } = {}) {
           company_name: r.company_name,
           contact_email: r.contact_email,
           participants: r.participants.length,
-          has_transcript: transcripts.has(r.granola_meeting_id),
+          has_transcript: withTranscript.has(r.granola_meeting_id),
           action: existingCompany.has(r.granola_meeting_id) ? "update" : "insert",
         })),
       });
@@ -428,11 +514,12 @@ async function runSync({ dryRun = false }: { dryRun?: boolean } = {}) {
 
     return NextResponse.json({
       synced: upserted?.length ?? 0,
-      total_from_granola: candidates.length,
-      transcripts_fetched: transcripts.size,
+      total_from_granola: details.length,
+      transcripts_fetched: withTranscript.size,
       skipped_internal: skippedInternal,
       skipped_no_participants: skippedNoParticipants,
       skipped,
+      unreadable,
       keys: keyResults,
     });
   } catch (err) {
@@ -487,5 +574,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  return runSync();
+  // ?dryRun=1 works here too, so the full path can be exercised with the cron
+  // credential instead of an admin session.
+  const dryRun = new URL(request.url).searchParams.get("dryRun") === "1";
+  return runSync({ dryRun });
 }
