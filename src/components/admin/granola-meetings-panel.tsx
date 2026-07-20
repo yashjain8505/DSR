@@ -33,6 +33,25 @@ interface GranolaMeetingsPanelProps {
   existingCompanies: string[];
 }
 
+/**
+ * Turn a raw sync error into something actionable. Granola's failure modes are
+ * mostly configuration, not outages, and the raw codes don't say what to fix.
+ */
+function explainSyncError(raw: string | undefined): string {
+  const error = raw ?? "Sync failed";
+
+  if (error.includes("SUBSCRIPTION_INACTIVE")) {
+    return "Granola workspace subscription inactive — the API needs an active Business/Enterprise plan on the key's workspace.";
+  }
+  if (error.includes("INVALID_API_KEY") || error.includes("MISSING_API_KEY")) {
+    return "A Granola API key was rejected. Check GRANOLA_API_KEYS — a key may have been revoked or mistyped.";
+  }
+  if (error.includes("GRANOLA_API_KEYS")) {
+    return "No Granola API keys configured. Set GRANOLA_API_KEYS (see .env.example).";
+  }
+  return error;
+}
+
 export function GranolaMeetingsPanel({
   existingCompanies,
 }: GranolaMeetingsPanelProps) {
@@ -217,24 +236,36 @@ App Growth, Linkrunner`;
     try {
       const res = await fetch("/api/granola/sync", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) {
-        // Granola doesn't expose a public REST API — sync via Claude Code MCP
-        if (data.error?.includes("GRANOLA_API_KEY") || data.error?.includes("404") || data.error?.includes("Not Found")) {
-          setSyncMessage('Ask Claude Code to "sync granola" — Granola only works via MCP');
-        } else {
-          throw new Error(data.error);
-        }
-        return;
+      if (!res.ok) throw new Error(explainSyncError(data.error));
+
+      // Surface what was dropped, so an empty sync never looks like a no-op.
+      const parts = [`Synced ${data.synced} meetings`];
+      if (data.skipped_internal) {
+        parts.push(`${data.skipped_internal} internal skipped`);
       }
-      setSyncMessage(`Synced ${data.synced} meetings`);
+      // No attendees means the recorder's calendar isn't shared with the
+      // Granola account — a setup problem worth calling out, not a no-op.
+      if (data.skipped_no_participants) {
+        parts.push(
+          `${data.skipped_no_participants} skipped with no attendees — check calendar sharing`
+        );
+      }
+      const failed = (data.keys ?? []).filter(
+        (k: { error?: string }) => k.error
+      );
+      if (failed.length) {
+        parts.push(
+          `${failed.length} key(s) failed: ${failed
+            .map((k: { label: string }) => k.label)
+            .join(", ")}`
+        );
+      }
+      setSyncMessage(parts.join(" · "));
       await fetchMeetings();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Sync failed";
-      if (msg.includes("404") || msg.includes("Not Found")) {
-        setSyncMessage('Ask Claude Code to "sync granola" — Granola only works via MCP');
-      } else {
-        setSyncMessage(msg);
-      }
+      setSyncMessage(
+        err instanceof Error ? err.message : "Sync failed"
+      );
     } finally {
       setSyncing(false);
       setTimeout(() => setSyncMessage(""), 8000);
