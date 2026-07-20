@@ -59,50 +59,49 @@ Date: 20 July 2026
 Attendees: Raghav Sehgal, Tushar Gaudara
 
 ## Your Situation
-- Teertham is building the Urban Company for puja rituals: correctly-portioned samagri bundled with a vetted pundit, at a price that works because it removes the double margin customers pay when a pundit sources samagri himself.
-- Pundits get demand they would otherwise buy from Google and JustDial; customers get a ritual that arrives complete. Roughly 1,000 pujas delivered in about fifteen months.
-- The app relaunches this month, expanding from one-off pujas into daily use: panchang, horoscope, kundli guidance, festivals and events, with an AI pundit answering questions on top.
-- That expansion is the point. Two or three pujas a year will not keep an app installed, so the relaunch is what turns a transactional app into a retained one.
-- Built on Flutter. The immediate goal is a push on app installs across Meta and Google, plus OEM channels.
+- Urban Company for puja rituals: packaged samagri plus a vetted pundit, priced to remove the margin a pundit adds sourcing samagri himself.
+- Around 1,000 pujas in fifteen months.
+- Relaunching this month with panchang, horoscope, kundli, festivals and an AI pundit, so the app earns daily use instead of two visits a year.
+- Flutter app. Next push is installs across Meta, Google and OEM channels.
 
 ## Pain Points
-- 70 to 80 percent of installs are expected to come from Meta and Google alone, with no reliable way today to see the full path across both.
-- AppsFlyer was evaluated and is capable, but expensive and overkill at this stage.
-- Attribution data needs to reach your internal knowledge hub, which runs on Open WebUI alongside Microsoft, Fireflies and HubSpot.
-- Cost visibility is needed stage by stage, not just cost per install: what a signup costs versus what a completed purchase costs.
-- Two campaign types need measuring differently: broad install campaigns, and puja-specific campaigns that must land the user on the right ritual after install.
+- 70 to 80 percent of installs will come from Meta and Google, with no view of the path across both.
+- AppsFlyer is capable but expensive, and overkill at this stage.
+- Attribution data needs to reach your Open WebUI knowledge hub.
+- Cost needed per stage, signup versus purchase, not just per install.
+- Puja-specific campaigns must land users on the right ritual after install.
 
 ## What We Showed You
-- Flutter SDK integration. The fastest customers are live in three to four hours, typical is one to two days, against two to four weeks for legacy MMPs.
-- A single acquisition table as the source of truth across organic, influencer, Google, referrals, Meta, offline QR, social and website, each carrying clicks, installs, signups, uninstalls, retention, revenue, spend, ROAS, CPI, CPS, suspicious installs and your own custom events such as puja started and puja done.
-- White-labelled trackable links on your own domain, app.teertham.org, with deferred deep linking and OneLink. A user clicks, installs, signs up and lands on the exact puja page; if the app is already installed they go straight there. The same link works from push, WhatsApp, email, affiliates or a QR code, and nothing needs to be installed on your website.
-- Drill-down to ad set and ad creative level, so creatives can be cut on revenue and retention rather than on install counts.
-- Cost per event, configurable per event, split by campaign, ad set or creative.
-- Data export three ways: APIs, webhooks fired on each new install, and CSV.
-- Integrations across Google, Meta, TikTok, Reddit, Apple Search Ads, Snapchat and LinkedIn; analytics into Mixpanel, MoEngage, PostHog and RevenueCat; and 30 to 40 Indian affiliates.
-- An MCP server for querying your own data from Claude and other assistants without opening the dashboard.
+- Flutter SDK: fastest customers live in three to four hours, one to two days typical, against two to four weeks for legacy MMPs.
+- One table across every channel with clicks, installs, signups, retention, revenue, ROAS, CPI, CPS, suspicious installs and your own events.
+- White-labelled links on app.teertham.org with deferred deep linking: click, install, land on the exact puja page. Nothing goes on your website.
+- Drill-down to ad set and ad creative, so creatives are cut on revenue rather than install count.
+- Cost per event, split by campaign, ad set or creative.
+- Export by API, webhook or CSV into your knowledge hub.
+- Integrations across the major ad networks, plus Mixpanel, MoEngage, PostHog, RevenueCat and 30 to 40 Indian affiliates.
+- MCP for querying your data from Claude without opening the dashboard.
 
 ## Questions & Answers
-- Does the SDK need to go on our website too? No. You generate a trackable link inside Linkrunner and use it anywhere; nothing is installed on the site.
-- How deep does the reporting drill down? To ad set and ad creative, not just the source.
-- Is multi-touch attribution production-ready, or does it still need ironing out? It is live and runs a last-click model today. The re-engagement view already shows reinstall and re-engagement paths across channels, so a user who installs from Google, deletes, then reinstalls from Meta and purchases appears there in full. Since multi-touch is your core reason for wanting an MMP, we would rather state the current position plainly than describe a roadmap.
-- Can we track cost at every stage? Yes: cost per click, install, signup and purchase, split by link, campaign, ad set or creative. Install and signup are tracked by default. Revenue and other post-signup events need a one-time setup by your team, because Linkrunner cannot know where revenue occurs inside your app. Our tech team will sit with yours for that.
-- Can Linkrunner feed our internal knowledge hub? Yes, through data APIs, webhooks or CSV into Open WebUI or any downstream system, which is what a number of our customers already do.
-- How is an install attributed? On first open rather than on download. Expect a 5 to 10 percent discrepancy against Meta's reported installs, because some users download and never open. In exchange you get user-level data for every attributed install, which the ad networks will not give you; the MMP acts as the referee between them.
-- What is genuinely missing compared with AppsFlyer? Connected-TV measurement, which we do not do at all, so no native Samsung, Sony or Bravia integrations. Breadth of integrations, where we are at roughly 150 against their 10,000, though any named partner takes about three days to add. Apple's ad affiliate is not connected yet and needs about three days once you confirm which one. Link and QR-code attribution works anywhere, including from a TV ad.
-- Why is the cost so different? We are India-based, venture-backed and around 25 people, built over eighteen months. AppsFlyer carries fifteen to twenty years of legacy infrastructure cost. The difference shows up in integration breadth and connected TV, not in core attribution.
+- Does the SDK go on our website? No, trackable links only.
+- How deep is the drill-down? Ad set and ad creative.
+- Is multi-touch ready? Live, last-click today, with reinstall and re-engagement paths across channels. Stated plainly because it is your main reason for buying.
+- Can we see cost at every stage? Click, install, signup and purchase. Install and signup work by default; revenue events need a one-time setup with your team.
+- Can it feed our knowledge hub? Yes, by API, webhook or CSV.
+- How is an install counted? On first open, not download. Expect 5 to 10 percent below Meta's number, in exchange for user-level data they will not give you.
+- What is missing against AppsFlyer? No connected TV. Around 150 integrations against their 10,000, though any named partner takes about three days. Apple's ad affiliate is not connected yet.
+- Why the price gap? India-based, around 25 people, eighteen months of build, against fifteen to twenty years of legacy infrastructure cost.
 
 ## Why It Matters
-- With the relaunch turning Teertham into a daily-use app, the value of a paid install compounds. Measuring which channel produces retained users, rather than which produces installs, is what makes Meta and Google spend defensible.
-- Deferred deep linking lets a puja-specific campaign drop a user directly into that ritual after install, which is where the conversion actually happens.
-- Billing runs postpaid monthly through Razorpay, which you already use, so procurement is a vendor addition rather than a new payment rail.
-- Every new account gets 25,000 free installs with no expiry, so you can validate our numbers against your own before committing spend.
+- A daily-use app makes each paid install worth more, so what matters is which channel produces retained users, not installs.
+- Deferred deep linking drops users into the puja they clicked for, which is where conversion happens.
+- Postpaid monthly via Razorpay, which you already use, so we are a vendor addition rather than a new payment rail.
+- 25,000 free installs with no expiry, so you can check our numbers against yours before committing spend.
 
 ## Next Steps
-- Linkrunner to send the deck, commercial pricing and feature summary by email.
-- Teertham to begin self-serve registration and integration; 25,000 free installs, no expiry.
-- Tushar Gaudara to lead the integration, with a 10 to 15 minute walkthrough from our tech team whenever useful.
-- Teertham to confirm which Apple ad affiliate is needed, roughly three days to connect.
+- Linkrunner to send deck, pricing and feature summary by email.
+- Teertham to start self-serve registration and integration.
+- Tushar to lead integration; 10 to 15 minute walkthrough from our tech team on request.
+- Teertham to confirm which Apple ad affiliate to connect, about three days.
 `;
 
 function splitBrief(brief: string): { content: string; nextSteps: string } {
