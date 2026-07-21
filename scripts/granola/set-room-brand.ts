@@ -20,6 +20,9 @@
  *
  * --logo accepts a local path or an http(s) URL. All flags except --slug are
  * optional; omitted fields are left untouched. --secondary '' clears it.
+ * --contact sets contact_name, which drives the hero greeting
+ * ("Dear <first names> & <company> team,") — the greeting splits it on commas,
+ * so a stored "Sayantan, Sayantan" renders the name twice; pass one clean name.
  * Supplied logos are trimmed of surrounding whitespace by default, since brand
  * files usually ship on a padded canvas and the room scales the canvas, not the
  * mark — pass --no-trim to keep the original framing.
@@ -57,9 +60,12 @@ const LOGO = arg("logo");
 const PRIMARY = arg("primary");
 const SECONDARY = arg("secondary");
 const COMPANY = arg("company");
+const CONTACT = arg("contact");
 
 if (!SLUG) {
-  console.error("Usage: --slug <room-slug> [--logo <path|url>] [--primary #hex] [--secondary #hex] [--company Name]");
+  console.error(
+    "Usage: --slug <room-slug> [--logo <path|url>] [--primary #hex] [--secondary #hex] [--company Name] [--contact 'Full Name']"
+  );
   process.exit(1);
 }
 
@@ -106,7 +112,7 @@ async function trimLogo(bytes: Buffer): Promise<Buffer> {
 async function main() {
   const { data: room, error } = await sb
     .from("rooms")
-    .select("id, slug, company_name, logo_url, brand_primary_color, brand_secondary_color")
+    .select("id, slug, company_name, contact_name, logo_url, brand_primary_color, brand_secondary_color")
     .eq("slug", SLUG)
     .maybeSingle();
   if (error) throw new Error(`lookup: ${error.message}`);
@@ -136,6 +142,7 @@ async function main() {
   if (PRIMARY !== undefined) patch.brand_primary_color = PRIMARY || null;
   if (SECONDARY !== undefined) patch.brand_secondary_color = SECONDARY || null;
   if (COMPANY !== undefined) patch.company_name = COMPANY;
+  if (CONTACT !== undefined) patch.contact_name = CONTACT || null;
 
   if (Object.keys(patch).length === 0) {
     console.log("nothing to change");
@@ -146,7 +153,7 @@ async function main() {
     .from("rooms")
     .update(patch)
     .eq("id", room.id)
-    .select("slug, company_name, logo_url, brand_primary_color, brand_secondary_color")
+    .select("slug, company_name, contact_name, logo_url, brand_primary_color, brand_secondary_color")
     .single();
   if (upErr) throw new Error(`update: ${upErr.message}`);
 
