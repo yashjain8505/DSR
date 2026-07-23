@@ -152,6 +152,7 @@ export const DEFAULT_CUSTOMER_REFERENCES: { name: string; logo_url: string }[] =
   { name: "Grapevine", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/grapevine.png" },
   { name: "Lakmé", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/lakme.png" },
   { name: "Ferryscanner", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/ferryscanner.png" },
+  { name: "R for Rabbit", logo_url: "https://iubstoakzckephkspsys.supabase.co/storage/v1/object/public/assets/logos/r-for-rabbit.png" },
 ];
 
 /**
