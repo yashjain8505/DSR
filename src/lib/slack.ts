@@ -148,6 +148,74 @@ export async function sendDailyDigest({
 }
 
 /**
+ * Pre-call prep doc: posted ~30 min before a scheduled call, summarizing what
+ * the prospect did in their DSR room so the rep can skim before joining.
+ */
+export async function sendCallPrepDoc({
+  personName,
+  companyName,
+  roomSlug,
+  meetingTitle,
+  minutesUntil,
+  activeTimeLabel,
+  sectionLines,
+  actionLines,
+  hasActivity,
+  test = false,
+}: {
+  personName: string;
+  companyName: string;
+  roomSlug: string;
+  meetingTitle: string;
+  minutesUntil: number;
+  activeTimeLabel: string;
+  sectionLines: string[];
+  actionLines: string[];
+  hasActivity: boolean;
+  test?: boolean;
+}): Promise<boolean> {
+  const blocks: unknown[] = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `${prefix(test)}:calendar: *Call prep — ${personName} from ${companyName}, in ~${minutesUntil} min*\n_${meetingTitle}_`,
+      },
+    },
+  ];
+
+  if (hasActivity) {
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*In the room (${activeTimeLabel} active):*\n${sectionLines.join("\n")}`,
+      },
+    });
+    if (actionLines.length > 0) {
+      blocks.push({
+        type: "section",
+        text: { type: "mrkdwn", text: `*What they did:*\n${actionLines.join("\n")}` },
+      });
+    }
+    blocks.push({
+      type: "context",
+      elements: [{ type: "mrkdwn", text: `Room: ${roomSlug}` }],
+    });
+  } else {
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `_Hasn't opened the room (${roomSlug}) yet — worth nudging them to it._`,
+      },
+    });
+  }
+
+  return postBlocks(activityWebhook(), blocks, "sendCallPrepDoc");
+}
+
+/**
  * Send a Slack notification via webhook.
  * Used to alert when a prospect opens a room.
  */
