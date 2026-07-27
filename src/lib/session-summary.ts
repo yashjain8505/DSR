@@ -8,8 +8,13 @@
  *
  * Server-only: the Groq narrative reads GROQ_API_KEY.
  */
-/** Inactivity gap (minutes) that separates one session from the next. */
-export const SESSION_GAP_MIN = 30;
+/**
+ * Inactivity gap (minutes) that separates one session from the next, and the
+ * idle time after which a visitor is considered "signed out". 15 min: short
+ * enough that the sign-out lands soon after they actually leave, long enough
+ * that a brief pause doesn't fake a sign-out + re-sign-in.
+ */
+export const SESSION_GAP_MIN = 15;
 
 export interface SessionEvent {
   event_type: string;
@@ -99,4 +104,13 @@ export function prettifyNameFromEmail(email: string): string {
   return parts
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
     .join(" ");
+}
+
+/**
+ * First name only, for the sign-in / sign-out pings ("Tusshar from KheloMore").
+ * Falls back to the raw email when the local part isn't a parseable name.
+ */
+export function displayNameFromEmail(email: string): string {
+  const full = prettifyNameFromEmail(email);
+  return full.includes("@") ? full : full.split(" ")[0];
 }

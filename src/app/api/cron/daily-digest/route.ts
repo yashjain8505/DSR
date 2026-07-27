@@ -29,7 +29,7 @@ function yesterdayIstRange(nowMs: number): { startIso: string; endIso: string; l
 }
 
 /** Build one bullet per person: name (company) — room · N sign-in(s). */
-async function runDailyDigest(nowMs: number) {
+async function runDailyDigest(nowMs: number, test = false) {
   const admin = createAdminClient();
   const { startIso, endIso, label } = yesterdayIstRange(nowMs);
 
@@ -83,7 +83,7 @@ async function runDailyDigest(nowMs: number) {
         `• *${e.name}* (${e.company}) — ${e.room}${e.count > 1 ? ` · ${e.count} sign-ins` : ""}`
     );
 
-  const sent = await sendDailyDigest({ dateLabel: label, lines });
+  const sent = await sendDailyDigest({ dateLabel: label, lines, test });
   return NextResponse.json({ date: label, people: lines.length, sent });
 }
 
@@ -103,8 +103,9 @@ export async function GET(request: Request) {
   if (a.length !== b.length || !timingSafeEqual(a, b)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const test = new URL(request.url).searchParams.get("test") === "1";
   try {
-    return await runDailyDigest(Date.now());
+    return await runDailyDigest(Date.now(), test);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "daily digest failed" },
@@ -113,12 +114,13 @@ export async function GET(request: Request) {
   }
 }
 
-/** POST /api/cron/daily-digest — admin-triggered manual run, for testing. */
-export async function POST() {
+/** POST /api/cron/daily-digest — admin-triggered manual run. ?test=1 tags as [TEST]. */
+export async function POST(request: Request) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  const test = new URL(request.url).searchParams.get("test") === "1";
   try {
-    return await runDailyDigest(Date.now());
+    return await runDailyDigest(Date.now(), test);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "daily digest failed" },

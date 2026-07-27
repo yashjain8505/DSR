@@ -11,6 +11,24 @@ function activityWebhook(): string | null {
   );
 }
 
+/**
+ * Slack member IDs to @mention on every activity alert (e.g. Shreyans), from
+ * SLACK_MENTION_USER_IDS (comma-separated, e.g. "U0123ABCD,U0456WXYZ"). Empty
+ * when unset. Slack notifies these users if they're in the channel.
+ */
+function mentionPrefix(): string {
+  const ids = (process.env.SLACK_MENTION_USER_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return ids.length ? ids.map((id) => `<@${id}>`).join(" ") + " " : "";
+}
+
+/** Loud [TEST] tag so manually-triggered test alerts are never mistaken for real ones. */
+function prefix(test: boolean): string {
+  return `${test ? ":test_tube: *[TEST]* " : ""}${mentionPrefix()}`;
+}
+
 /** POST Block Kit blocks to a webhook. Never throws; returns whether it posted. */
 async function postBlocks(
   webhookUrl: string | null,
@@ -53,17 +71,19 @@ export async function sendSigninAlert({
   personName,
   companyName,
   when,
+  test = false,
 }: {
   personName: string;
   companyName: string;
   when: Date;
+  test?: boolean;
 }): Promise<boolean> {
   const blocks = [
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `:wave: *${personName} from ${companyName} signed in*\n${IST(when)}`,
+        text: `${prefix(test)}:wave: *${personName} from ${companyName} signed in*\n${IST(when)}`,
       },
     },
   ];
@@ -78,17 +98,19 @@ export async function sendSignoutAlert({
   personName,
   companyName,
   when,
+  test = false,
 }: {
   personName: string;
   companyName: string;
   when: Date;
+  test?: boolean;
 }): Promise<boolean> {
   const blocks = [
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `:door: *${personName} from ${companyName} signed out*\n${IST(when)}`,
+        text: `${prefix(test)}:door: *${personName} from ${companyName} signed out*\n${IST(when)}`,
       },
     },
   ];
@@ -102,9 +124,11 @@ export async function sendSignoutAlert({
 export async function sendDailyDigest({
   dateLabel,
   lines,
+  test = false,
 }: {
   dateLabel: string;
   lines: string[];
+  test?: boolean;
 }): Promise<boolean> {
   const body =
     lines.length > 0
@@ -115,7 +139,7 @@ export async function sendDailyDigest({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `:bar_chart: *DSR sign-ins — ${dateLabel}*\n${lines.length} ${lines.length === 1 ? "person" : "people"}`,
+        text: `${prefix(test)}:bar_chart: *DSR sign-ins — ${dateLabel}*\n${lines.length} ${lines.length === 1 ? "person" : "people"}`,
       },
     },
     { type: "section", text: { type: "mrkdwn", text: body } },

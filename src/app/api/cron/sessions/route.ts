@@ -5,7 +5,7 @@ import { timingSafeEqual } from "crypto";
 import { sendSigninAlert, sendSignoutAlert } from "@/lib/slack";
 import {
   reconstructSessions,
-  prettifyNameFromEmail,
+  displayNameFromEmail,
   SESSION_GAP_MIN,
 } from "@/lib/session-summary";
 
@@ -49,7 +49,7 @@ async function fetchEvents(
   return out;
 }
 
-async function runSessionAlerts() {
+async function runSessionAlerts({ test = false }: { test?: boolean } = {}) {
   const admin = createAdminClient();
   const now = Date.now();
   const sinceIso = new Date(now - LOOKBACK_HOURS * 3600_000).toISOString();
@@ -103,7 +103,7 @@ async function runSessionAlerts() {
       .single();
     if (upErr || !row) continue;
 
-    const personName = prettifyNameFromEmail(email);
+    const personName = displayNameFromEmail(email);
     const startedMs = Date.parse(s.startedAt);
     const lastMs = Date.parse(s.lastEventAt);
 
@@ -113,6 +113,7 @@ async function runSessionAlerts() {
         personName,
         companyName: room.company,
         when: new Date(s.startedAt),
+        test,
       });
       if (ok) {
         await admin
@@ -135,6 +136,7 @@ async function runSessionAlerts() {
         personName,
         companyName: room.company,
         when: new Date(s.lastEventAt),
+        test,
       });
       if (ok) {
         await admin
@@ -171,8 +173,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // ?test=1 tags every alert this run sends with [TEST].
+  const test = new URL(request.url).searchParams.get("test") === "1";
   try {
-    return await runSessionAlerts();
+    return await runSessionAlerts({ test });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "session cron failed" },
@@ -181,12 +185,13 @@ export async function GET(request: Request) {
   }
 }
 
-/** POST /api/cron/sessions — admin-triggered manual run, for testing. */
-export async function POST() {
+/** POST /api/cron/sessions — admin-triggered manual run. ?test=1 tags alerts as [TEST]. */
+export async function POST(request: Request) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
+  const test = new URL(request.url).searchParams.get("test") === "1";
   try {
-    return await runSessionAlerts();
+    return await runSessionAlerts({ test });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "session cron failed" },
