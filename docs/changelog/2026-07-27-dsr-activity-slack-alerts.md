@@ -26,7 +26,7 @@ Two Slack alerts for visitor activity, both driven by one scheduled job so they 
 
 ### Verified
 - `npx tsc --noEmit` clean; `npm run build` compiles (`/api/cron/sessions` present); `npm run lint` 0 errors / 58 warnings (unchanged baseline).
-- **Not yet run against real data** — needs the migration applied, `SLACK_DSR_ACTIVITY_WEBHOOK_URL` set in Vercel, and a deploy. First live run is the real test; the admin `POST` triggers one on demand.
+- **Verified in production (2026-07-27):** first authenticated run returned `{"sessions":3,"signins":2,"summaries":2}` — counters only increment on an accepted Slack post, so 2 sign-in + 2 summary messages were delivered. An immediate re-run returned `signins:0, summaries:0` (same 3 sessions), confirming the dedup ledger prevents repeat alerts on the every-5-min schedule.
 
 ### Setup required (see the accompanying step-by-step)
 1. Create a Slack Incoming Webhook for the activity channel → set `SLACK_DSR_ACTIVITY_WEBHOOK_URL` in Vercel + `.env.local`.
