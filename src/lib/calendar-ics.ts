@@ -24,8 +24,44 @@ export type CalendarResult =
 
 const DEFAULT_OFFSET_MIN = Number(process.env.CALENDAR_DEFAULT_TZ_OFFSET_MIN ?? 330);
 
+/** The configured URL, tolerant of surrounding quotes/whitespace from a paste. */
+function icsUrl(): string {
+  return (process.env.CALENDAR_ICS_URL ?? "").trim().replace(/^["']|["']$/g, "");
+}
+
 export function calendarConfigured(): boolean {
-  return Boolean(process.env.CALENDAR_ICS_URL);
+  return icsUrl().length > 0;
+}
+
+/**
+ * A privacy-safe fingerprint of the configured URL for diagnosing a bad feed —
+ * host and path shape only, never the private token or full URL.
+ */
+export function describeIcsUrl(): Record<string, unknown> {
+  const raw = process.env.CALENDAR_ICS_URL ?? "";
+  const url = icsUrl();
+  let host = "";
+  let path = "";
+  let scheme = "";
+  try {
+    const u = new URL(url);
+    host = u.host;
+    path = u.pathname;
+    scheme = u.protocol.replace(":", "");
+  } catch {
+    /* not a parseable URL */
+  }
+  return {
+    set: raw.length > 0,
+    length: raw.length,
+    had_surrounding_quotes_or_space: raw !== url,
+    parseable_url: host.length > 0,
+    scheme,
+    host,
+    path_ends_with_basic_ics: path.endsWith("/basic.ics"),
+    looks_like_secret_address: /\/private-[^/]+\//.test(path),
+    looks_like_public_address: /\/public\//.test(path),
+  };
 }
 
 /** "+0530" / "-0400" → minutes east of UTC. */
@@ -67,7 +103,7 @@ function unfold(text: string): string[] {
 }
 
 export async function fetchUpcomingEvents(fromMs: number, toMs: number): Promise<CalendarResult> {
-  const url = process.env.CALENDAR_ICS_URL;
+  const url = icsUrl();
   if (!url) return { ok: false, error: "CALENDAR_ICS_URL not configured" };
 
   let text: string;

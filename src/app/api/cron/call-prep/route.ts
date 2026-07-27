@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { timingSafeEqual } from "crypto";
-import { fetchUpcomingEvents, calendarConfigured } from "@/lib/calendar-ics";
+import { fetchUpcomingEvents, calendarConfigured, describeIcsUrl } from "@/lib/calendar-ics";
 import { findRoomForEmail, buildPrepDoc } from "@/lib/call-prep";
 import { sendCallPrepDoc } from "@/lib/slack";
 
@@ -21,9 +21,15 @@ async function runCallPrep({
   test = false,
   demoEmail,
   peekHours,
-}: { test?: boolean; demoEmail?: string | null; peekHours?: number | null } = {}) {
+  peekUrl,
+}: { test?: boolean; demoEmail?: string | null; peekHours?: number | null; peekUrl?: boolean } = {}) {
   const admin = createAdminClient();
   const now = Date.now();
+
+  // Diagnostic: privacy-safe fingerprint of the configured iCal URL (no token).
+  if (peekUrl) {
+    return NextResponse.json(describeIcsUrl());
+  }
 
   // Diagnostic: list upcoming events over a wider window, send nothing. Confirms
   // the iCal URL is reachable AND that the parser reads the feed's events/times.
@@ -160,8 +166,9 @@ export async function GET(request: Request) {
   const test = params.get("test") === "1";
   const demoEmail = params.get("demoEmail");
   const peekHours = params.get("peekHours") ? Number(params.get("peekHours")) : null;
+  const peekUrl = params.get("peekUrl") === "1";
   try {
-    return await runCallPrep({ test, demoEmail, peekHours });
+    return await runCallPrep({ test, demoEmail, peekHours, peekUrl });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "call-prep cron failed" },
@@ -178,8 +185,9 @@ export async function POST(request: Request) {
   const test = params.get("test") === "1";
   const demoEmail = params.get("demoEmail");
   const peekHours = params.get("peekHours") ? Number(params.get("peekHours")) : null;
+  const peekUrl = params.get("peekUrl") === "1";
   try {
-    return await runCallPrep({ test, demoEmail, peekHours });
+    return await runCallPrep({ test, demoEmail, peekHours, peekUrl });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "call-prep cron failed" },
