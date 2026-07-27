@@ -75,37 +75,29 @@ export async function sendSigninAlert({
 }
 
 /**
- * Session summary: fires once, after a visitor's session has gone idle.
- * `sections` is a pre-formatted "where the time went" list; `narrative` is an
- * optional one-line read of intent.
+ * Sign-out alert: fires once, after a visitor's session has gone idle past the
+ * inactivity threshold. A plain "signed out" ping (paired with the sign-in),
+ * with how long they were active — not a detailed summary.
  */
-export async function sendSessionSummary({
+export async function sendSignoutAlert({
   personName,
   companyName,
   roomSlug,
   activeTimeLabel,
-  sectionLines,
-  actionLines,
-  narrative,
-  startedAt,
-  endedAt,
+  when,
 }: {
   personName: string;
   companyName: string;
   roomSlug: string;
   activeTimeLabel: string;
-  sectionLines: string[];
-  actionLines: string[];
-  narrative: string | null;
-  startedAt: Date;
-  endedAt: Date;
+  when: Date;
 }): Promise<boolean> {
-  const blocks: unknown[] = [
+  const blocks = [
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `:receipt: *Session summary — ${personName} (${companyName})*`,
+        text: `:door: *${personName} from ${companyName} has signed out of the Digital Sales Room.*`,
       },
     },
     {
@@ -113,35 +105,39 @@ export async function sendSessionSummary({
       fields: [
         { type: "mrkdwn", text: `*Room:*\n${roomSlug}` },
         { type: "mrkdwn", text: `*Active time:*\n${activeTimeLabel}` },
-        { type: "mrkdwn", text: `*Started:*\n${IST(startedAt)}` },
-        { type: "mrkdwn", text: `*Last active:*\n${IST(endedAt)}` },
+        { type: "mrkdwn", text: `*Signed out:*\n${IST(when)}` },
       ],
     },
   ];
+  return postBlocks(activityWebhook(), blocks, "sendSignoutAlert");
+}
 
-  if (sectionLines.length > 0) {
-    blocks.push({
+/**
+ * Daily digest: one message listing everyone who signed in the previous day.
+ * `lines` is pre-formatted, one bullet per person.
+ */
+export async function sendDailyDigest({
+  dateLabel,
+  lines,
+}: {
+  dateLabel: string;
+  lines: string[];
+}): Promise<boolean> {
+  const body =
+    lines.length > 0
+      ? lines.join("\n")
+      : "_No sign-ins yesterday._";
+  const blocks = [
+    {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*Where they spent time:*\n${sectionLines.join("\n")}`,
+        text: `:bar_chart: *DSR sign-ins — ${dateLabel}*\n${lines.length} ${lines.length === 1 ? "person" : "people"}`,
       },
-    });
-  }
-  if (actionLines.length > 0) {
-    blocks.push({
-      type: "section",
-      text: { type: "mrkdwn", text: `*What they did:*\n${actionLines.join("\n")}` },
-    });
-  }
-  if (narrative) {
-    blocks.push({
-      type: "context",
-      elements: [{ type: "mrkdwn", text: `:brain: ${narrative}` }],
-    });
-  }
-
-  return postBlocks(activityWebhook(), blocks, "sendSessionSummary");
+    },
+    { type: "section", text: { type: "mrkdwn", text: body } },
+  ];
+  return postBlocks(activityWebhook(), blocks, "sendDailyDigest");
 }
 
 /**

@@ -2,11 +2,10 @@ import { requireAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { timingSafeEqual } from "crypto";
-import { sendSigninAlert, sendSessionSummary } from "@/lib/slack";
+import { sendSigninAlert, sendSignoutAlert } from "@/lib/slack";
 import {
   reconstructSessions,
-  buildSummaryLines,
-  generateNarrative,
+  sessionActiveTimeLabel,
   prettifyNameFromEmail,
   SESSION_GAP_MIN,
 } from "@/lib/session-summary";
@@ -17,8 +16,8 @@ export const maxDuration = 60;
 const LOOKBACK_HOURS = 6;
 /** Don't announce a sign-in for a session that started longer ago than this. */
 const SIGNIN_MAX_AGE_MIN = 90;
-/** Don't summarize a session whose last activity is older than this. */
-const SUMMARY_MAX_AGE_MIN = 180;
+/** Don't send a sign-out for a session whose last activity is older than this. */
+const SIGNOUT_MAX_AGE_MIN = 180;
 
 interface RawEvent {
   visitor_id: string;
@@ -81,7 +80,7 @@ async function runSessionAlerts() {
   );
 
   let signins = 0;
-  let summaries = 0;
+  let signouts = 0;
 
   for (const s of sessions) {
     const email = emailById.get(s.visitorId);
@@ -127,37 +126,27 @@ async function runSessionAlerts() {
       }
     }
 
-    // Summary: once the session has gone idle past the gap, and not too stale.
+    // Sign-out ping: once the session has gone idle past the gap, and not too
+    // stale. The `summary_sent` column is reused as the "sign-out sent" flag.
     const idleMs = now - lastMs;
     if (
       !row.summary_sent &&
       idleMs > SESSION_GAP_MIN * 60_000 &&
-      idleMs < SUMMARY_MAX_AGE_MIN * 60_000
+      idleMs < SIGNOUT_MAX_AGE_MIN * 60_000
     ) {
-      const { activeTimeLabel, sectionLines, actionLines } = buildSummaryLines(s.events);
-      const narrative = await generateNarrative({
-        companyName: room.company,
-        activeTimeLabel,
-        sectionLines,
-        actionLines,
-      });
-      const ok = await sendSessionSummary({
+      const ok = await sendSignoutAlert({
         personName,
         companyName: room.company,
         roomSlug: room.slug,
-        activeTimeLabel,
-        sectionLines,
-        actionLines,
-        narrative,
-        startedAt: new Date(s.startedAt),
-        endedAt: new Date(s.lastEventAt),
+        activeTimeLabel: sessionActiveTimeLabel(s.events),
+        when: new Date(s.lastEventAt),
       });
       if (ok) {
         await admin
           .from("visitor_sessions")
           .update({ summary_sent: true })
           .eq("session_key", s.sessionKey);
-        summaries++;
+        signouts++;
       }
     }
   }
@@ -165,7 +154,7 @@ async function runSessionAlerts() {
   return NextResponse.json({
     sessions: sessions.length,
     signins,
-    summaries,
+    signouts,
   });
 }
 

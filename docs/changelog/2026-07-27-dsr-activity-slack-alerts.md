@@ -28,6 +28,13 @@ Two Slack alerts for visitor activity, both driven by one scheduled job so they 
 - `npx tsc --noEmit` clean; `npm run build` compiles (`/api/cron/sessions` present); `npm run lint` 0 errors / 58 warnings (unchanged baseline).
 - **Verified in production (2026-07-27):** first authenticated run returned `{"sessions":3,"signins":2,"summaries":2}` — counters only increment on an accepted Slack post, so 2 sign-in + 2 summary messages were delivered. An immediate re-run returned `signins:0, summaries:0` (same 3 sessions), confirming the dedup ledger prevents repeat alerts on the every-5-min schedule.
 
+### Follow-up — reshaped per user feedback (same day)
+Seen live in `#crm-alerts`, the detailed session summary (time-by-section + Groq intent line) was not wanted. Replaced with a simpler model:
+- **Sign-in ping** — kept as-is.
+- **Sign-out ping** (new) — replaces the summary. Fires once when a session goes idle past the gap: *"<person> from <company> has signed out"* + room + active time. No section breakdown, no LLM. `sendSessionSummary` → `sendSignoutAlert`; the `visitor_sessions.summary_sent` column is reused as the sign-out flag (no migration). `generateNarrative`/`buildSummaryLines` removed; `sessionActiveTimeLabel` added.
+- **Daily digest** (new) — `GET /api/cron/daily-digest`, posts once at **11:00 IST** listing everyone who signed in the previous IST day (one bullet per person/room, repeat sign-ins counted, internal excluded). Scheduled via **Vercel cron `30 5 * * *`** (05:30 UTC = 11:00 IST) — Hobby allows daily, so this needs no external scheduler. The old daily `/api/cron/sessions` Vercel cron (a weak fallback) was dropped in its favour.
+- The every-5-min external trigger is still needed for the in/out pings only.
+
 ### Setup required (see the accompanying step-by-step)
 1. Create a Slack Incoming Webhook for the activity channel → set `SLACK_DSR_ACTIVITY_WEBHOOK_URL` in Vercel + `.env.local`.
 2. Confirm `CRON_SECRET` and `GROQ_API_KEY` are set in Vercel (Groq optional — without it summaries send without the one-liner).

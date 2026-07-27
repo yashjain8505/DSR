@@ -9,9 +9,7 @@
  * Server-only: the Groq narrative reads GROQ_API_KEY.
  */
 import {
-  sectionBreakdown,
   displayActiveTime,
-  describeActivityEvent,
   formatDuration,
   type TimedEvent,
 } from "./analytics-format";
@@ -109,95 +107,14 @@ export function prettifyNameFromEmail(email: string): string {
     .join(" ");
 }
 
-/** Build the "where they spent time" + "what they did" lines for a session. */
-export function buildSummaryLines(events: SessionEvent[]): {
-  activeTimeLabel: string;
-  sectionLines: string[];
-  actionLines: string[];
-} {
+/** Human "active time" label for a session, e.g. "8m 12s" or "under a minute". */
+export function sessionActiveTimeLabel(events: SessionEvent[]): string {
   const timed: TimedEvent[] = events.map((e) => ({
     event_type: e.event_type,
     event_data: e.event_data,
   }));
-
   const { seconds, isEstimate } = displayActiveTime(timed);
-  const activeTimeLabel =
-    seconds > 0
-      ? `${formatDuration(seconds)}${isEstimate ? " (est.)" : ""}`
-      : "under a minute";
-
-  const sectionLines = sectionBreakdown(timed)
-    .slice(0, 5)
-    .map((s) => `• ${s.label} — ${formatDuration(s.seconds)}`);
-
-  // Discrete actions in order, deduped, excluding the per-flush time events.
-  const seen = new Set<string>();
-  const actionLines: string[] = [];
-  for (const e of events) {
-    if (e.event_type === "time_on_tab") continue;
-    const line = describeActivityEvent(e.event_type, e.event_data);
-    if (seen.has(line)) continue;
-    seen.add(line);
-    actionLines.push(`• ${line}`);
-  }
-
-  return { activeTimeLabel, sectionLines, actionLines: actionLines.slice(0, 8) };
-}
-
-/**
- * A one-line read of intent via Groq. Never throws and never blocks the alert:
- * returns null when GROQ_API_KEY is unset or the call fails, in which case the
- * summary still goes out with just the stats.
- */
-export async function generateNarrative(input: {
-  companyName: string;
-  activeTimeLabel: string;
-  sectionLines: string[];
-  actionLines: string[];
-}): Promise<string | null> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return null;
-  if (input.sectionLines.length === 0 && input.actionLines.length === 0) return null;
-
-  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
-  const system =
-    "You summarize a sales-prospect's browsing session in one short sentence " +
-    "for the sales team. State where their attention went and what it suggests " +
-    "about intent. Be concrete and neutral. No greeting, no preamble, one sentence, max 30 words.";
-  const user = [
-    `Prospect company: ${input.companyName}`,
-    `Active time: ${input.activeTimeLabel}`,
-    `Time by section:\n${input.sectionLines.join("\n") || "(none)"}`,
-    `Actions:\n${input.actionLines.join("\n") || "(none)"}`,
-  ].join("\n\n");
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.3,
-        max_tokens: 120,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const text = data?.choices?.[0]?.message?.content?.trim();
-    return text || null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
+  return seconds > 0
+    ? `${formatDuration(seconds)}${isEstimate ? " (est.)" : ""}`
+    : "under a minute";
 }
