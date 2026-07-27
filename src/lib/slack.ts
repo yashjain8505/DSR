@@ -216,6 +216,67 @@ export async function sendCallPrepDoc({
 }
 
 /**
+ * Build the `/prep <company>` reply blocks: each visitor from the company and
+ * what they did in the room. Returned to Slack (via response_url) as a message.
+ */
+export function buildRoomPrepBlocks({
+  company,
+  slug,
+  visitors,
+}: {
+  company: string;
+  slug: string;
+  visitors: { name: string; activeTimeLabel: string; topSections: string }[];
+}): unknown[] {
+  if (visitors.length === 0) {
+    return [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:calendar: *Call prep — ${company}*\n_No room activity yet (${slug}). Nobody from ${company} has opened the room._`,
+        },
+      },
+    ];
+  }
+  const lines = visitors
+    .map((v) => `• *${v.name}* — ${v.activeTimeLabel} active · ${v.topSections}`)
+    .join("\n");
+  return [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `:calendar: *Call prep — ${company}*  _(room: ${slug})_`,
+      },
+    },
+    { type: "section", text: { type: "mrkdwn", text: lines } },
+  ];
+}
+
+/** Post a message back to a Slack slash-command response_url. Never throws. */
+export async function postToResponseUrl(
+  responseUrl: string,
+  blocks: unknown[],
+  inChannel: boolean
+): Promise<boolean> {
+  try {
+    const res = await fetch(responseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        response_type: inChannel ? "in_channel" : "ephemeral",
+        blocks,
+      }),
+    });
+    return res.ok;
+  } catch (error) {
+    console.error("postToResponseUrl failed:", error);
+    return false;
+  }
+}
+
+/**
  * Send a Slack notification via webhook.
  * Used to alert when a prospect opens a room.
  */
