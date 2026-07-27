@@ -17,12 +17,43 @@ export const maxDuration = 60;
 const LEAD_MIN_LOW = 25;
 const LEAD_MIN_HIGH = 35;
 
-async function runCallPrep({ test = false }: { test?: boolean } = {}) {
+async function runCallPrep({
+  test = false,
+  demoEmail,
+}: { test?: boolean; demoEmail?: string | null } = {}) {
+  const admin = createAdminClient();
+  const now = Date.now();
+
+  // Demo path: preview a prep doc for one prospect, bypassing the calendar.
+  // Never writes call_prep_log. Used to show the format without a live meeting.
+  if (demoEmail) {
+    const room = await findRoomForEmail(admin, demoEmail);
+    if (!room) return NextResponse.json({ demo: demoEmail, matched: false });
+    const doc = await buildPrepDoc(admin, room.id, demoEmail);
+    const sent = await sendCallPrepDoc({
+      personName: doc.personName,
+      companyName: room.company_name,
+      roomSlug: room.slug,
+      meetingTitle: "(demo — no real meeting)",
+      minutesUntil: 30,
+      activeTimeLabel: doc.activeTimeLabel,
+      sectionLines: doc.sectionLines,
+      actionLines: doc.actionLines,
+      hasActivity: doc.hasActivity,
+      test: true,
+    });
+    return NextResponse.json({
+      demo: demoEmail,
+      matched: true,
+      room: room.slug,
+      has_activity: doc.hasActivity,
+      sent,
+    });
+  }
+
   if (!calendarConfigured()) {
     return NextResponse.json({ error: "CALENDAR_ICS_URL not configured" }, { status: 500 });
   }
-  const admin = createAdminClient();
-  const now = Date.now();
 
   const listed = await fetchUpcomingEvents(now + LEAD_MIN_LOW * 60_000, now + LEAD_MIN_HIGH * 60_000);
   if (!listed.ok) {
@@ -107,9 +138,11 @@ export async function GET(request: Request) {
   if (a.length !== b.length || !timingSafeEqual(a, b)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const test = new URL(request.url).searchParams.get("test") === "1";
+  const params = new URL(request.url).searchParams;
+  const test = params.get("test") === "1";
+  const demoEmail = params.get("demoEmail");
   try {
-    return await runCallPrep({ test });
+    return await runCallPrep({ test, demoEmail });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "call-prep cron failed" },
@@ -122,9 +155,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
-  const test = new URL(request.url).searchParams.get("test") === "1";
+  const params = new URL(request.url).searchParams;
+  const test = params.get("test") === "1";
+  const demoEmail = params.get("demoEmail");
   try {
-    return await runCallPrep({ test });
+    return await runCallPrep({ test, demoEmail });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "call-prep cron failed" },
