@@ -1,4 +1,150 @@
 /**
+ * Webhook for DSR activity alerts (sign-in + session summary). Falls back to the
+ * legacy SLACK_WEBHOOK_URL so the feature still posts somewhere if the dedicated
+ * channel var isn't set yet.
+ */
+function activityWebhook(): string | null {
+  return (
+    process.env.SLACK_DSR_ACTIVITY_WEBHOOK_URL ||
+    process.env.SLACK_WEBHOOK_URL ||
+    null
+  );
+}
+
+/** POST Block Kit blocks to a webhook. Never throws; returns whether it posted. */
+async function postBlocks(
+  webhookUrl: string | null,
+  blocks: unknown[],
+  context: string
+): Promise<boolean> {
+  if (!webhookUrl) {
+    console.warn(`${context}: no Slack webhook configured, skipping`);
+    return false;
+  }
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blocks }),
+    });
+    return res.ok;
+  } catch (error) {
+    console.error(`${context}: Slack post failed:`, error);
+    return false;
+  }
+}
+
+const IST = (d: Date) =>
+  d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+/**
+ * Sign-in alert: fires once per new session (from the /api/cron/sessions job).
+ * "<person> from <company> has signed in to the Digital Sales Room."
+ */
+export async function sendSigninAlert({
+  personName,
+  companyName,
+  roomSlug,
+  visitorEmail,
+  when,
+}: {
+  personName: string;
+  companyName: string;
+  roomSlug: string;
+  visitorEmail: string;
+  when: Date;
+}): Promise<boolean> {
+  const blocks = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `:wave: *${personName} from ${companyName} has signed in to the Digital Sales Room.*`,
+      },
+    },
+    {
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: `*Visitor:*\n${visitorEmail}` },
+        { type: "mrkdwn", text: `*Room:*\n${roomSlug}` },
+        { type: "mrkdwn", text: `*Signed in:*\n${IST(when)}` },
+      ],
+    },
+  ];
+  return postBlocks(activityWebhook(), blocks, "sendSigninAlert");
+}
+
+/**
+ * Session summary: fires once, after a visitor's session has gone idle.
+ * `sections` is a pre-formatted "where the time went" list; `narrative` is an
+ * optional one-line read of intent.
+ */
+export async function sendSessionSummary({
+  personName,
+  companyName,
+  roomSlug,
+  activeTimeLabel,
+  sectionLines,
+  actionLines,
+  narrative,
+  startedAt,
+  endedAt,
+}: {
+  personName: string;
+  companyName: string;
+  roomSlug: string;
+  activeTimeLabel: string;
+  sectionLines: string[];
+  actionLines: string[];
+  narrative: string | null;
+  startedAt: Date;
+  endedAt: Date;
+}): Promise<boolean> {
+  const blocks: unknown[] = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `:receipt: *Session summary — ${personName} (${companyName})*`,
+      },
+    },
+    {
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: `*Room:*\n${roomSlug}` },
+        { type: "mrkdwn", text: `*Active time:*\n${activeTimeLabel}` },
+        { type: "mrkdwn", text: `*Started:*\n${IST(startedAt)}` },
+        { type: "mrkdwn", text: `*Last active:*\n${IST(endedAt)}` },
+      ],
+    },
+  ];
+
+  if (sectionLines.length > 0) {
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*Where they spent time:*\n${sectionLines.join("\n")}`,
+      },
+    });
+  }
+  if (actionLines.length > 0) {
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: `*What they did:*\n${actionLines.join("\n")}` },
+    });
+  }
+  if (narrative) {
+    blocks.push({
+      type: "context",
+      elements: [{ type: "mrkdwn", text: `:brain: ${narrative}` }],
+    });
+  }
+
+  return postBlocks(activityWebhook(), blocks, "sendSessionSummary");
+}
+
+/**
  * Send a Slack notification via webhook.
  * Used to alert when a prospect opens a room.
  */

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendSlackNotification } from "@/lib/slack";
 import { isEmailAllowed } from "@/lib/room-access";
 import type { EmailGatePayload } from "@/lib/types";
 
@@ -100,15 +99,11 @@ export async function POST(request: Request) {
       console.error("Failed to insert analytics event:", eventError.message);
     }
 
-    // 4. Send Slack notification (fire and forget -- don't block response)
-    sendSlackNotification({
-      roomSlug: room.slug,
-      companyName: room.company_name,
-      visitorEmail: body.email,
-      visitorName: body.name,
-    }).catch((err) =>
-      console.error("Slack notification failed:", err)
-    );
+    // Sign-in Slack alerts are now sent by /api/cron/sessions, which fires once
+    // per session (covering both gate submits and returning visitors who skip
+    // the gate) and posts to the dedicated activity channel. Alerting here too
+    // would double-notify, so the inline call is intentionally removed.
+    // sendSlackNotification(...) — see src/lib/session-summary.ts + api/cron/sessions.
 
     return NextResponse.json({ visitor_id: visitor.id }, { status: 201 });
   } catch (err) {
