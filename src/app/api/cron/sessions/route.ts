@@ -5,7 +5,6 @@ import { timingSafeEqual } from "crypto";
 import { sendSigninAlert, sendSignoutAlert } from "@/lib/slack";
 import {
   reconstructSessions,
-  sessionActiveTimeLabel,
   prettifyNameFromEmail,
   SESSION_GAP_MIN,
 } from "@/lib/session-summary";
@@ -113,8 +112,6 @@ async function runSessionAlerts() {
       const ok = await sendSigninAlert({
         personName,
         companyName: room.company,
-        roomSlug: room.slug,
-        visitorEmail: email,
         when: new Date(s.startedAt),
       });
       if (ok) {
@@ -137,8 +134,6 @@ async function runSessionAlerts() {
       const ok = await sendSignoutAlert({
         personName,
         companyName: room.company,
-        roomSlug: room.slug,
-        activeTimeLabel: sessionActiveTimeLabel(s.events),
         when: new Date(s.lastEventAt),
       });
       if (ok) {

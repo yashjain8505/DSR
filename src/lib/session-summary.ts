@@ -8,12 +8,6 @@
  *
  * Server-only: the Groq narrative reads GROQ_API_KEY.
  */
-import {
-  displayActiveTime,
-  formatDuration,
-  type TimedEvent,
-} from "./analytics-format";
-
 /** Inactivity gap (minutes) that separates one session from the next. */
 export const SESSION_GAP_MIN = 30;
 
@@ -105,16 +99,4 @@ export function prettifyNameFromEmail(email: string): string {
   return parts
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
     .join(" ");
-}
-
-/** Human "active time" label for a session, e.g. "8m 12s" or "under a minute". */
-export function sessionActiveTimeLabel(events: SessionEvent[]): string {
-  const timed: TimedEvent[] = events.map((e) => ({
-    event_type: e.event_type,
-    event_data: e.event_data,
-  }));
-  const { seconds, isEstimate } = displayActiveTime(timed);
-  return seconds > 0
-    ? `${formatDuration(seconds)}${isEstimate ? " (est.)" : ""}`
-    : "under a minute";
 }

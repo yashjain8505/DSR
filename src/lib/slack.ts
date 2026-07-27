@@ -35,7 +35,15 @@ async function postBlocks(
 }
 
 const IST = (d: Date) =>
-  d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+  d.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 
 /**
  * Sign-in alert: fires once per new session (from the /api/cron/sessions job).
@@ -44,14 +52,10 @@ const IST = (d: Date) =>
 export async function sendSigninAlert({
   personName,
   companyName,
-  roomSlug,
-  visitorEmail,
   when,
 }: {
   personName: string;
   companyName: string;
-  roomSlug: string;
-  visitorEmail: string;
   when: Date;
 }): Promise<boolean> {
   const blocks = [
@@ -59,16 +63,8 @@ export async function sendSigninAlert({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `:wave: *${personName} from ${companyName} has signed in to the Digital Sales Room.*`,
+        text: `:wave: *${personName} from ${companyName} signed in*\n${IST(when)}`,
       },
-    },
-    {
-      type: "section",
-      fields: [
-        { type: "mrkdwn", text: `*Visitor:*\n${visitorEmail}` },
-        { type: "mrkdwn", text: `*Room:*\n${roomSlug}` },
-        { type: "mrkdwn", text: `*Signed in:*\n${IST(when)}` },
-      ],
     },
   ];
   return postBlocks(activityWebhook(), blocks, "sendSigninAlert");
@@ -76,20 +72,15 @@ export async function sendSigninAlert({
 
 /**
  * Sign-out alert: fires once, after a visitor's session has gone idle past the
- * inactivity threshold. A plain "signed out" ping (paired with the sign-in),
- * with how long they were active — not a detailed summary.
+ * inactivity threshold. Deliberately mirrors the sign-in — one line + timestamp.
  */
 export async function sendSignoutAlert({
   personName,
   companyName,
-  roomSlug,
-  activeTimeLabel,
   when,
 }: {
   personName: string;
   companyName: string;
-  roomSlug: string;
-  activeTimeLabel: string;
   when: Date;
 }): Promise<boolean> {
   const blocks = [
@@ -97,16 +88,8 @@ export async function sendSignoutAlert({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `:door: *${personName} from ${companyName} has signed out of the Digital Sales Room.*`,
+        text: `:door: *${personName} from ${companyName} signed out*\n${IST(when)}`,
       },
-    },
-    {
-      type: "section",
-      fields: [
-        { type: "mrkdwn", text: `*Room:*\n${roomSlug}` },
-        { type: "mrkdwn", text: `*Active time:*\n${activeTimeLabel}` },
-        { type: "mrkdwn", text: `*Signed out:*\n${IST(when)}` },
-      ],
     },
   ];
   return postBlocks(activityWebhook(), blocks, "sendSignoutAlert");
