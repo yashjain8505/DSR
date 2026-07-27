@@ -20,9 +20,27 @@ const LEAD_MIN_HIGH = 35;
 async function runCallPrep({
   test = false,
   demoEmail,
-}: { test?: boolean; demoEmail?: string | null } = {}) {
+  peekHours,
+}: { test?: boolean; demoEmail?: string | null; peekHours?: number | null } = {}) {
   const admin = createAdminClient();
   const now = Date.now();
+
+  // Diagnostic: list upcoming events over a wider window, send nothing. Confirms
+  // the iCal URL is reachable AND that the parser reads the feed's events/times.
+  if (peekHours && peekHours > 0) {
+    const listed = await fetchUpcomingEvents(now, now + peekHours * 3600_000);
+    if (!listed.ok) return NextResponse.json({ error: listed.error }, { status: 502 });
+    return NextResponse.json({
+      peek_hours: peekHours,
+      count: listed.events.length,
+      events: listed.events.map((e) => ({
+        title: e.title,
+        starts: new Date(e.startMs).toISOString(),
+        in_min: Math.round((e.startMs - now) / 60_000),
+        attendees: e.attendeeEmails.length,
+      })),
+    });
+  }
 
   // Demo path: preview a prep doc for one prospect, bypassing the calendar.
   // Never writes call_prep_log. Used to show the format without a live meeting.
@@ -141,8 +159,9 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const test = params.get("test") === "1";
   const demoEmail = params.get("demoEmail");
+  const peekHours = params.get("peekHours") ? Number(params.get("peekHours")) : null;
   try {
-    return await runCallPrep({ test, demoEmail });
+    return await runCallPrep({ test, demoEmail, peekHours });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "call-prep cron failed" },
@@ -158,8 +177,9 @@ export async function POST(request: Request) {
   const params = new URL(request.url).searchParams;
   const test = params.get("test") === "1";
   const demoEmail = params.get("demoEmail");
+  const peekHours = params.get("peekHours") ? Number(params.get("peekHours")) : null;
   try {
-    return await runCallPrep({ test, demoEmail });
+    return await runCallPrep({ test, demoEmail, peekHours });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "call-prep cron failed" },
