@@ -98,10 +98,9 @@ export const ALWAYS_VISIBLE_TABS: MainTabKey[] = [
 
 /**
  * Sections hidden on a newly-created room (stored in rooms.hidden_sections).
- * Pricing is hidden by default; an admin can re-show it per room from the
- * room editor's visibility toggles.
+ * Nothing hidden by default; admins hide sections per room from the editor.
  */
-export const DEFAULT_HIDDEN_SECTIONS: string[] = ["pricing"];
+export const DEFAULT_HIDDEN_SECTIONS: string[] = [];
 
 /**
  * Tabs that can be toggled on/off by admin.
@@ -275,6 +274,16 @@ export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
  * Default iframe URL for the security & compliance sub-tab.
  */
 export const TRUST_PAGE_URL = "https://trust.linkrunner.io";
+
+/**
+ * Default demo-booking (Cal.com) link used across the room — the floating
+ * "Talk to us" button and the Pricing tab's "book a demo call" CTA both use it.
+ */
+export const DEMO_CALL_URL =
+  "https://cal.linkrunner.io/team/demos/quick-demo?overlayCalendar=true";
+
+/** Public pricing page on the marketing site. */
+export const PRICING_PAGE_URL = "https://linkrunner.io/pricing";
 
 /**
  * Asset categories for the global Assets tab.

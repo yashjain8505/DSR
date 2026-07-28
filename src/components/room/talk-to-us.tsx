@@ -1,10 +1,7 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
-
-/** Cal.com booking link for the Linkrunner demos team. */
-const CAL_LINK =
-  "https://cal.linkrunner.io/team/demos/quick-demo?overlayCalendar=true";
+import { DEMO_CALL_URL as CAL_LINK } from "@/lib/constants";
 
 /**
  * Small circular "Talk to us" button pinned to the bottom-right of the room.
