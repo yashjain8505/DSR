@@ -9,6 +9,7 @@ import {
   TRUST_PAGE_URL,
   DEFAULT_CUSTOMER_REFERENCES,
   DEFAULT_CASE_STUDIES,
+  DEFAULT_HIDDEN_SECTIONS,
 } from "@/lib/constants";
 import { extractBrandAssets, domainFromEmail, domainFromSlug } from "@/lib/brand-colors";
 import { generateBriefFromTranscript } from "@/lib/brief-from-transcript";
@@ -154,6 +155,8 @@ export async function POST(request: Request) {
         // Private by default: locked to the attendee's domain/email (seeded
         // below). Only a room the admin explicitly marks public is left open.
         restrict_access: restrict,
+        // Pricing is hidden by default; admins re-show it per room if needed.
+        hidden_sections: DEFAULT_HIDDEN_SECTIONS,
       })
       .select()
       .single();

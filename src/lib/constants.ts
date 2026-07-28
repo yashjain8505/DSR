@@ -97,6 +97,13 @@ export const ALWAYS_VISIBLE_TABS: MainTabKey[] = [
 ];
 
 /**
+ * Sections hidden on a newly-created room (stored in rooms.hidden_sections).
+ * Pricing is hidden by default; an admin can re-show it per room from the
+ * room editor's visibility toggles.
+ */
+export const DEFAULT_HIDDEN_SECTIONS: string[] = ["pricing"];
+
+/**
  * Tabs that can be toggled on/off by admin.
  * Maps tab key to the corresponding boolean column in the rooms table.
  */

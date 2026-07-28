@@ -9,6 +9,7 @@ import {
   TRUST_PAGE_URL,
   DEFAULT_CUSTOMER_REFERENCES,
   DEFAULT_CASE_STUDIES,
+  DEFAULT_HIDDEN_SECTIONS,
 } from "@/lib/constants";
 import { extractBrandAssets, domainFromEmail, domainFromSlug } from "@/lib/brand-colors";
 import { parseBrief, hasStructure, serializeBrief } from "@/lib/meeting-brief";
@@ -164,6 +165,8 @@ export async function POST(request: Request) {
         // the rare case no prospect domain could be determined, the room is
         // private to Linkrunner until a domain/email is added in the admin.
         restrict_access: true,
+        // Pricing is hidden by default; admins re-show it per room if needed.
+        hidden_sections: DEFAULT_HIDDEN_SECTIONS,
       })
       .select()
       .single();
