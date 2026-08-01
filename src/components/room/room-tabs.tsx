@@ -141,6 +141,8 @@ export function RoomTabs({ data, visitorId }: RoomTabsProps) {
         <TabPricing
           pricing={data.pricing}
           companyName={data.room.company_name}
+          roomId={data.room.id}
+          visitorId={visitorId}
         />
       );
     }

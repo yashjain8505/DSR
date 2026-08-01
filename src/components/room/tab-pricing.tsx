@@ -2,12 +2,35 @@
 
 import { ArrowUpRight, CalendarCheck, Gift } from "lucide-react";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
-import { DEMO_CALL_URL, PRICING_PAGE_URL } from "@/lib/constants";
+import { DEMO_CALL_URL, PRICING_PAGE_URL, TRACKED_CTAS } from "@/lib/constants";
 import type { Pricing } from "@/lib/types";
 
 interface TabPricingProps {
   pricing: Pricing;
   companyName: string;
+  roomId: string;
+  visitorId: string | null;
+}
+
+/**
+ * Fire-and-forget: records the click as a `link_click` event and raises the
+ * real-time Slack alert. Only the CTA key is sent — the route resolves the
+ * label server-side (see TRACKED_CTAS). `keepalive` so the request survives if
+ * the click ever navigates the current tab instead of opening a new one.
+ */
+function trackDemoCtaClick(roomId: string, visitorId: string | null) {
+  fetch("/api/analytics/cta-click", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      room_id: roomId,
+      visitor_id: visitorId,
+      cta: "pricing_demo_call",
+    }),
+    keepalive: true,
+  }).catch(() => {
+    /* analytics is best-effort; never block the booking link */
+  });
 }
 
 /**
@@ -18,9 +41,17 @@ interface TabPricingProps {
  * customized quote comes from a demo call. The CTA uses DEMO_CALL_URL — the
  * same booking link as the room's floating "Talk to us" button.
  *
+ * Clicking that CTA is the strongest buying signal the room produces, so it is
+ * tracked and pinged to Slack in real time (`/api/analytics/cta-click`).
+ *
  * `pricing.content` (admin markdown notes), if any, still renders underneath.
  */
-export function TabPricing({ pricing, companyName }: TabPricingProps) {
+export function TabPricing({
+  pricing,
+  companyName,
+  roomId,
+  visitorId,
+}: TabPricingProps) {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 text-center">
@@ -79,10 +110,11 @@ export function TabPricing({ pricing, companyName }: TabPricingProps) {
           href={DEMO_CALL_URL}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackDemoCtaClick(roomId, visitorId)}
           className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--brand-primary)] px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
         >
           <CalendarCheck className="h-4 w-4" />
-          Book a demo call for a custom quote
+          {TRACKED_CTAS.pricing_demo_call.label}
         </a>
       </div>
 

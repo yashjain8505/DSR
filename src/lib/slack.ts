@@ -118,6 +118,44 @@ export async function sendSignoutAlert({
 }
 
 /**
+ * CTA-click alert: fires the moment a visitor clicks a booking CTA in the room
+ * (currently the Pricing tab's "book a demo call"). Unlike sign-in/sign-out —
+ * which are reconstructed by the every-few-minutes session cron — this one is
+ * sent inline from the click itself, because a booking-intent click is the
+ * hottest signal in the room and is worth acting on immediately.
+ */
+export async function sendCtaClickAlert({
+  personName,
+  companyName,
+  ctaLabel,
+  roomSlug,
+  when,
+  test = false,
+}: {
+  personName: string;
+  companyName: string;
+  ctaLabel: string;
+  roomSlug: string;
+  when: Date;
+  test?: boolean;
+}): Promise<boolean> {
+  const blocks = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `${prefix(test)}:fire: *${personName} from ${companyName} clicked "${ctaLabel}"*\n${IST(when)}`,
+      },
+    },
+    {
+      type: "context",
+      elements: [{ type: "mrkdwn", text: `Pricing tab · room: ${roomSlug}` }],
+    },
+  ];
+  return postBlocks(activityWebhook(), blocks, "sendCtaClickAlert");
+}
+
+/**
  * Daily digest: one message listing everyone who signed in the previous day.
  * `lines` is pre-formatted, one bullet per person.
  */

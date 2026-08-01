@@ -286,6 +286,26 @@ export const DEMO_CALL_URL =
 export const PRICING_PAGE_URL = "https://linkrunner.io/pricing";
 
 /**
+ * Room CTAs whose clicks raise a real-time Slack alert (`/api/analytics/cta-click`).
+ *
+ * The client posts only the `cta` KEY; the server looks the label up here rather
+ * than trusting a client-supplied string. That keeps the button text and the
+ * Slack message from drifting apart, and — more importantly — stops anyone
+ * POSTing arbitrary text into the alert channel, since the route is public.
+ *
+ * The key is also stored on the `link_click` event's `event_data.cta`, so the
+ * admin timeline and the alert always describe the same click.
+ */
+export const TRACKED_CTAS = {
+  pricing_demo_call: {
+    label: "Book a demo call for a custom quote",
+    url: DEMO_CALL_URL,
+  },
+} as const;
+
+export type TrackedCtaKey = keyof typeof TRACKED_CTAS;
+
+/**
  * Asset categories for the global Assets tab.
  * These map to the room content sections that are the same for every customer.
  */
