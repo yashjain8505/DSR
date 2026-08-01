@@ -83,7 +83,24 @@ window would silence both.
   whether or not the code worked (the vacuous-grep trap from `2026-07-20-set-room-brand-tool`).
   The compiled chunk shows `onClick` bound to the CTA anchor beside `href:g.DEMO_CALL_URL`,
   posting `{room_id, visitor_id, cta:"pricing_demo_call"}` with `keepalive:!0`.
-- **Not verified by an actual browser click.** A real-browser pass was attempted and
+### Confirmed in production (2026-08-01, post-deploy)
+- **Slack delivery:** a `?test=1` click against `dsr.linkrunner.io` returned
+  `{"success":true,"alerted":true}` — `alerted` only goes true on a 2xx from the Slack
+  webhook, so the message reached `#crm-alerts`. An immediate repeat returned
+  `alerted:false`, confirming the 30-min dedup live. Both test rows were then deleted;
+  `link_click` count across the whole table is back to 0.
+- **The `onClick` fires** — the one thing the local browser pass could not prove. Yash
+  clicked the CTA in the CredFlow room and it recorded cleanly:
+  `05:58:00 yash@linkrunner.io link_click {"cta":"pricing_demo_call","tab":"pricing",…}`.
+- **⚠️ You cannot self-test this by clicking.** That click produced no Slack message, which
+  read as a bug and is not one: `@linkrunner.io` visitors are recorded but never announced
+  (same exclusion as the session cron and the analytics dashboard). Reviewed and
+  **deliberately kept** — the alert's whole value is that it only ever means "a prospect
+  showed buying intent". To verify it by hand, POST to `/api/analytics/cta-click?test=1`
+  with a non-internal `visitor_id`, or click through as a non-linkrunner email.
+
+### Verification attempt that failed (local only)
+- **Not verified by an actual browser click *locally*.** A real-browser pass was attempted and
   abandoned after the local environment failed three different ways, none of them related to
   this feature: (1) Turbopack panicked with `Next.js package not found` on the dev server —
   a `.next` directory left in production-build state; (2) after `rm -rf .next`, the dev
@@ -92,10 +109,9 @@ window would silence both.
   for every room tried) but never hydrated in the browser, leaving `loading.tsx` on screen.
   Also noted en route: `/room/kredit` has `restrict_access: true` with an `@kredit.pe`
   allowlist, so a test visitor is evicted by `/api/rooms/access-check` on load.
-  **The remaining unproven step is exactly one thing — whether React's `onClick` fires on
-  that anchor.** Route behaviour, dedup, injection rejection, message rendering and the
-  compiled binding are all verified above. The definitive test is one click in a real room
-  after deploy, watching `#crm-alerts`.
+  This left exactly one unproven step — whether React's `onClick` fires on that anchor —
+  which the production click above then settled. Recorded here because the three failure
+  modes will recur for anyone trying to run this room locally.
 - **No residue.** The browser attempts left 2 events (`page_view`, `tab_click`) under the
   `test@example.com` visitor; both deleted. Re-queried after cleanup: 0 events for that
   visitor, and 0 stray `link_click` rows anywhere in the window.
