@@ -141,6 +141,14 @@ export async function POST(request: Request) {
         })
       : { content: "", nextSteps: "" };
 
+    // Hide recap sections that have no content. Without this a room whose brief
+    // failed to generate (or that was created with no transcript at all) shows
+    // an empty "What we discussed so far" tab to the prospect. Admins can
+    // unhide either section once the brief is filled in.
+    const hiddenSections = [...DEFAULT_HIDDEN_SECTIONS];
+    if (!brief.content.trim()) hiddenSections.push("recap_discussed");
+    if (!brief.nextSteps.trim()) hiddenSections.push("recap_next_steps");
+
     // Create the room
     const { data: room, error: roomError } = await admin
       .from("rooms")
@@ -156,7 +164,8 @@ export async function POST(request: Request) {
         // below). Only a room the admin explicitly marks public is left open.
         restrict_access: restrict,
         // Pricing is hidden by default; admins re-show it per room if needed.
-        hidden_sections: DEFAULT_HIDDEN_SECTIONS,
+        // Empty recap sections are hidden too (see hiddenSections above).
+        hidden_sections: hiddenSections,
       })
       .select()
       .single();

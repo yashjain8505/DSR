@@ -43,13 +43,31 @@ const LINKRUNNER_TEAM: {
  * Flowla-inspired warm greeting with dual-brand gradient,
  * both logos above the greeting, and a seller info card.
  */
+/**
+ * A room for an individual rather than a company — an independent developer,
+ * consultant, or anyone with no company behind them.
+ *
+ * Derived from the data rather than stored as a flag, so it needs no migration:
+ * create the room with `company_name` set to the person's own full name and it
+ * greets them directly ("Dear Ramnarayan,") with no company logo beside ours.
+ * For every normal room the two differ, so nothing changes.
+ */
+function isPersonalRoom(companyName: string, contactName: string | null): boolean {
+  if (!contactName) return false;
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+  return norm(companyName) === norm(contactName);
+}
+
 export function RoomHero({
   companyName,
   logoUrl,
   contactName,
   onScrollDown,
 }: RoomHeroProps) {
+  const personal = isPersonalRoom(companyName, contactName);
+
   // Build greeting with first names: "Dear Dheeraj, Divyanshu & Zypp Electric team,"
+  // — or, for an individual, just "Dear Ramnarayan," with no company to greet.
   const greeting = (() => {
     if (!contactName) return `Dear ${companyName} team,`;
     const firstNames = contactName
@@ -57,6 +75,7 @@ export function RoomHero({
       .map((n) => n.trim().split(" ")[0])
       .filter(Boolean);
     if (firstNames.length === 0) return `Dear ${companyName} team,`;
+    if (personal) return `Dear ${firstNames.join(", ")},`;
     return `Dear ${firstNames.join(", ")} & ${companyName} team,`;
   })();
 
@@ -111,31 +130,38 @@ export function RoomHero({
                 className="h-10 w-10 object-contain sm:h-16 sm:w-16"
               />
             </div>
-            <span
-              className="text-2xl sm:text-4xl"
-              style={{
-                filter:
-                  "brightness(1.25) saturate(1.15) drop-shadow(0 1px 3px rgba(0,0,0,0.25))",
-              }}
-              role="img"
-              aria-label="handshake"
-            >
-              🤝
-            </span>
-            {logoUrl ? (
-              <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg sm:h-20 sm:w-20">
-                <img
-                  src={logoUrl}
-                  alt={`${companyName} logo`}
-                  className="h-10 w-10 object-contain sm:h-16 sm:w-16"
-                />
-              </div>
-            ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 shadow-lg backdrop-blur-sm sm:h-20 sm:w-20">
-                <span className="text-lg font-bold text-white sm:text-xl">
-                  {companyName.slice(0, 2).toUpperCase()}
+            {/* Individuals get no second logo: there is no company mark to
+                show, and a monogram of a person's name reads as a placeholder
+                for something missing rather than as branding. */}
+            {!personal && (
+              <>
+                <span
+                  className="text-2xl sm:text-4xl"
+                  style={{
+                    filter:
+                      "brightness(1.25) saturate(1.15) drop-shadow(0 1px 3px rgba(0,0,0,0.25))",
+                  }}
+                  role="img"
+                  aria-label="handshake"
+                >
+                  🤝
                 </span>
-              </div>
+                {logoUrl ? (
+                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg sm:h-20 sm:w-20">
+                    <img
+                      src={logoUrl}
+                      alt={`${companyName} logo`}
+                      className="h-10 w-10 object-contain sm:h-16 sm:w-16"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 shadow-lg backdrop-blur-sm sm:h-20 sm:w-20">
+                    <span className="text-lg font-bold text-white sm:text-xl">
+                      {companyName.slice(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

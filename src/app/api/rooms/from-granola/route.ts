@@ -213,6 +213,23 @@ export async function POST(request: Request) {
       briefContent = serializeBrief(parsedBrief);
     }
 
+    // Hide recap sections with no content. Brief generation can come back empty
+    // (Groq unavailable — it no longer falls back to dumping the transcript), and
+    // an empty "What we discussed so far" tab on a prospect-facing room is worse
+    // than no tab. Patched after the insert because the room row is created
+    // before the brief is built. Admins can unhide once the brief is filled in.
+    const emptyRecap: string[] = [];
+    if (!briefContent.trim()) emptyRecap.push("recap_discussed");
+    if (!nextSteps.trim()) emptyRecap.push("recap_next_steps");
+    if (emptyRecap.length > 0) {
+      await admin
+        .from("rooms")
+        .update({
+          hidden_sections: [...(DEFAULT_HIDDEN_SECTIONS ?? []), ...emptyRecap],
+        })
+        .eq("id", roomId);
+    }
+
     // 7. Create all child rows in parallel
     const [briefResult, subTabsResult, pricingResult, gettingStartedResult, refsResult, caseStudiesResult] =
       await Promise.all([
